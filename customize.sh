@@ -116,7 +116,8 @@ install_ntfs() {
     /usr/bin/logger 'install_ntfs()' -t 'Customizing Debian';
     
     export DEBIAN_FRONTEND=noninteractive;
-    sudo apt -qq -y install ntfs-3g;
+    sudo apt-get -qq -y install ntfs-3g;
+    sudo apt-get -qq -y install exfat-fuse exfat-utils;
     sync;
     
     echo -e "\e[32m - install_ntfs() finished\e[0m";
