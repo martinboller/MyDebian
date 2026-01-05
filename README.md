@@ -1,5 +1,5 @@
 # myBookworm
-Install some basics on Debian 12 Bookworm
+Install some basics on Debian 12 and 13
 
 ### Design principles:
   - Controlled by .env file
@@ -8,6 +8,8 @@ Install some basics on Debian 12 Bookworm
   - Installs some Networking, Forensics, Development, and System utilities
 
 ## Latest changes ##
+### 2026-01-04
+ - Installing NTFS support
 
 ### 2024-01-03 - Go and Serial Ports ###
  - Installing golang

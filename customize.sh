@@ -5,30 +5,27 @@
 # Author:       Martin Boller                                       #
 #                                                                   #
 # Email:        martin@bollers.dk                                   #
-# Last Update:  2024-01-05                                          #
-# Version:      1.61                                                #
+# Last Update:  2026-01-05                                          #
+# Version:      2.00                                                #
 #                                                                   #
-# Changes:  Tested on Debian 12 (Bookworm)                          #
+# Changes:  Tested on Debian 13 (Debian)                            #
 #                                                                   #
 #####################################################################
 
 do_intro() {
-    /usr/bin/logger 'do_intro()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'do_intro()' -t 'Customizing Debian';
     echo -e '\e[32m   ___          _                '  _     _
     echo -e '\e[32m / ___|   _ ___| |_ ___  _ __ ___ (_)___(_)_ __   __ _  '
     echo -e '\e[32m| |  | | | / __| __/ _ \| ´_ ` _ \| |_  / | ´_ \ / _` | '
     echo -e '\e[32m| |__| |_| \__ \ || (_) | | | | | | |/ /| | | | | (_| | '
     echo -e '\e[32m \____\__,_|___/\__\___/|_| |_| |_|_/___|_|_| |_|\__, | '
-    echo -e '\e[32m| __ )  ___   ___ | | ____      _____  _ __ _ __ |___/  '
-    echo -e '\e[32m|  _ \ / _ \ / _ \| |/ /\ \ /\ / / _ \| ´__| ´_ ` _ \   '
-    echo -e '\e[32m| |_) | (_) | (_) |   <  \ V  V / (_) | |  | | | | | |  '
-    echo -e '\e[32m|____/ \___/ \___/|_|\_\  \_/\_/ \___/|_|  |_| |_| |_|  '
+    echo -e '\e[32m|                                                |___/  '
     echo -e
-    /usr/bin/logger 'do_intro() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'do_intro() finished' -t 'Customizing Debian';
 }
 
 do_outro() {
-    /usr/bin/logger 'do_outro()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'do_outro()' -t 'Customizing Debian';
     echo -e '\e[32m  ____          _                  _          _   _              '
     echo -e '\e[32m / ___|   _ ___| |_ ___  _ __ ___ (_)______ _| |_(_) ___  _ __   '
     echo -e '\e[32m| |  | | | / __| __/ _ \| ´_ ` _ \| |_  / _` | __| |/ _ \| ´_ \  '
@@ -39,12 +36,12 @@ do_outro() {
     echo -e '\e[32m             |  _| | | | | | \__ \ | | |  __/ (_| |              '
     echo -e '\e[32m             |_|   |_|_| |_|_|___/_| |_|\___|\__,_|              '
     echo -e
-    /usr/bin/logger 'do_outro() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'do_outro() finished' -t 'Customizing Debian';
 }
 
 configure_env() {
     echo -e "\e[32m - configure_env()\e[0m";
-    /usr/bin/logger 'configure_env()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'configure_env()' -t 'Customizing Debian';
 
     # Remember to change settings in the .env file.
     # Directory of script
@@ -93,12 +90,12 @@ configure_env() {
     echo -e "\e[36mEnvironment configured\e[0m";
 
     echo -e "\e[32m - configure_env() finished\e[0m";
-    /usr/bin/logger 'configure_env() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'configure_env() finished' -t 'Customizing Debian';
 }
 
 install_updates() {
     echo -e "\e[32m - install_updates()\e[0m";
-    /usr/bin/logger 'install_updates()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'install_updates()' -t 'Customizing Debian';
     
     export DEBIAN_FRONTEND=noninteractive;
     sync
@@ -111,26 +108,38 @@ install_updates() {
     sync;
     
     echo -e "\e[32m - install_updates() finished\e[0m";
-    /usr/bin/logger 'install_updates() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'install_updates() finished' -t 'Customizing Debian';
+}
+
+install_ntfs() {
+     echo -e "\e[32m - install_ntfs()\e[0m";
+    /usr/bin/logger 'install_ntfs()' -t 'Customizing Debian';
+    
+    export DEBIAN_FRONTEND=noninteractive;
+    sudo apt -qq -y install ntfs-3g;
+    sync;
+    
+    echo -e "\e[32m - install_ntfs() finished\e[0m";
+    /usr/bin/logger 'install_ntfs() finished' -t 'Customizing Debian';
 }
 
 install_utils_apt() {
     echo -e "\e[32m - install_utils_apt()\e[0m";
-    /usr/bin/logger 'install_utils_apt()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'install_utils_apt()' -t 'Customizing Debian';
 
     export DEBIAN_FRONTEND=noninteractive;
     echo -e "\e[36m .... Installing some additional tools and utilities\e[0m";
 
     # NETTOOLS_INSTALL
     if [ "$NETTOOLS_INSTALL" == "Yes" ]; then
-        /usr/bin/logger 'installing Network tools from Debian repository ' -t 'Customizing Bookworm';
+        /usr/bin/logger 'installing Network tools from Debian repository ' -t 'Customizing Debian';
         echo -e "\e[36m .... Installing network tools\e[0m";
         sudo apt-get -y -qq install ipcalc-ng wireshark tcpdump nmap ncat ngrep ethtool aircrack-ng whois dnsutils > /dev/null 2>&1;
     fi
 
     # FORTOOLS_INSTALL
     if [ "$FORTOOLS_INSTALL" == "Yes" ]; then
-        /usr/bin/logger 'installing Forensics tools from Debian repository ' -t 'Customizing Bookworm';
+        /usr/bin/logger 'installing Forensics tools from Debian repository ' -t 'Customizing Debian';
         echo -e "\e[36m .... Installing forensics tools\e[0m";
         sudo apt-get -y -qq install forensics-all > /dev/null 2>&1;
         sudo apt-get -y -qq install testdisk sleuthkit geoip-bin geoip-database geoipupdate binwalk > /dev/null 2>&1;
@@ -138,21 +147,21 @@ install_utils_apt() {
 
     # SYSTOOLS_INSTALL
     if [ "$SYSTOOLS_INSTALL" == "Yes" ]; then
-        /usr/bin/logger 'installing System tools from Debian repository ' -t 'Customizing Bookworm';
+        /usr/bin/logger 'installing System tools from Debian repository ' -t 'Customizing Debian';
         echo -e "\e[36m .... Installing system tools\e[0m";
         sudo apt-get -y -qq install gparted wget nano p7zip p7zip-full unzip dconf-editor htop > /dev/null 2>&1;
     fi
 
     # USERTOOLS_INSTALL
     if [ "$USERTOOLS_INSTALL" == "Yes" ]; then
-        /usr/bin/logger 'installing User tools from Debian repository ' -t 'Customizing Bookworm';
+        /usr/bin/logger 'installing User tools from Debian repository ' -t 'Customizing Debian';
         echo -e "\e[36m .... Installing user utils and other tools\e[0m";
         sudo apt-get -y -qq install curl transmission-gtk vlc ffmpeg libavcodec-extra default-jdk sshpass rclone rclone-browser tldr > /dev/null 2>&1;
     fi
 
     # DEVTOOLS_INSTALL
     if [ "$DEVTOOLS_INSTALL" == "Yes" ]; then
-        /usr/bin/logger 'installing Development tools from Debian repository ' -t 'Customizing Bookworm';
+        /usr/bin/logger 'installing Development tools from Debian repository ' -t 'Customizing Debian';
         echo -e "\e[36m .... Installing development tools\e[0m";
         sudo apt-get -y -qq install git devscripts build-essential software-properties-common gnupg2 dirmngr --install-recommends > /dev/null 2>&1;
         # Required to build Proxmark and others
@@ -161,18 +170,18 @@ install_utils_apt() {
     
     # PYTHON_INSTALL
     if [ "$PYTHON_INSTALL" == "Yes" ]; then
-        /usr/bin/logger 'installing Python stuff from Debian repository ' -t 'Customizing Bookworm';
+        /usr/bin/logger 'installing Python stuff from Debian repository ' -t 'Customizing Debian';
         echo -e "\e[36m .... Installing Python tools\e[0m";   
         sudo apt-get -y -qq install python3 python3-pip python3-setuptools python3-gnupg python3-venv libpython3-dev > /dev/null 2>&1;
     fi
 
     echo -e "\e[32m - install_utils_apt() finished\e[0m";
-    /usr/bin/logger 'install_utils_apt() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'install_utils_apt() finished' -t 'Customizing Debian';
 }
 
 install_flatpak() {
     echo -e "\e[32m - install_flatpak()\e[0m";
-    /usr/bin/logger 'install_flatpak()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'install_flatpak()' -t 'Customizing Debian';
 
     echo -e "\e[36m .... Installing flatpak and gnome software plugin\e[0m";
     sudo apt-get -qq -y install flatpak gnome-software-plugin-flatpak;
@@ -181,16 +190,16 @@ install_flatpak() {
     sync;
     
     echo -e "\e[32m - install_flatpak() finished\e[0m";
-    /usr/bin/logger 'install_flatpak() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'install_flatpak() finished' -t 'Customizing Debian';
 }
 
 install_utils_flatpak() {
     echo -e "\e[32m - install_utils_flatpak()\e[0m";
-    /usr/bin/logger 'install_utils_flatpak()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'install_utils_flatpak()' -t 'Customizing Debian';
 
     # FP_DEVTOOLS_INSTALL
     if [ "$FP_DEVTOOLS_INSTALL" == "Yes" ]; then
-        /usr/bin/logger 'installing Flatpak Devtools' -t 'Customizing Bookworm';
+        /usr/bin/logger 'installing Flatpak Devtools' -t 'Customizing Debian';
         echo -e "\e[36m .... Installing vs-codium\e[0m";
         flatpak --assumeyes install com.vscodium.codium > /dev/null 2>&1;
         echo -e "\e[36m .... installing ImHex Hex Editor\e[0m";
@@ -201,7 +210,7 @@ install_utils_flatpak() {
 
     # FP_USERTOOLS_INSTALL
     if [ "$FP_USERTOOLS_INSTALL" == "Yes" ]; then
-        /usr/bin/logger 'installing Flatpak Usertools' -t 'Customizing Bookworm';
+        /usr/bin/logger 'installing Flatpak Usertools' -t 'Customizing Debian';
         echo -e "\e[36m .... installing BitWarden\e[0m";
         flatpak --assumeyes install com.bitwarden.desktop > /dev/null 2>&1;
         echo -e "\e[36m .... installing Calibre\e[0m";
@@ -225,12 +234,12 @@ install_utils_flatpak() {
     fi
     
     echo -e "\e[32m - install_utils_flatpak() finished\e[0m";
-    /usr/bin/logger 'install_utils_flatpak() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'install_utils_flatpak() finished' -t 'Customizing Debian';
 }
 
 install_gnome_dash_to_panel() {
     echo -e "\e[32m - install_gnome_dash_to_panel()\e[0m";
-    /usr/bin/logger 'install_gnome_dash_to_panel()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'install_gnome_dash_to_panel()' -t 'Customizing Debian';
 
     echo -e "\e[36m .... installing the Dash-to-Panel Gnome Extension\e[0m";
     # Requires log out then logon
@@ -239,23 +248,23 @@ install_gnome_dash_to_panel() {
     gnome-extensions enable $DASH_UUID
      
     echo -e "\e[32m - install_gnome_dash_to_panel() finished\e[0m";
-    /usr/bin/logger 'install_gnome_dash_to_panel() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'install_gnome_dash_to_panel() finished' -t 'Customizing Debian';
 }
 
 configure_nix() {
     echo -e "\e[32m - configure_nix()\e[0m";
-    /usr/bin/logger 'configure_nix()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'configure_nix()' -t 'Customizing Debian';
 
     echo -e "\e[36m .... Configuring Linux changes\e[0m";
     # Currently nothing to do
 
     echo -e "\e[32m - configure_nix() finished\e[0m";
-    /usr/bin/logger 'configure_nix() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'configure_nix() finished' -t 'Customizing Debian';
 }
 
 configure_sudo() {
     echo -e "\e[32m - configure_sudo()\e[0m";
-    /usr/bin/logger 'configure_sudo()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'configure_sudo()' -t 'Customizing Debian';
     
     echo -e "\e[36m .... Adding user: $USERNAME to group $SUDOGROUP\e[0m";
     echo -e "\e[35m .... You must provide the root password, then logout and rerun script";
@@ -263,24 +272,24 @@ configure_sudo() {
     echo -e "\e[35m$("/usr/bin/newgrp $SUDOGROUP")\e[0m"
         
     echo -e "\e[32m - configure_sudo() finished\e[0m";
-    /usr/bin/logger 'configure_sudo() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'configure_sudo() finished' -t 'Customizing Debian';
 }
 
 configure_apt_repositories() {
     echo -e "\e[32m - configure_apt_repositories()\e[0m";
-    /usr/bin/logger 'configure_apt_respositories()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'configure_apt_respositories()' -t 'Customizing Debian';
 
     echo -e "\e[36m .... adding contrib, non-free, and non-free-firmware repositories to sources.list\e[0m";
     sudo sed -ie "s/main/main contrib non-free non-free-firmware/" /etc/apt/sources.list
     sudo apt-get -qq update;
     
     echo -e "\e[32m - configure_apt_repositories() finished\e[0m";
-    /usr/bin/logger 'configure_apt_respositories() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'configure_apt_respositories() finished' -t 'Customizing Debian';
 }
 
 configure_microsoft_apt_repository() {
     echo -e "\e[32m - configure_microsoft_apt_repository()\e[0m";
-    /usr/bin/logger 'configure_microsoft_apt_respository()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'configure_microsoft_apt_respository()' -t 'Customizing Debian';
 
     echo -e "\e[36m .... adding packages-microsoft-prod.deb to sources.list\e[0m";
     # Download the Microsoft repository GPG keys
@@ -294,8 +303,8 @@ configure_microsoft_apt_repository() {
     rm packages-microsoft-prod.deb > /dev/null 2>&1;
 
     if [ "$MICROSOFT_APT_WORKAROUND" == "Yes" ]; then
-        # Correct the repo to 11/Bullseye as 12/Bookworm stuff is mostly empty because Microsoft
-        echo -e "\e[31m .... Correct the repo to 11/Bullseye as 12/Bookworm stuff is mostly empty because Microsoft\e[0m";
+        # Correct the repo to 11/Bullseye as 12/Debian stuff is mostly empty because Microsoft
+        echo -e "\e[31m .... Correct the repo to 11/Bullseye as 12/Debian stuff is mostly empty because Microsoft\e[0m";
         echo -e "\e[31m .... This is BAD, and can hopefully be changed soon\e[0m"
         sudo sed -i "s/$VER/11/" /etc/apt/sources.list.d/microsoft-prod.list
         sudo sed -i "s/$CODENAME/bullseye/" /etc/apt/sources.list.d/microsoft-prod.list
@@ -305,12 +314,12 @@ configure_microsoft_apt_repository() {
     sudo apt-get -qq update
 
     echo -e "\e[32m - configure_microsoft_apt_repository() finished\e[0m";
-    /usr/bin/logger 'configure_microsoft_apt_respository() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'configure_microsoft_apt_respository() finished' -t 'Customizing Debian';
 }
 
 configure_serial_access() {
     echo -e "\e[32m - configure_serial_access()\e[0m";
-    /usr/bin/logger 'configure_serial_access()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'configure_serial_access()' -t 'Customizing Debian';
    
     if id -nG "$USERNAME" | grep -qw "$SERIALGROUP"; then
         echo -e "\e[32m - $USERNAME already  belongs to group: $SERIALGROUP, nothing to do\e[0m"
@@ -320,24 +329,24 @@ configure_serial_access() {
     fi
    
     echo -e "\e[32m - configure_serial_access() finished\e[0m";
-    /usr/bin/logger 'configure_serial_access() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'configure_serial_access() finished' -t 'Customizing Debian';
 }
 
 install_pwsh() {
     echo -e "\e[32m - install_pwsh()\e[0m";
-    /usr/bin/logger 'install_pwsh()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'install_pwsh()' -t 'Customizing Debian';
 
     # Install PowerShell
     echo -e "\e[36m .... Installing Powershell\e[0m";
     sudo apt-get -qq -y install powershell
 
     echo -e "\e[32m - install_pwsh() finished\e[0m";
-    /usr/bin/logger 'install_pwsh() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'install_pwsh() finished' -t 'Customizing Debian';
 }
 
 configure_kb_shortcuts() {
     echo -e "\e[32m - configure_kb_shortcuts()\e[0m";
-    /usr/bin/logger 'configure_kb_shortcuts()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'configure_kb_shortcuts()' -t 'Customizing Debian';
 
     # Create custom keybindings myTerminal and myDisks
     echo -e "\e[36m .... Create custom keybindings\e[0m";
@@ -367,23 +376,23 @@ configure_kb_shortcuts() {
     fi
 
     echo -e "\e[32m - configure_kb_shortcuts() finshed\e[0m";
-    /usr/bin/logger 'configure_kb_shortcuts() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'configure_kb_shortcuts() finished' -t 'Customizing Debian';
 }
 
 configure_min_max_buttons() {
     echo -e "\e[32m - configure_min_max_buttons()\e[0m";
-    /usr/bin/logger 'configure_min_max_buttons()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'configure_min_max_buttons()' -t 'Customizing Debian';
 
     echo -e "\e[36m .... Configuring GNOME Windows Manager to show minimize and maximize buttons\e[0m";
     gsettings set org.gnome.desktop.wm.preferences button-layout ":minimize,maximize,close"
 
     echo -e "\e[32m - configure_min_max_buttons() finished\e[0m";
-    /usr/bin/logger 'configure_min_max_buttons() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'configure_min_max_buttons() finished' -t 'Customizing Debian';
 }
 
 install_golang() {
     echo -e "\e[32m - install_golang()\e[0m";
-    /usr/bin/logger 'install_golang()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'install_golang()' -t 'Customizing Debian';
 
     mkdir -p /tmp/golang/;
     cd /tmp/golang/;
@@ -392,10 +401,10 @@ install_golang() {
     export GO_DOWNLOAD="https://go.dev/dl/$GO_LATEST.linux-amd64.tar.gz"
     wget -q "$GO_DOWNLOAD" -O /tmp/golang/go.tar.gz;
     echo -e "\e[1;36m .... Removing previous install of golang\e[0m";
-    /usr/bin/logger 'Removing previous install of golang' -t 'Customizing Bookworm';
+    /usr/bin/logger 'Removing previous install of golang' -t 'Customizing Debian';
     sudo rm -rf /usr/local/go;
     echo -e "\e[1;36m .... Opening and extracting golang tarball\e[0m";
-    /usr/bin/logger 'Open and extract the golang tarball' -t 'Customizing Bookworm';
+    /usr/bin/logger 'Open and extract the golang tarball' -t 'Customizing Debian';
     sudo tar -C /usr/local -zxf go.tar.gz > /dev/null 2>&1;
     sync;
 
@@ -409,17 +418,17 @@ install_golang() {
 
     echo -e
     echo -e "\e[36m .... Installed $(/usr/local/go/bin/go version)"
-    /usr/bin/logger "Installed $(/usr/local/go/bin/go version)" -t 'Customizing Bookworm';
+    /usr/bin/logger "Installed $(/usr/local/go/bin/go version)" -t 'Customizing Debian';
 
     echo -e "\e[32m - install_golang()\e[0m";
-    /usr/bin/logger 'install_golang()' -t 'Customizing Bookworm';
+    /usr/bin/logger 'install_golang()' -t 'Customizing Debian';
 }
 
 #################################################################################################################
 ## Main Routine                                                                                                 #
 #################################################################################################################
 main() {
-    /usr/bin/logger 'main() routine starting' -t 'Customizing Bookworm';
+    /usr/bin/logger 'main() routine starting' -t 'Customizing Debian';
 
     # Show intro message
     do_intro;
@@ -450,6 +459,12 @@ main() {
         if [ "$UPDATES_INSTALL" == "Yes" ]; then
             install_updates;
         fi
+
+        # Install NTFS support
+        if [ "$NTFS_INSTALL" == "Yes" ]; then
+            install_ntfs;
+        fi
+
 
         # Flatpak
         if [ "$FLATPAK_INSTALL" == "Yes" ]; then
@@ -508,7 +523,7 @@ main() {
     # Show finishing message
     do_outro;
 
-    /usr/bin/logger 'main() finished' -t 'Customizing Bookworm';
+    /usr/bin/logger 'main() finished' -t 'Customizing Debian';
 }
 
 main
