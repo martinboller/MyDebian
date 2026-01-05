@@ -1,4 +1,4 @@
-# myBookworm
+# myDebian
 Install some basics on Debian 12 and 13
 
 ### Design principles:
@@ -21,7 +21,7 @@ Install some basics on Debian 12 and 13
  - Adding minimize and maximize buttons to windows
  - Can install Powershell (default No in .env for libre reasons)
  - Added granularity in selection of categories of packages installed
- - **Note**: Microsoft Packages Repo for Bookworm does not contain Powershell, see MICROSOFT_APT_WORKAROUND in .env and shell script
+ - **Note**: Microsoft Packages Repo for Debian does not contain Powershell, see MICROSOFT_APT_WORKAROUND in .env and shell script
  
 ### 2024-01-01 - Initial version ###
 - Adds the currently logged on user to the sudo group (if necessary)
@@ -34,10 +34,10 @@ Install some basics on Debian 12 and 13
 
 ### Usage
 **Clone the repo**
-$ git clone https://github.com/martinboller/myBookworm.git
+$ git clone https://github.com/martinboller/myDebian.git
 
 **cd into the directory**
-$ cd /myBookworm/
+$ cd myDebian/
 
 **Edit .env and select what to install/configure**
 $ vi .env
