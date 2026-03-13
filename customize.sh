@@ -232,6 +232,10 @@ install_utils_flatpak() {
         flatpak --assumeyes install com.belmoussaoui.Authenticator > /dev/null 2>&1;
         echo -e "\e[36m .... installing Zoom\e[0m";
         flatpak --assumeyes install us.zoom.Zoom > /dev/null 2>&1;
+        echo -e "\e[36m .... installing openSCAD\e[0m";
+        flatpak --assumeyes install org.openscad.OpenSCAD > /dev/null 2>&1;
+        echo -e "\e[36m .... installing Fast STL Viewer\e[0m";
+        flatpak --assumeyes install io.github.wdaniau.fstl > /dev/null 2>&1;
     fi
     
     echo -e "\e[32m - install_utils_flatpak() finished\e[0m";
