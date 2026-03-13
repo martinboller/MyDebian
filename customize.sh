@@ -117,7 +117,7 @@ install_ntfs() {
     
     export DEBIAN_FRONTEND=noninteractive;
     sudo apt-get -qq -y install ntfs-3g;
-    sudo apt-get -qq -y install exfat-fuse exfat-utils;
+    sudo apt-get -qq -y install exfat-fuse exfatprogs;
     sync;
     
     echo -e "\e[32m - install_ntfs() finished\e[0m";
@@ -157,7 +157,7 @@ install_utils_apt() {
     if [ "$USERTOOLS_INSTALL" == "Yes" ]; then
         /usr/bin/logger 'installing User tools from Debian repository ' -t 'Customizing Debian';
         echo -e "\e[36m .... Installing user utils and other tools\e[0m";
-        sudo apt-get -y -qq install curl transmission-gtk vlc ffmpeg libavcodec-extra default-jdk sshpass rclone rclone-browser tldr > /dev/null 2>&1;
+        sudo apt-get -y -qq install curl transmission-gtk vlc ffmpeg libavcodec-extra default-jdk sshpass rclone rclone-browser > /dev/null 2>&1;
     fi
 
     # DEVTOOLS_INSTALL
@@ -444,7 +444,7 @@ main() {
     if id -nG "$USERNAME" | grep -q "$SUDOGROUP"; then
         echo -e "\e[32m - $USERNAME already  belongs to group: $SUDOGROUP, installation will continue using sudo\e[0m"
         # Ensuring that sudo group membership is active.
-        /usr/bin/newgrp $SUDOGROUP;
+        # /usr/bin/newgrp $SUDOGROUP;
         # Get sudo password
         echo -e "\e[35m - Sudo password needed"
         echo -e "\e[35m - $(sudo echo .)\e[0m"
