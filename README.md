@@ -8,6 +8,14 @@ Install some basics on Debian 12 and 13
   - Installs some Networking, Forensics, Development, and System utilities
 
 ## Latest changes ##
+
+### 2026-08-06
+- Wireshark installs silently.
+- Added requirements for Pulseview, which require Trixie backports.
+- Builds and installs latest version of hashcat directly from github.
+- Also added cmatrix, sl, figlet, lolcat, and cowsay just for the fun of it.
+- All of the above set to "Yes" in .env file, don't forget to adjust to your references!
+
 ### 2026-01-04
  - Installing NTFS support
 

@@ -139,6 +139,7 @@ install_utils_apt() {
         echo -e "\e[36m .... Installing network tools\e[0m";
         echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
         sudo apt-get -y -qq install wireshark > /dev/null 2>&1;
+        sudo usermod -a -G wireshark $USERNAME
         sudo apt-get -y -qq install ipcalc-ng tcpdump nmap ncat ngrep ethtool aircrack-ng whois dnsutils > /dev/null 2>&1;
     fi
 
@@ -205,6 +206,21 @@ __EOF__
         sudo apt-get -qq -y install qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools qttools5-dev-tools qttools5-dev libqt5svg5-dev > /dev/null 2>&1;
         sudo apt-get -qq install gpib-user-tools python3-gpib libgpib0 libgpib-dev libhidapi-dev > /dev/null 2>&1;
         sudo apt-get -qq -y install rpcbind libtirpc3 libavahi-client-dev > /dev/null 2>&1;
+    fi
+
+    # HASHCAT installation
+    # Note: depends on devtools being installed
+    if [ "$HASHCAT_INSTALL" == "Yes" ]; then
+        sudo apt-get -qq -y install libbz2-dev libssl-dev libncurses5-dev libffi-dev libreadline-dev libsqlite3-dev liblzma-dev > /dev/null 2>&1;
+        curl https://pyenv.run | bash > /dev/null 2>&1;
+        mkdir -p ~/git > /dev/null 2>&1;
+        cd ~/git/
+        git clone https://github.com/hashcat/hashcat.git > /dev/null 2>&1;
+        cd hashcat
+        make clean && make > /dev/null 2>&1;
+        sudo make install > /dev/null 2>&1;
+        sync;
+        cd ~
     fi
 }
 
