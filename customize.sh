@@ -64,6 +64,8 @@ configure_env() {
     echo -e "\e[1;35mInstall Flatpak Utilities $FLATPAK_UTILS\e[0m"
     echo -e "\e[1;35mInstall Debian Packages? $APT_UTILS\e[0m"
     echo -e "\e[1;35mInstall golang? $GO_INSTALL\e[0m"
+    echo -e "\e[1;35mInstall Backports? $BACKPORTS_INSTALL\e[0m"
+    echo -e "\e[1;35mInstall Requirements for Pulseview? $PULSEVIEW_INSTALL\e[0m"
     echo -e "\e[1;35mConfigure Minimize and Maximize buttons on Windows? $MM_BUTTONS_CONFIGURE\e[0m"
     echo -e "\e[1;35mConfigure access to Serial Ports for $USERNAME? $CONFIGURE_SERIAL\e[0m"
     echo -e
@@ -135,7 +137,9 @@ install_utils_apt() {
     if [ "$NETTOOLS_INSTALL" == "Yes" ]; then
         /usr/bin/logger 'installing Network tools from Debian repository ' -t 'Customizing Debian';
         echo -e "\e[36m .... Installing network tools\e[0m";
-        sudo apt-get -y -qq install ipcalc-ng wireshark tcpdump nmap ncat ngrep ethtool aircrack-ng whois dnsutils > /dev/null 2>&1;
+        echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
+        sudo apt-get -y -qq install wireshark > /dev/null 2>&1;
+        sudo apt-get -y -qq install ipcalc-ng tcpdump nmap ncat ngrep ethtool aircrack-ng whois dnsutils > /dev/null 2>&1;
     fi
 
     # FORTOOLS_INSTALL
@@ -157,7 +161,7 @@ install_utils_apt() {
     if [ "$USERTOOLS_INSTALL" == "Yes" ]; then
         /usr/bin/logger 'installing User tools from Debian repository ' -t 'Customizing Debian';
         echo -e "\e[36m .... Installing user utils and other tools\e[0m";
-        sudo apt-get -y -qq install curl transmission-gtk vlc ffmpeg libavcodec-extra default-jdk sshpass rclone rclone-browser figlet lolcat cowsay sl > /dev/null 2>&1;
+        sudo apt-get -y -qq install curl transmission-gtk vlc ffmpeg libavcodec-extra default-jdk sshpass rclone rclone-browser figlet lolcat cowsay sl cmatrix > /dev/null 2>&1;
     fi
 
     # DEVTOOLS_INSTALL
@@ -166,7 +170,7 @@ install_utils_apt() {
         echo -e "\e[36m .... Installing development tools\e[0m";
         sudo apt-get -y -qq install git devscripts build-essential software-properties-common gnupg2 dirmngr --install-recommends > /dev/null 2>&1;
         # Required to build Proxmark and others
-        sudo apt-get -qq -y install --no-install-recommends ca-certificates pkg-config libreadline-dev gcc-arm-none-eabi libnewlib-dev qtbase5-dev libbz2-dev liblz4-dev libbluetooth-dev libssl-dev > /dev/null 2>&1;
+        sudo apt-get -qq -y install --install-recommends ca-certificates pkg-config libreadline-dev gcc-arm-none-eabi libnewlib-dev qtbase5-dev libbz2-dev liblz4-dev libbluetooth-dev libssl-dev cmake > /dev/null 2>&1;
     fi
     
     # PYTHON_INSTALL
@@ -178,6 +182,30 @@ install_utils_apt() {
 
     echo -e "\e[32m - install_utils_apt() finished\e[0m";
     /usr/bin/logger 'install_utils_apt() finished' -t 'Customizing Debian';
+    
+    # Trixie backports
+    if [ "$BACKPORTS_INSTALL" == "Yes" ]; then
+        sudo tee /etc/apt/sources.list.d/debian-backports.sources << '__EOF__'
+Types: deb deb-src
+URIs: http://deb.debian.org/debian
+Suites: trixie-backports
+Components: main
+Enabled: yes
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+__EOF__
+    sync;
+    sudo apt update;
+    fi
+    
+    # Pulseview Requirements
+    # Note: Depending on trixie backports
+    if [ "$PULSEVIEW_INSTALL" == "Yes" ]; then
+        sudo apt-get -qq -y install autoconf autoconf-archive automake sdcc libtool libboost-all-dev asciidoctor libzip-dev ruby-dev > /dev/null 2>&1;
+        sudo apt-get -qq -y install pkg-config libglib2.0-dev libglib2.0-dev libzip5 libtirpc-dev libserialport0 libvisa0 libvisa-dev libusb-1.0-0 libusb-1.0-0-dev libhidapi-hidraw0 libhidapi-libusb0 libftdi1-dev python3-pyvisa-py libieee1284-3-dev libgio-2.0-dev libghc-nettle-dev check doxygen graphviz swig libglibmm-2.68-dev python-setuptools-doc python-gi-dev python3-numpy python3-numpy-dev python3-doxypypy ruby openjdk-25-jdk > /dev/null 2>&1;
+        sudo apt-get -qq -y install qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools qttools5-dev-tools qttools5-dev libqt5svg5-dev > /dev/null 2>&1;
+        sudo apt-get -qq install gpib-user-tools python3-gpib libgpib0 libgpib-dev libhidapi-dev > /dev/null 2>&1;
+        sudo apt-get -qq -y install rpcbind libtirpc3 libavahi-client-dev > /dev/null 2>&1;
+    fi
 }
 
 install_flatpak() {
