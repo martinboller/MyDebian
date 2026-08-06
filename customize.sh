@@ -157,7 +157,7 @@ install_utils_apt() {
     if [ "$USERTOOLS_INSTALL" == "Yes" ]; then
         /usr/bin/logger 'installing User tools from Debian repository ' -t 'Customizing Debian';
         echo -e "\e[36m .... Installing user utils and other tools\e[0m";
-        sudo apt-get -y -qq install curl transmission-gtk vlc ffmpeg libavcodec-extra default-jdk sshpass rclone rclone-browser > /dev/null 2>&1;
+        sudo apt-get -y -qq install curl transmission-gtk vlc ffmpeg libavcodec-extra default-jdk sshpass rclone rclone-browser figlet lolcat cowsay sl > /dev/null 2>&1;
     fi
 
     # DEVTOOLS_INSTALL
