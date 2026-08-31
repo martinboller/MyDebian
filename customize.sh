@@ -224,6 +224,64 @@ __EOF__
     fi
 }
 
+install_hwhack() {
+    echo -e "\e[32m - install_hwhack()\e[0m";
+    /usr/bin/logger 'install_hwhack()' -t 'Customizing Debian';
+    ## Hardware Hacking Tools for Debian
+    # Directory for source-code (declared in .env)
+    mkdir -p $SOURCE_DIR; 
+    cd $SOURCE_DIR;
+
+    #ST-LINK (STM microcontrollers)
+    sudo apt-get -y -qq install stlink-tools;
+    
+    # flashrom
+    sudo apt-get -y -qq install gcc meson ninja-build pkg-config python3-sphinx libcmocka-dev libpci-dev libusb-1.0-0-dev libftdi1-dev libjaylink-dev;
+    git clone https://github.com/whid-injector/flashrom-whidboard
+    cd flashrom-whidboard/
+    meson setup builddir
+    meson compile -C builddir
+    meson test -C builddir
+    meson install -C builddir
+    ## Flashrom install in /usr/local/sbin which is not in PATH by default
+    sudo cp $SCRIPT_DIR/files/flashrom.sh /etc/profile.d/;
+    sync
+
+    # openOCD
+    cd $SOURCE_DIR;
+    sudo apt-get -y -qq install libtool pkg-config texinfo libusb-dev libusb-1.0-0-dev libftdi-dev autoconf automake make git libftdi* libhidapi-hidraw0;
+    sudo ldconfig;
+    git clone --recursive https://github.com/whid-injector/openocd-linux;
+    cd ./openocd-linux/;
+    chmod -R 755 OpenOCD_SourceCode_CH347/;
+    cd ./OpenOCD_SourceCode_CH347;
+    ./bootstrap;
+    autoreconf --force --install;
+    ./configure --disable-doxygen-html --disable-doxygen-pdf --disable-gccwarnings --disable-wextra --enable-ch347;
+    make;
+    sudo make install;
+    mkdir ~/.openocd
+    cp $SCRIPT_DIR/files/*.cfg ~/.openocd/
+    sync
+
+    # SNANDER
+    cd $SOURCE_DIR;
+    sudo apt-get -y -qq install mingw-w64 gcc-mingw-w64-x86-64 libusb-1.0-0-dev;
+    sudo ldconfig;
+    git clone https://github.com/martinboller/SNANDer
+    cd SNANDer:
+    ./build-for-linux.sh;
+    sync;
+    sudo cp ./build/snander /usr/local/bin/;
+    
+    # udev stuff to make devices work
+    cd ~
+    sudo cp $SCRIPT_DIR/files/*.rules /etc/udev/rules/
+    sudo udevadm control --reload
+    echo -e "\e[32m - install_hwhack() finished\e[0m";
+    /usr/bin/logger 'install_hwhack() finished' -t 'Customizing Debian';
+}
+
 install_flatpak() {
     echo -e "\e[32m - install_flatpak()\e[0m";
     /usr/bin/logger 'install_flatpak()' -t 'Customizing Debian';
@@ -482,6 +540,8 @@ main() {
     # Show intro message
     do_intro;
 
+    # Dir where script is running
+    export SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
     # Configure variables from .env-file
     configure_env;
 
@@ -541,6 +601,11 @@ main() {
         # Gnome show minimize and maximize buttons
         if [ "$MM_BUTTONS_CONFIGURE" == "Yes" ]; then
             configure_min_max_buttons;
+        fi
+
+       # Install HWHack Tools
+        if [ "$HWHACKTOOLS_INSTALL" == "Yes" ]; then
+            install_hwhack;
         fi
 
         # GOLANG
