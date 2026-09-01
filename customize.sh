@@ -224,9 +224,9 @@ __EOF__
     fi
 }
 
-install_hwhack() {
-    echo -e "\e[32m - install_hwhack()\e[0m";
-    /usr/bin/logger 'install_hwhack()' -t 'Customizing Debian';
+install_hwhacktools() {
+    echo -e "\e[32m - install_hwhacktools()\e[0m";
+    /usr/bin/logger 'install_hwhacktools()' -t 'Customizing Debian';
     ## Hardware Hacking Tools for Debian
     # Directory for source-code (declared in .env)
     mkdir -p $SOURCE_DIR; 
@@ -273,13 +273,35 @@ install_hwhack() {
     ./build-for-linux.sh;
     sync;
     sudo cp ./build/snander /usr/local/bin/;
+
+    # ufprog
+    cd $SOURCE_DIR;
+    sudo apt-get -y -qq install libjson-c-dev libhidapi-dev libusb-dev libusb-1.0-0-dev;
+    git clone https://github.com/whid-injector/ufprog;
+    cd ufprog;
+    cmake -DCMAKE_BUILD_TYPE=None -DBUILD_PORTABLE=OFF -DCMAKE_INSTALL_PREFIX=/usr -B build
+    cd build
+    make
+    sudo make install
+    sudo cp -r /usr/share/ufprog/ /usr/lib/
     
+    # BUSSide
+    cd $SOURCE_DIR;
+    git clone https://github.com/martinboller/BUSSide.git;
+    sudo apt-get -y -qq install esptool;
+    python3 -m venv ~/.BUSSide;
+    source ~/.BUSSide/bin/activate;
+    cd ./BUSSide/Client;
+    pip install -r requirements.txt
+    deactivate;
+
     # udev stuff to make devices work
     cd ~
+    sudo ldconfig;
     sudo cp $SCRIPT_DIR/files/*.rules /etc/udev/rules/
     sudo udevadm control --reload
-    echo -e "\e[32m - install_hwhack() finished\e[0m";
-    /usr/bin/logger 'install_hwhack() finished' -t 'Customizing Debian';
+    echo -e "\e[32m - install_hwhacktools() finished\e[0m";
+    /usr/bin/logger 'install_hwhacktools() finished' -t 'Customizing Debian';
 }
 
 install_flatpak() {
@@ -519,7 +541,7 @@ install_golang() {
         echo -e "\e[1;36m .... golang path already configured\e[0m";        
     else
         echo -e "\e[1;36m .... Configuring golang path\e[0m";        
-        echo "export PATH=$PATH:/usr/local/go/bin" | sudo tee /etc/profile.d/go_lang.sh  > /dev/null 2>&1;
+        echo 'export PATH=$PATH:/usr/local/go/bin' | sudo tee /etc/profile.d/go_lang.sh  > /dev/null 2>&1;
         sudo chmod 644 /etc/profile.d/go_lang.sh
     fi
 
@@ -605,7 +627,7 @@ main() {
 
        # Install HWHack Tools
         if [ "$HWHACKTOOLS_INSTALL" == "Yes" ]; then
-            install_hwhack;
+            install_hwhacktools;
         fi
 
         # GOLANG
