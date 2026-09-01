@@ -236,13 +236,14 @@ install_hwhacktools() {
     sudo apt-get -y -qq install stlink-tools;
     
     # flashrom
+    cd $SOURCE_DIR;
     sudo apt-get -y -qq install gcc meson ninja-build pkg-config python3-sphinx libcmocka-dev libpci-dev libusb-1.0-0-dev libftdi1-dev libjaylink-dev;
     git clone https://github.com/whid-injector/flashrom-whidboard
     cd flashrom-whidboard/
     meson setup builddir
     meson compile -C builddir
     meson test -C builddir
-    meson install -C builddir
+    sudo meson install -C builddir
     ## Flashrom install in /usr/local/sbin which is not in PATH by default
     sudo cp $SCRIPT_DIR/files/flashrom.sh /etc/profile.d/;
     sync
@@ -268,8 +269,8 @@ install_hwhacktools() {
     cd $SOURCE_DIR;
     sudo apt-get -y -qq install mingw-w64 gcc-mingw-w64-x86-64 libusb-1.0-0-dev;
     sudo ldconfig;
-    git clone https://github.com/martinboller/SNANDer
-    cd SNANDer:
+    git clone https://github.com/martinboller/SNANDer;
+    cd SNANDer;
     ./build-for-linux.sh;
     sync;
     sudo cp ./build/snander /usr/local/bin/;
@@ -293,12 +294,16 @@ install_hwhacktools() {
     source ~/.BUSSide/bin/activate;
     cd ./BUSSide/Client;
     pip install -r requirements.txt
-    deactivate;
+    
+    cd $SOURCE_DIR;
+    git clone https://github.com/martinboller/sertack.git;
+    sudo apt-get -y -qq install python3-serial;
+
 
     # udev stuff to make devices work
     cd ~
     sudo ldconfig;
-    sudo cp $SCRIPT_DIR/files/*.rules /etc/udev/rules/
+    sudo cp $SCRIPT_DIR/files/*.rules /etc/udev/rules.d/
     sudo udevadm control --reload
     echo -e "\e[32m - install_hwhacktools() finished\e[0m";
     /usr/bin/logger 'install_hwhacktools() finished' -t 'Customizing Debian';
