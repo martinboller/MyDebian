@@ -169,7 +169,7 @@ install_utils_apt() {
     if [ "$DEVTOOLS_INSTALL" == "Yes" ]; then
         /usr/bin/logger 'installing Development tools from Debian repository ' -t 'Customizing Debian';
         echo -e "\e[36m .... Installing development tools\e[0m";
-        sudo apt-get -y -qq install git devscripts build-essential software-properties-common gnupg2 dirmngr --install-recommends > /dev/null 2>&1;
+        sudo apt-get -y -qq install git devscripts build-essential gnupg2 dirmngr --install-recommends > /dev/null 2>&1;
         # Required to build Proxmark and others
         sudo apt-get -qq -y install --install-recommends ca-certificates pkg-config libreadline-dev gcc-arm-none-eabi libnewlib-dev qtbase5-dev libbz2-dev liblz4-dev libbluetooth-dev libssl-dev cmake > /dev/null 2>&1;
     fi
@@ -230,23 +230,24 @@ install_hwhacktools() {
     ## Hardware Hacking Tools for Debian
     # Directory for source-code (declared in .env)
     mkdir -p $SOURCE_DIR; 
-    cd $SOURCE_DIR;
 
     #ST-LINK (STM microcontrollers)
     sudo apt-get -y -qq install stlink-tools;
+    /usr/bin/logger 'Installed st-link-tools' -t 'Customizing Debian';
     
     # flashrom
-    cd $SOURCE_DIR;
     sudo apt-get -y -qq install gcc meson ninja-build pkg-config python3-sphinx libcmocka-dev libpci-dev libusb-1.0-0-dev libftdi1-dev libjaylink-dev;
+    cd $SOURCE_DIR;
     git clone https://github.com/whid-injector/flashrom-whidboard
-    cd flashrom-whidboard/
-    meson setup builddir
-    meson compile -C builddir
-    meson test -C builddir
-    sudo meson install -C builddir
+    cd $SOURCE_DIR/flashrom-whidboard;
+    meson setup builddir;
+    meson compile -C builddir;
+    meson test -C builddir;
+    sudo meson install -C builddir;
     ## Flashrom install in /usr/local/sbin which is not in PATH by default
     sudo cp $SCRIPT_DIR/files/flashrom.sh /etc/profile.d/;
     sync
+    /usr/bin/logger 'Installed flashrom' -t 'Customizing Debian';
 
     # openOCD
     cd $SOURCE_DIR;
@@ -264,6 +265,7 @@ install_hwhacktools() {
     mkdir ~/.openocd
     cp $SCRIPT_DIR/files/*.cfg ~/.openocd/
     sync
+    /usr/bin/logger 'Installed openOCD' -t 'Customizing Debian';
 
     # SNANDER
     cd $SOURCE_DIR;
@@ -274,6 +276,7 @@ install_hwhacktools() {
     ./build-for-linux.sh;
     sync;
     sudo cp ./build/snander /usr/local/bin/;
+    /usr/bin/logger 'Installed snander' -t 'Customizing Debian';
 
     # ufprog
     cd $SOURCE_DIR;
@@ -285,7 +288,8 @@ install_hwhacktools() {
     make
     sudo make install
     sudo cp -r /usr/share/ufprog/ /usr/lib/
-    
+    /usr/bin/logger 'Installed ufprog' -t 'Customizing Debian';
+
     # BUSSide
     cd $SOURCE_DIR;
     git clone https://github.com/martinboller/BUSSide.git;
