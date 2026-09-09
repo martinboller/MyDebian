@@ -21,9 +21,9 @@ CONFIG_GROUPS = [
         ("Install Debian Backports", "BACKPORTS_INSTALL"),
         ("Install Development Tools from Debian Packages", "DEVTOOLS_INSTALL"),
         ("Install Go Language Support", "GO_INSTALL"),
-        ("Install Pulseview", "PULSEVIEW_INSTALL"),
-        ("Install Hashcat", "HASHCAT_INSTALL"),
-        ("Install Hardware Hacking Tools", "HWHACKTOOLS_INSTALL"),
+        ("Install Pulseview (require Development tools)", "PULSEVIEW_INSTALL"),
+        ("Install Hashcat (require Development tools)", "HASHCAT_INSTALL"),
+        ("Install Hardware Hacking Tools (require Development tools)", "HWHACKTOOLS_INSTALL"),
     ]),
     ("Flatpak Packages", [
         ("Enable Flatpak Integration", "FLATPAK_UTILS"),
@@ -89,7 +89,7 @@ def main():
         index = 1
 
         print("\n==========================================")
-        print("     ENVIRONMENT COMPONENT CONFIGURE")
+        print("     Environment Component Configuration")
         print("==========================================")
 
         for group_title, items in CONFIG_GROUPS:

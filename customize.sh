@@ -189,7 +189,7 @@ install_utils_apt() {
     
     # Trixie backports
     if [ "$BACKPORTS_INSTALL" == "Yes" ]; then
-        sudo tee /etc/apt/sources.list.d/debian-backports.sources << '__EOF__'
+        sudo tee /etc/apt/sources.list.d/debian-backports.sources << __EOF__
 Types: deb deb-src
 URIs: http://deb.debian.org/debian
 Suites: trixie-backports
