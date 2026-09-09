@@ -81,7 +81,7 @@ configure_env() {
     echo -e "\e[1;35mOperating System: $OS Version: $VER: $CODENAME\e[0m";
     echo -e "\e[1;35m-------------------------------------------------------------------\e[0m"
     echo -e
-    /usr/bin/logger "Operating System: $OS Version: $VER: $CODENAME" -t 'gce-23.1.0';
+    /usr/bin/logger "Operating System: $OS Version: $VER: $CODENAME" -t 'Customizing Debian';
 
     if [ "$VER" == "$DEBIAN_SUPPORTED" ]; then
         echo -e "\e[1;36mRunning Debian $VER codename $CODENAME. All good to go\e[0m"
@@ -108,7 +108,7 @@ install_updates() {
     echo -e "\e[36m .... autoclean\e[0m" && sudo apt-get -qq autoclean > /dev/null 2>&1
     echo -e "\e[36m .... Done\e[0m" > /dev/null 2>&1
     sync;
-    
+
     echo -e "\e[32m - install_updates() finished\e[0m";
     /usr/bin/logger 'install_updates() finished' -t 'Customizing Debian';
 }
@@ -118,8 +118,8 @@ install_ntfs() {
     /usr/bin/logger 'install_ntfs()' -t 'Customizing Debian';
     
     export DEBIAN_FRONTEND=noninteractive;
-    sudo apt-get -qq -y install ntfs-3g;
-    sudo apt-get -qq -y install exfat-fuse exfatprogs;
+    sudo apt-get -qq -y install ntfs-3g > /dev/null 2>&1;
+    sudo apt-get -qq -y install exfat-fuse exfatprogs > /dev/null 2>&1;
     sync;
     
     echo -e "\e[32m - install_ntfs() finished\e[0m";
@@ -139,7 +139,7 @@ install_utils_apt() {
         echo -e "\e[36m .... Installing network tools\e[0m";
         echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
         sudo apt-get -y -qq install wireshark > /dev/null 2>&1;
-        sudo usermod -a -G wireshark $USERNAME
+        sudo usermod -a -G wireshark $USERNAME > /dev/null 2>&1;
         sudo apt-get -y -qq install ipcalc-ng tcpdump nmap ncat ngrep ethtool aircrack-ng whois dnsutils > /dev/null 2>&1;
     fi
 
@@ -156,6 +156,7 @@ install_utils_apt() {
         /usr/bin/logger 'installing System tools from Debian repository ' -t 'Customizing Debian';
         echo -e "\e[36m .... Installing system tools\e[0m";
         sudo apt-get -y -qq install gparted wget nano p7zip p7zip-full unzip dconf-editor htop > /dev/null 2>&1;
+        sudo apt-get -y -qq install screen > /dev/null 2>&1;
     fi
 
     # USERTOOLS_INSTALL
@@ -170,6 +171,8 @@ install_utils_apt() {
         /usr/bin/logger 'installing Development tools from Debian repository ' -t 'Customizing Debian';
         echo -e "\e[36m .... Installing development tools\e[0m";
         sudo apt-get -y -qq install git devscripts build-essential gnupg2 dirmngr --install-recommends > /dev/null 2>&1;
+        # Some additional helpful tools
+        sudo apt-get -y -qq install gawk xxd vbindiff --install-recommends > /dev/null 2>&1;
         # Required to build Proxmark and others
         sudo apt-get -qq -y install --install-recommends ca-certificates pkg-config libreadline-dev gcc-arm-none-eabi libnewlib-dev qtbase5-dev libbz2-dev liblz4-dev libbluetooth-dev libssl-dev cmake > /dev/null 2>&1;
     fi
@@ -195,7 +198,7 @@ Enabled: yes
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 __EOF__
     sync;
-    sudo apt update;
+    sudo apt update > /dev/null 2>&1;
     fi
     
     # Pulseview Requirements
@@ -232,83 +235,82 @@ install_hwhacktools() {
     mkdir -p $SOURCE_DIR; 
 
     #ST-LINK (STM microcontrollers)
-    sudo apt-get -y -qq install stlink-tools;
+    sudo apt-get -y -qq install stlink-tools > /dev/null 2>&1;
     /usr/bin/logger 'Installed st-link-tools' -t 'Customizing Debian';
     
     # flashrom
-    sudo apt-get -y -qq install gcc meson ninja-build pkg-config python3-sphinx libcmocka-dev libpci-dev libusb-1.0-0-dev libftdi1-dev libjaylink-dev;
+    sudo apt-get -y -qq install gcc meson ninja-build pkg-config python3-sphinx libcmocka-dev libpci-dev libusb-1.0-0-dev libftdi1-dev libjaylink-dev > /dev/null 2>&1;
     cd $SOURCE_DIR;
-    git clone https://github.com/whid-injector/flashrom-whidboard
-    cd $SOURCE_DIR/flashrom-whidboard;
-    meson setup builddir;
-    meson compile -C builddir;
-    meson test -C builddir;
-    sudo meson install -C builddir;
+    git clone https://github.com/whid-injector/flashrom-whidboard > /dev/null 2>&1;
+    cd $SOURCE_DIR/flashrom-whidboard > /dev/null 2>&1;
+    meson setup builddir > /dev/null 2>&1;
+    meson compile -C builddir > /dev/null 2>&1;
+    meson test -C builddir > /dev/null 2>&1;
+    sudo meson install -C builddir > /dev/null 2>&1;
     ## Flashrom install in /usr/local/sbin which is not in PATH by default
-    sudo cp $SCRIPT_DIR/files/flashrom.sh /etc/profile.d/;
+    sudo cp $SCRIPT_DIR/files/flashrom.sh /etc/profile.d/ > /dev/null 2>&1;
     sync
     /usr/bin/logger 'Installed flashrom' -t 'Customizing Debian';
 
     # openOCD
     cd $SOURCE_DIR;
-    sudo apt-get -y -qq install libtool pkg-config texinfo libusb-dev libusb-1.0-0-dev libftdi-dev autoconf automake make git libftdi* libhidapi-hidraw0;
-    sudo ldconfig;
-    git clone --recursive https://github.com/whid-injector/openocd-linux;
-    cd ./openocd-linux/;
-    chmod -R 755 OpenOCD_SourceCode_CH347/;
-    cd ./OpenOCD_SourceCode_CH347;
-    ./bootstrap;
-    autoreconf --force --install;
-    ./configure --disable-doxygen-html --disable-doxygen-pdf --disable-gccwarnings --disable-wextra --enable-ch347;
-    make;
-    sudo make install;
-    mkdir ~/.openocd
-    cp $SCRIPT_DIR/files/*.cfg ~/.openocd/
+    sudo apt-get -y -qq install libtool pkg-config texinfo libusb-dev libusb-1.0-0-dev libftdi-dev autoconf automake make git libftdi* libhidapi-hidraw0 > /dev/null 2>&1;
+    sudo ldconfig > /dev/null 2>&1;
+    git clone --recursive https://github.com/whid-injector/openocd-linux > /dev/null 2>&1;
+    cd ./openocd-linux/ > /dev/null 2>&1;
+    chmod -R 755 OpenOCD_SourceCode_CH347/ > /dev/null 2>&1;
+    cd ./OpenOCD_SourceCode_CH347 > /dev/null 2>&1;
+    ./bootstrap > /dev/null 2>&1;
+    autoreconf --force --install > /dev/null 2>&1;
+    ./configure --disable-doxygen-html --disable-doxygen-pdf --disable-gccwarnings --disable-wextra --enable-ch347 > /dev/null 2>&1;
+    make > /dev/null 2>&1;
+    sudo make install > /dev/null 2>&1;
+    mkdir ~/.openocd > /dev/null 2>&1;
+    cp $SCRIPT_DIR/files/*.cfg ~/.openocd/ > /dev/null 2>&1;
     sync
     /usr/bin/logger 'Installed openOCD' -t 'Customizing Debian';
 
     # SNANDER
     cd $SOURCE_DIR;
-    sudo apt-get -y -qq install mingw-w64 gcc-mingw-w64-x86-64 libusb-1.0-0-dev;
-    sudo ldconfig;
-    git clone https://github.com/martinboller/SNANDer;
-    cd SNANDer;
-    ./build-for-linux.sh;
+    sudo apt-get -y -qq install mingw-w64 gcc-mingw-w64-x86-64 libusb-1.0-0-dev > /dev/null 2>&1;
+    sudo ldconfig > /dev/null 2>&1;
+    git clone https://github.com/martinboller/SNANDer > /dev/null 2>&1;
+    cd SNANDer > /dev/null 2>&1;
+    ./build-for-linux.sh > /dev/null 2>&1;
     sync;
-    sudo cp ./build/snander /usr/local/bin/;
+    sudo cp ./build/snander /usr/local/bin/ > /dev/null 2>&1;
     /usr/bin/logger 'Installed snander' -t 'Customizing Debian';
 
     # ufprog
     cd $SOURCE_DIR;
-    sudo apt-get -y -qq install libjson-c-dev libhidapi-dev libusb-dev libusb-1.0-0-dev;
-    git clone https://github.com/whid-injector/ufprog;
-    cd ufprog;
-    cmake -DCMAKE_BUILD_TYPE=None -DBUILD_PORTABLE=OFF -DCMAKE_INSTALL_PREFIX=/usr -B build
-    cd build
-    make
-    sudo make install
-    sudo cp -r /usr/share/ufprog/ /usr/lib/
+    sudo apt-get -y -qq install libjson-c-dev libhidapi-dev libusb-dev libusb-1.0-0-dev > /dev/null 2>&1;
+    git clone https://github.com/whid-injector/ufprog > /dev/null 2>&1;
+    cd ufprog > /dev/null 2>&1;
+    cmake -DCMAKE_BUILD_TYPE=None -DBUILD_PORTABLE=OFF -DCMAKE_INSTALL_PREFIX=/usr -B build > /dev/null 2>&1;
+    cd build > /dev/null 2>&1;
+    make > /dev/null 2>&1;
+    sudo make install > /dev/null 2>&1;
+    sudo cp -r /usr/share/ufprog/ /usr/lib/ > /dev/null 2>&1;
     /usr/bin/logger 'Installed ufprog' -t 'Customizing Debian';
 
     # BUSSide
     cd $SOURCE_DIR;
-    git clone https://github.com/martinboller/BUSSide.git;
-    sudo apt-get -y -qq install esptool;
-    python3 -m venv ~/.BUSSide;
-    source ~/.BUSSide/bin/activate;
-    cd ./BUSSide/Client;
-    pip install -r requirements.txt
+    git clone https://github.com/martinboller/BUSSide.git > /dev/null 2>&1;
+    sudo apt-get -y -qq install esptool > /dev/null 2>&1;
+    python3 -m venv ~/.BUSSide > /dev/null 2>&1;
+    source ~/.BUSSide/bin/activate > /dev/null 2>&1;
+    cd ./BUSSide/Client > /dev/null 2>&1;
+    pip install -r requirements.txt > /dev/null 2>&1;
     
     cd $SOURCE_DIR;
-    git clone https://github.com/martinboller/sertack.git;
-    sudo apt-get -y -qq install python3-serial;
-
+    git clone https://github.com/martinboller/sertack.git > /dev/null 2>&1;
+    sudo apt-get -y -qq install python3-serial > /dev/null 2>&1;
 
     # udev stuff to make devices work
     cd ~
     sudo ldconfig;
-    sudo cp $SCRIPT_DIR/files/*.rules /etc/udev/rules.d/
-    sudo udevadm control --reload
+    sudo cp $SCRIPT_DIR/files/*.rules /etc/udev/rules.d/ > /dev/null 2>&1;
+    sudo udevadm control --reload > /dev/null 2>&1;
     echo -e "\e[32m - install_hwhacktools() finished\e[0m";
     /usr/bin/logger 'install_hwhacktools() finished' -t 'Customizing Debian';
 }
@@ -318,9 +320,9 @@ install_flatpak() {
     /usr/bin/logger 'install_flatpak()' -t 'Customizing Debian';
 
     echo -e "\e[36m .... Installing flatpak and gnome software plugin\e[0m";
-    sudo apt-get -qq -y install flatpak gnome-software-plugin-flatpak;
+    sudo apt-get -qq -y install flatpak gnome-software-plugin-flatpak > /dev/null 2>&1;
     echo -e "\e[36m .... Adding flathub repository\e[0m";
-    sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+    sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo > /dev/null 2>&1;
     sync;
     
     echo -e "\e[32m - install_flatpak() finished\e[0m";
@@ -340,6 +342,10 @@ install_utils_flatpak() {
         flatpak --assumeyes install net.werwolv.ImHex > /dev/null 2>&1;
         echo -e "\e[36m .... installing Bless Hex Editor\e[0m";
         flatpak --assumeyes install com.github.afrantzis.Bless > /dev/null 2>&1;
+        echo -e "\e[36m .... installing Ghidra\e[0m";
+        flatpak --assumeyes install org.ghidra_sre.Ghidra > /dev/null 2>&1;
+        echo -e "\e[36m .... installing Arduino IDE v2\e[0m";
+        flatpak --assumeyes install cc.arduino.IDE2 > /dev/null 2>&1;
     fi
 
     # FP_USERTOOLS_INSTALL
@@ -365,12 +371,29 @@ install_utils_flatpak() {
         flatpak --assumeyes install com.belmoussaoui.Authenticator > /dev/null 2>&1;
         echo -e "\e[36m .... installing Zoom\e[0m";
         flatpak --assumeyes install us.zoom.Zoom > /dev/null 2>&1;
+        echo -e "\e[36m .... installing Remmina\e[0m";
+        flatpak --assumeyes install org.remmina.Remmina > /dev/null 2>&1;
+        echo -e "\e[36m .... installing Anki\e[0m";
+        flatpak --assumeyes install net.ankiweb.Anki > /dev/null 2>&1;
+    fi
+    
+    # FP_ELECTRONICSTOOLS_INSTALL
+    if [ "$FP_ELECTRONICSTOOLS_INSTALL" == "Yes" ]; then
+        /usr/bin/logger 'installing Flatpak Electronics Tools' -t 'Customizing Debian';
+        echo -e "\e[36m .... installing Electronic Circuit Simulator\e[0m";
+        flatpak --assumeyes install com.simulide.simulide > /dev/null 2>&1;
+    fi
+
+    # FP_3DTOOLS_INSTALL
+    if [ "$FP_3DTOOLS_INSTALL" == "Yes" ]; then
+        /usr/bin/logger 'installing Flatpak 3D Tools' -t 'Customizing Debian';
         echo -e "\e[36m .... installing openSCAD\e[0m";
         flatpak --assumeyes install org.openscad.OpenSCAD > /dev/null 2>&1;
         echo -e "\e[36m .... installing Fast STL Viewer\e[0m";
         flatpak --assumeyes install io.github.wdaniau.fstl > /dev/null 2>&1;
     fi
-    
+
+
     echo -e "\e[32m - install_utils_flatpak() finished\e[0m";
     /usr/bin/logger 'install_utils_flatpak() finished' -t 'Customizing Debian';
 }
@@ -381,12 +404,48 @@ install_gnome_dash_to_panel() {
 
     echo -e "\e[36m .... installing the Dash-to-Panel Gnome Extension\e[0m";
     # Requires log out then logon
-    sudo apt-get -y -qq install gnome-shell-extension-dash-to-panel;
-    DASH_UUID="$(gnome-extensions list | grep dash)"
-    gnome-extensions enable $DASH_UUID
-     
+    sudo apt-get -y -qq install gnome-shell-extension-dash-to-panel > /dev/null 2>&1;
+    DASH_UUID="$(gnome-extensions list | grep -i dash)"
+
     echo -e "\e[32m - install_gnome_dash_to_panel() finished\e[0m";
     /usr/bin/logger 'install_gnome_dash_to_panel() finished' -t 'Customizing Debian';
+}
+
+install_gnome_caffeine() {
+    echo -e "\e[32m - install_gnome_caffeine()\e[0m";
+    /usr/bin/logger 'install_gnome_caffeine()' -t 'Customizing Debian';
+
+    echo -e "\e[36m .... installing the caffeine Gnome Extension\e[0m";
+    # Requires log out then logon
+    cd $SCRIPT_DIR;
+    wget https://extensions.gnome.org/extension-data/caffeinepatapon.info.v60.shell-extension.zip > /dev/null 2>&1; 
+    export CAF_UUID=$(unzip -c $SCRIPT_DIR/caffeinepatapon.info.v60.shell-extension.zip metadata.json | grep uuid | cut -d \" -f4) > /dev/null 2>&1;
+    echo -e "\e[36m .... Installing the Dash-to-Panel Gnome Extension $CAF_UUID\e[0m";
+    gnome-extensions install $SCRIPT_DIR/caffeinepatapon.info.v60.shell-extension.zip > /dev/null 2>&1;
+     
+    echo -e "\e[32m - install_gnome_caffeine() finished\e[0m";
+    /usr/bin/logger 'install_gnome_caffeine() finished' -t 'Customizing Debian';
+}
+
+enable_gnome_extensions() {
+    echo -e "\e[32m - enable_gnome_extensions()\e[0m";
+    /usr/bin/logger 'enable_gnome_extensions()' -t 'Customizing Debian';
+    
+    mkdir -p ~/.config/autostart
+    cat << ___EOF___ > ~/.config/autostart/gnome-extensions.desktop
+[Desktop Entry]
+Type=Application
+Name=GNOME Extensions Setup
+Exec=$SCRIPT_DIR/gnome-extensions.sh
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+___EOF___
+sudo chmod 755 $SCRIPT_DIR/gnome-extensions.sh > /dev/null 2>&1;
+
+    echo -e "\e[32m - enable_gnome_extensions() finished\e[0m";
+    /usr/bin/logger 'enable_gnome_extensions() finished' -t 'Customizing Debian';
+    
 }
 
 configure_nix() {
@@ -419,7 +478,7 @@ configure_apt_repositories() {
 
     echo -e "\e[36m .... adding contrib, non-free, and non-free-firmware repositories to sources.list\e[0m";
     sudo sed -ie "s/main/main contrib non-free non-free-firmware/" /etc/apt/sources.list
-    sudo apt-get -qq update;
+    sudo apt-get -qq update > /dev/null 2>&1; 
     
     echo -e "\e[32m - configure_apt_repositories() finished\e[0m";
     /usr/bin/logger 'configure_apt_respositories() finished' -t 'Customizing Debian';
@@ -449,7 +508,7 @@ configure_microsoft_apt_repository() {
     fi
 
     # Update the list of packages after we added packages.microsoft.com
-    sudo apt-get -qq update
+    sudo apt-get -qq update > /dev/null 2>&1;
 
     echo -e "\e[32m - configure_microsoft_apt_repository() finished\e[0m";
     /usr/bin/logger 'configure_microsoft_apt_respository() finished' -t 'Customizing Debian';
@@ -476,7 +535,7 @@ install_pwsh() {
 
     # Install PowerShell
     echo -e "\e[36m .... Installing Powershell\e[0m";
-    sudo apt-get -qq -y install powershell
+    sudo apt-get -qq -y install powershell > /dev/null 2>&1;
 
     echo -e "\e[32m - install_pwsh() finished\e[0m";
     /usr/bin/logger 'install_pwsh() finished' -t 'Customizing Debian';
@@ -532,19 +591,18 @@ install_golang() {
     echo -e "\e[32m - install_golang()\e[0m";
     /usr/bin/logger 'install_golang()' -t 'Customizing Debian';
 
-    mkdir -p /tmp/golang/;
-    cd /tmp/golang/;
+    cd $SCRIPT_DIR;
+    echo -e "\e[1;36m .... Downloading golang $GO_URL\e[0m";
     echo -e "\e[1;36m .... Downloading golang $GO_URL\e[0m";
     export GO_LATEST="$(curl $GO_URL | head -n1)";
     export GO_DOWNLOAD="https://go.dev/dl/$GO_LATEST.linux-amd64.tar.gz"
-    wget -q "$GO_DOWNLOAD" -O /tmp/golang/go.tar.gz;
+    wget -q "$GO_DOWNLOAD" -O ./go.tar.gz;
     echo -e "\e[1;36m .... Removing previous install of golang\e[0m";
     /usr/bin/logger 'Removing previous install of golang' -t 'Customizing Debian';
-    sudo rm -rf /usr/local/go;
+   /go; sudo rm -rf /usr/local
     echo -e "\e[1;36m .... Opening and extracting golang tarball\e[0m";
     /usr/bin/logger 'Open and extract the golang tarball' -t 'Customizing Debian';
-    sudo tar -C /usr/local -zxf go.tar.gz > /dev/null 2>&1;
-    sync;
+    sudo tar -C /usr/local -xzf go.tar.gz > /dev/null 2>&1;
 
     if test -f "/etc/profile.d/go_lang.sh"; then
         echo -e "\e[1;36m .... golang path already configured\e[0m";        
@@ -600,11 +658,34 @@ main() {
             install_updates;
         fi
 
+        if [ "$GNOME_SETTINGS" == "Yes" ]; then
+            # Gnome Keyboard Shortcuts
+            if [ "$KB_SHORTCUTS" == "Yes" ]; then
+                configure_kb_shortcuts;
+            fi
+
+            # Gnome Extensions
+            # Gnome Extension Dash to Panel
+            if [ "$GNOME_DASH_TO_PANEL" == "Yes" ]; then
+                install_gnome_dash_to_panel;
+            fi
+            # Gnome Extension Caffeine
+            if [ "$GNOME_CAFFEINE" == "Yes" ]; then
+                install_gnome_caffeine;
+            fi
+
+            # Gnome show minimize and maximize buttons
+            if [ "$MM_BUTTONS_CONFIGURE" == "Yes" ]; then
+                configure_min_max_buttons;
+            fi
+
+            enable_gnome_extensions;
+        fi
+    
         # Install NTFS support
         if [ "$NTFS_INSTALL" == "Yes" ]; then
             install_ntfs;
         fi
-
 
         # Flatpak
         if [ "$FLATPAK_INSTALL" == "Yes" ]; then
@@ -617,21 +698,6 @@ main() {
         # Debian APT packages
         if [ "$APT_UTILS" == "Yes" ]; then
             install_utils_apt;
-        fi
-        
-        # Gnome Keyboard Shortcuts
-        if [ "$KB_SHORTCUTS" == "Yes" ]; then
-            configure_kb_shortcuts;
-        fi
-
-        # Gnome Dash to Panel Extension
-        if [ "$DASH_TO_PANEL" == "Yes" ]; then
-            install_gnome_dash_to_panel;
-        fi
-
-        # Gnome show minimize and maximize buttons
-        if [ "$MM_BUTTONS_CONFIGURE" == "Yes" ]; then
-            configure_min_max_buttons;
         fi
 
        # Install HWHack Tools
