@@ -278,7 +278,7 @@ install_hwhacktools() {
     cd SNANDer > /dev/null 2>&1;
     ./build-for-linux.sh > /dev/null 2>&1;
     sync;
-    sudo cp ./build/snander /usr/local/bin/ > /dev/null 2>&1;
+    sudo cp ./build/snander /usr/bin/ > /dev/null 2>&1;
     /usr/bin/logger 'Installed snander' -t 'Customizing Debian';
 
     # ufprog
