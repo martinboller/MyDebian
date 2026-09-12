@@ -201,16 +201,6 @@ __EOF__
     sudo apt update > /dev/null 2>&1;
     fi
     
-    # Pulseview Requirements
-    # Note: Depending on trixie backports
-    if [ "$PULSEVIEW_INSTALL" == "Yes" ]; then
-        sudo apt-get -qq -y install autoconf autoconf-archive automake sdcc libtool libboost-all-dev asciidoctor libzip-dev ruby-dev > /dev/null 2>&1;
-        sudo apt-get -qq -y install pkg-config libglib2.0-dev libglib2.0-dev libzip5 libtirpc-dev libserialport0 libvisa0 libvisa-dev libusb-1.0-0 libusb-1.0-0-dev libhidapi-hidraw0 libhidapi-libusb0 libftdi1-dev python3-pyvisa-py libieee1284-3-dev libgio-2.0-dev libghc-nettle-dev check doxygen graphviz swig libglibmm-2.68-dev python-setuptools-doc python-gi-dev python3-numpy python3-numpy-dev python3-doxypypy ruby openjdk-25-jdk > /dev/null 2>&1;
-        sudo apt-get -qq -y install qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools qttools5-dev-tools qttools5-dev libqt5svg5-dev > /dev/null 2>&1;
-        sudo apt-get -qq install gpib-user-tools python3-gpib libgpib0 libgpib-dev libhidapi-dev > /dev/null 2>&1;
-        sudo apt-get -qq -y install rpcbind libtirpc3 libavahi-client-dev > /dev/null 2>&1;
-    fi
-
     # HASHCAT installation
     # Note: depends on devtools being installed
     if [ "$HASHCAT_INSTALL" == "Yes" ]; then
@@ -226,6 +216,71 @@ __EOF__
         cd ~
     fi
 }
+install_pulseview() {
+    echo -e "\e[32m - install_pulseview()\e[0m";
+    /usr/bin/logger 'install_pulseview()' -t 'Customizing Debian';
+
+    # Installing Debian Package
+    #sudo apt-get -y -qq install pulseview > /dev/null 2>&1;
+   
+    # Installing prerequisites
+    sudo apt-get -qq -y install autoconf autoconf-archive automake sdcc libtool libboost-all-dev asciidoctor libzip-dev ruby-dev > /dev/null 2>&1;
+    sudo apt-get -qq -y install pkg-config libglib2.0-dev libglib2.0-dev libzip5 libtirpc-dev libserialport0 libvisa0 libvisa-dev \
+        libusb-1.0-0 libusb-1.0-0-dev libhidapi-hidraw0 libhidapi-libusb0 libftdi1-dev python3-pyvisa-py libieee1284-3-dev \
+        libgio-2.0-dev libghc-nettle-dev check doxygen graphviz swig libglibmm-2.68-dev python-setuptools-doc python-gi-dev \
+        python3-numpy python3-numpy-dev python3-doxypypy ruby openjdk-25-jdk > /dev/null 2>&1;
+    sudo apt-get -qq -y install qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools qttools5-dev-tools qttools5-dev libqt5svg5-dev > /dev/null 2>&1;
+    sudo apt-get -qq -y install gpib-user-tools python3-gpib libgpib0 libgpib-dev libhidapi-dev > /dev/null 2>&1;
+    sudo apt-get -qq -y install rpcbind libtirpc3 libavahi-client-dev check > /dev/null 2>&1;
+    
+    cd $SOURCE_DIR;
+    # Install fork of libsigrokdecode
+    # Note: Depending on trixie backports
+    git clone git://sigrok.org/libsigrokdecode > /dev/null 2>&1;
+    cd libsigrokdecode > /dev/null 2>&1;
+    ./autogen.sh > /dev/null 2>&1;
+    ./configure > /dev/null 2>&1;
+    make clean > /dev/null 2>&1;
+    make > /dev/null 2>&1;
+    sudo make install > /dev/null 2>&1;
+
+    # Install fork of libsigrok with support for SiPEED SLogic 8 and 16
+    cd $SOURCE_DIR;
+    git clone -b slogic-dev https://github.com/sipeed/libsigrok > /dev/null 2>&1;
+    #git clone git://sigrok.org/libsigrok > /dev/null 2>&1;
+    cd libsigrok > /dev/null 2>&1;
+    ./autogen.sh > /dev/null 2>&1;
+    ./configure > /dev/null 2>&1;
+    make clean > /dev/null 2>&1;
+    make > /dev/null 2>&1;
+    sudo make install > /dev/null 2>&1;
+
+    # Install fork of libsigrok with support for SiPEED SLogic 8 and 16
+    cd $SOURCE_DIR;
+        git clone git://sigrok.org/sigrok-cli > /dev/null 2>&1;
+    cd sigrok-cli > /dev/null 2>&1;
+    ./autogen.sh > /dev/null 2>&1;
+    ./configure > /dev/null 2>&1;
+    make clean > /dev/null 2>&1;
+    make > /dev/null 2>&1;
+    sudo make install > /dev/null 2>&1;
+
+    # Install fork of libsigrok with support for SiPEED SLogic 8 and 16
+    cd $SOURCE_DIR;
+    git clone git://sigrok.org/pulseview > /dev/null 2>&1;
+    cd pulseview > /dev/null 2>&1;
+    cmake .  > /dev/null 2>&1;
+    #make clean > /dev/null 2>&1;
+    make > /dev/null 2>&1;
+    sudo make install > /dev/null 2>&1;
+    sudo ldconfig;
+    # Back home to where install script is running from
+    cd $SCRIPT_DIR
+
+    echo -e "\e[32m - install_pulseview() finished\e[0m";
+    /usr/bin/logger 'install_pulseview() finished' -t 'Customizing Debian';
+}
+
 
 install_hwhacktools() {
     echo -e "\e[32m - install_hwhacktools()\e[0m";
@@ -242,7 +297,8 @@ install_hwhacktools() {
     sudo apt-get -y -qq install gcc meson ninja-build pkg-config python3-sphinx libcmocka-dev libpci-dev libusb-1.0-0-dev libftdi1-dev libjaylink-dev > /dev/null 2>&1;
     cd $SOURCE_DIR;
     git clone https://github.com/whid-injector/flashrom-whidboard > /dev/null 2>&1;
-    cd $SOURCE_DIR/flashrom-whidboard > /dev/null 2>&1;
+    cd $SOURCE_DIR/flashrom-whidboard/ > /dev/null 2>&1;
+    sudo mkdir -p /usr/local/sbin > /dev/null 2>&1;
     meson setup builddir > /dev/null 2>&1;
     meson compile -C builddir > /dev/null 2>&1;
     meson test -C builddir > /dev/null 2>&1;
@@ -258,6 +314,7 @@ install_hwhacktools() {
     sudo ldconfig > /dev/null 2>&1;
     git clone --recursive https://github.com/whid-injector/openocd-linux > /dev/null 2>&1;
     cd ./openocd-linux/ > /dev/null 2>&1;
+    sudo mkdir -p /usr/bin > /dev/null 2>&1;
     chmod -R 755 OpenOCD_SourceCode_CH347/ > /dev/null 2>&1;
     cd ./OpenOCD_SourceCode_CH347 > /dev/null 2>&1;
     ./bootstrap > /dev/null 2>&1;
@@ -274,6 +331,7 @@ install_hwhacktools() {
     cd $SOURCE_DIR;
     sudo apt-get -y -qq install mingw-w64 gcc-mingw-w64-x86-64 libusb-1.0-0-dev > /dev/null 2>&1;
     sudo ldconfig > /dev/null 2>&1;
+    sudo mkdir -p /usr/bin > /dev/null 2>&1;
     git clone https://github.com/martinboller/SNANDer > /dev/null 2>&1;
     cd SNANDer > /dev/null 2>&1;
     ./build-for-linux.sh > /dev/null 2>&1;
@@ -594,12 +652,13 @@ install_golang() {
     cd $SCRIPT_DIR;
     echo -e "\e[1;36m .... Downloading golang $GO_URL\e[0m";
     echo -e "\e[1;36m .... Downloading golang $GO_URL\e[0m";
-    export GO_LATEST="$(curl $GO_URL | head -n1)";
-    export GO_DOWNLOAD="https://go.dev/dl/$GO_LATEST.linux-amd64.tar.gz"
-    wget -q "$GO_DOWNLOAD" -O ./go.tar.gz;
+    mkdir -p /usr /local/ > /dev/null 2>&1;
+    export GO_LATEST="$(curl $GO_URL | head -n1)" > /dev/null 2>&1;
+    export GO_DOWNLOAD="https://go.dev/dl/$GO_LATEST.linux-amd64.tar.gz" > /dev/null 2>&1;
+    wget -q "$GO_DOWNLOAD" -O ./go.tar.gz > /dev/null 2>&1;
     echo -e "\e[1;36m .... Removing previous install of golang\e[0m";
     /usr/bin/logger 'Removing previous install of golang' -t 'Customizing Debian';
-   /go; sudo rm -rf /usr/local
+    sudo rm -rf /usr/local/go > /dev/null 2>&1;
     echo -e "\e[1;36m .... Opening and extracting golang tarball\e[0m";
     /usr/bin/logger 'Open and extract the golang tarball' -t 'Customizing Debian';
     sudo tar -C /usr/local -xzf go.tar.gz > /dev/null 2>&1;
@@ -723,6 +782,12 @@ main() {
                 install_pwsh;
             fi
         fi
+
+        if [ "$PULSEVIEW_INSTALL" == "Yes" ]; then
+            install_pulseview;
+        fi
+
+
 
     # Cannot sudo
     else
