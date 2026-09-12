@@ -6,11 +6,14 @@ CONFIG_GROUPS = [
     ("General Configuration", [
         ("Configure Debian Repositories", "APT_CONFIGURE"),
         ("Configure Nix", "NIX_CONFIGURE"),
-        ("Configure Serial Access", "CONFIGURE_SERIAL"),
-        ("Install Updates", "UPDATES_INSTALL"),
+        ("Configure Serial Ports Access", "CONFIGURE_SERIAL"),
+        ("Configure USB Ports Access", "CONFIGURE_USB"),
+        ("Install Virtualization", "VIRT_INSTALL"),
+        ("Install Docker", "DOCKER_INSTALL"),
+        ("Install Hardware Hacking Tools (require Development tools)", "HWHACKTOOLS_INSTALL"),
+        ("Install Reverse Engineering Tools (require Development tools)", "REVERSETOOLS_INSTALL"),
     ]),
     ("Debian Packages", [
-        ("Enable Installation of Debian Packages", "APT_UTILS"),
         ("Install Forensics Tools", "FORTOOLS_INSTALL"),
         ("Install Network Tools", "NETTOOLS_INSTALL"),
         ("Install User Tools", "USERTOOLS_INSTALL"),
@@ -23,10 +26,8 @@ CONFIG_GROUPS = [
         ("Install Go Language Support", "GO_INSTALL"),
         ("Install Pulseview (require Development tools)", "PULSEVIEW_INSTALL"),
         ("Install Hashcat (require Development tools)", "HASHCAT_INSTALL"),
-        ("Install Hardware Hacking Tools (require Development tools)", "HWHACKTOOLS_INSTALL"),
     ]),
     ("Flatpak Packages", [
-        ("Enable Flatpak Integration", "FLATPAK_UTILS"),
         ("Install Flatpak User Tools", "FP_USERTOOLS_INSTALL"),
         ("Install Flatpak Development Tools", "FP_DEVTOOLS_INSTALL"),
         ("Install Flatpak Electronics Tools", "FP_ELECTRONICSTOOLS_INSTALL"),
@@ -88,12 +89,10 @@ def main():
         option_map = {}
         index = 1
 
-        print("\n==========================================")
-        print("     Environment Component Configuration")
-        print("==========================================")
-
+        print("#####     Environment Component Configuration     #####")
+    
         for group_title, items in CONFIG_GROUPS:
-            print(f"\n-- {group_title} --")
+            print(f"-- {group_title} --")
             for label, var_name in items:
                 status = env_data.get(var_name, "N/A")
                 print(f"  [{index}] {label} ({var_name}): [{status}]")
