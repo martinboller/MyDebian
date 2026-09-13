@@ -4,7 +4,6 @@ import sys
 # Define configuration sections and their items (Label, Variable)
 CONFIG_GROUPS = [
     ("General Configuration", [
-        ("Configure Debian Repositories", "APT_CONFIGURE"),
         ("Configure Nix", "NIX_CONFIGURE"),
         ("Configure Serial Ports Access", "CONFIGURE_SERIAL"),
         ("Configure USB Ports Access", "CONFIGURE_USB"),
@@ -12,6 +11,7 @@ CONFIG_GROUPS = [
         ("Install Docker", "DOCKER_INSTALL"),
         ("Install Hardware Hacking Tools (require Development tools)", "HWHACKTOOLS_INSTALL"),
         ("Install Reverse Engineering Tools (require Development tools)", "REVERSETOOLS_INSTALL"),
+        ("Install Go Language Support", "GO_INSTALL"),
     ]),
     ("Debian Packages", [
         ("Install Forensics Tools", "FORTOOLS_INSTALL"),
@@ -23,7 +23,6 @@ CONFIG_GROUPS = [
         ("Install NTFS Support", "NTFS_INSTALL"),
         ("Install Debian Backports", "BACKPORTS_INSTALL"),
         ("Install Development Tools from Debian Packages", "DEVTOOLS_INSTALL"),
-        ("Install Go Language Support", "GO_INSTALL"),
         ("Install Pulseview (require Development tools)", "PULSEVIEW_INSTALL"),
         ("Install Hashcat (require Development tools)", "HASHCAT_INSTALL"),
     ]),
