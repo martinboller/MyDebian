@@ -94,6 +94,7 @@ install_updates() {
     sudo apt-get -qq -y --purge autoremove > /dev/null 2>&1
     sudo apt-get -qq autoclean > /dev/null 2>&1
     sync;
+    cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_updates() finished\n\e[0m";
     /usr/bin/logger 'install_updates() finished' -t 'Customizing Debian';
@@ -122,6 +123,7 @@ install_ntfs() {
     sudo apt-get -qq -y install exfat-fuse exfatprogs > /dev/null 2>&1;
     sync;
     check_install;
+    cd $SCRIPT_DIR;
     
     echo -e "\e[32m - install_ntfs() finished\n\e[0m";
     /usr/bin/logger 'install_ntfs() finished' -t 'Customizing Debian';
@@ -183,15 +185,15 @@ install_hashcat() {
         liblzma-dev > /dev/null 2>&1;
     curl --silent https://pyenv.run | bash > /dev/null 2>&1;
     mkdir -p ~/git > /dev/null 2>&1;
-    cd ~/git/
+    cd $SOURCE_DIR;
     git clone https://github.com/hashcat/hashcat.git > /dev/null 2>&1;
     cd hashcat
     make clean > /dev/null 2>&1;
     make > /dev/null 2>&1;
     sudo make install > /dev/null 2>&1;
     sync;
-    cd $SCRIPT_DIR;
     check_install;
+    cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_hashcat() finished\n\e[0m";
     /usr/bin/logger 'installing hashcat finished' -t 'Customizing Debian';
@@ -211,6 +213,7 @@ Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 __EOF__
     sync;
     sudo apt update > /dev/null 2>&1;
+    cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_backports() finished\n\e[0m";
     /usr/bin/logger 'installing Debian backports repository finished' -t 'Customizing Debian';
@@ -223,6 +226,7 @@ install_pythontools() {
     echo -e "\e[36m .... Installing Python tools\e[0m";   
     sudo apt-get -y -qq install python3 python3-pip python3-setuptools python3-gnupg python3-venv \
         libpython3-dev > /dev/null 2>&1;
+    cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_pythontools() finished\n\e[0m";
     /usr/bin/logger 'installing Python tools from Debian repository finished' -t 'Customizing Debian';
@@ -239,6 +243,7 @@ install_networktools() {
     sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
     sudo apt-get -y -qq install ipcalc-ng tcpdump nmap ncat ngrep ethtool aircrack-ng whois dnsutils > /dev/null 2>&1;
     check_install;
+    cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_networktools() finished\n\e[0m";
     /usr/bin/logger 'installing Network tools from Debian repository finished' -t 'Customizing Debian';
@@ -256,6 +261,7 @@ install_forensicstools() {
     sudo apt-get -y -qq install testdisk sleuthkit geoip-bin geoip-database geoipupdate binwalk > /dev/null 2>&1;
     sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
     check_install;
+    cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_forensicstools() finished\n\e[0m";
     /usr/bin/logger 'installing Forensics tools from Debian repository finished' -t 'Customizing Debian';
@@ -270,6 +276,7 @@ install_systemtools() {
     sudo apt-get -y -qq install gparted wget nano p7zip p7zip-full unzip dconf-editor htop > /dev/null 2>&1;
     sudo apt-get -y -qq install screen > /dev/null 2>&1;
     check_install;
+    cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_systemtools() finished\e[0m";
     /usr/bin/logger 'installing System tools from Debian repository finished' -t 'Customizing Debian';
@@ -284,6 +291,7 @@ install_usertools() {
     sudo apt-get -y -qq install curl transmission-gtk vlc ffmpeg libavcodec-extra default-jdk sshpass rclone \
         rclone-browser figlet lolcat cowsay sl cmatrix > /dev/null 2>&1;
     check_install;
+    cd $SCRIPT_DIR;
     
     echo -e "\e[32m - install_usertools() finished\n\e[0m";
     /usr/bin/logger 'installing User tools from Debian repository finished' -t 'Customizing Debian';
@@ -301,6 +309,7 @@ install_devtools() {
     sudo apt-get -qq -y install --install-recommends ca-certificates pkg-config libreadline-dev gcc-arm-none-eabi \
         libnewlib-dev qtbase5-dev libbz2-dev liblz4-dev libbluetooth-dev libssl-dev cmake > /dev/null 2>&1;
     check_install;
+    cd $SCRIPT_DIR;
 
     /usr/bin/logger 'installing Development tools from Debian repository finished' -t 'Customizing Debian';
     echo -e "\e[36m .... Installing development tools finished\n\e[0m";
@@ -315,6 +324,8 @@ install_pulseview() {
     
     # Installing from source    
     # Installing prerequisites
+    echo -e "\e[32m - installing pulseview prerequisites\e[0m";
+    /usr/bin/logger 'installing pulseview prerequisites' -t 'Customizing Debian';
     sudo apt-get -qq -y install autoconf autoconf-archive automake sdcc libtool libboost-all-dev asciidoctor \
         libzip-dev ruby-dev > /dev/null 2>&1;
     sudo apt-get -qq -y install pkg-config libglib2.0-dev libglib2.0-dev libzip5 libtirpc-dev libserialport0 libvisa0 libvisa-dev \
@@ -326,10 +337,28 @@ install_pulseview() {
     sudo apt-get -qq -y install gpib-user-tools python3-gpib libgpib0 libgpib-dev libhidapi-dev > /dev/null 2>&1;
     sudo apt-get -qq -y install rpcbind libtirpc3 libavahi-client-dev check > /dev/null 2>&1;
     sudo echo > /dev/null 2>&1;
+    
+    echo -e "\e[1;36m .... Checking VENV path\e[0m";
+    export VENV_PATH=$(grep '.venv/bin' ~/.profile)
 
-    cd $SOURCE_DIR;
+    if [ -n "$VENV_PATH" ]; then
+        echo -e "\e[1;36m .... VENV already configured\e[0m";
+    else
+        echo -e "\e[1;36m .... installing Python Virtual Environment\e[0m";
+        config_venv;
+    fi
+    # Activate Python VENV
+    source ~/.venv/bin/activate > /dev/null 2>&1;
+    # Python pip modules needed for libsigrok
+    pip install setuptools numpy > /dev/null 2>&1;
+
+    mkdir -p $SOURCE_DIR/sigrok;
+    cd $SOURCE_DIR/sigrok/;
     # Install libsigrokdecode from source
     # Note: Depending on trixie backports
+    TOOL_INSTALL="libsigrokdecode";
+    echo -e "\e[32m - installing libsigrokdecode\e[0m";
+    /usr/bin/logger 'installing libsigrokdecode' -t 'Customizing Debian';
     git clone git://sigrok.org/libsigrokdecode > /dev/null 2>&1;
     cd libsigrokdecode > /dev/null 2>&1;
     ./autogen.sh > /dev/null 2>&1;
@@ -337,11 +366,15 @@ install_pulseview() {
     make clean > /dev/null 2>&1;
     make > /dev/null 2>&1;
     sudo make install > /dev/null 2>&1;
+    /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
     sudo echo > /dev/null 2>&1;
 
     # Install fork of libsigrok with support for SiPEED SLogic 8 and 16
-    cd $SOURCE_DIR;
-    git clone -b slogic-dev https://github.com/sipeed/libsigrok > /dev/null 2>&1;
+    echo -e "\e[32m - installing libsigrok\e[0m";
+    /usr/bin/logger 'installing libsigrok' -t 'Customizing Debian';
+    cd $SOURCE_DIR/sigrok/;
+    git clone https://github.com/martinboller/libsigrok > /dev/null 2>&1;
+    #git clone -b slogic-dev https://github.com/sipeed/libsigrok > /dev/null 2>&1;
     #git clone git://sigrok.org/libsigrok > /dev/null 2>&1;
     cd libsigrok > /dev/null 2>&1;
     ./autogen.sh > /dev/null 2>&1;
@@ -352,7 +385,9 @@ install_pulseview() {
     sudo echo > /dev/null 2>&1;
 
     # Install sigrok-cli from source
-    cd $SOURCE_DIR;
+    echo -e "\e[32m - installing sigrok-cli\e[0m";
+    /usr/bin/logger 'installing sigrok-cli' -t 'Customizing Debian';
+    cd $SOURCE_DIR/sigrok/;
     TOOL_INSTALL="sigrok-cli";
     git clone git://sigrok.org/sigrok-cli > /dev/null 2>&1;
     cd sigrok-cli > /dev/null 2>&1;
@@ -362,22 +397,38 @@ install_pulseview() {
     make > /dev/null 2>&1;
     sudo make install > /dev/null 2>&1;
     check_install;
-    
+
     # check libraries for sigrok are installed
     TOOL_INSTALL="libsigrok"
     LDD_SIGROK=$(which sigrok-cli | xargs ldd | grep libsig) > /dev/null 2>&1;
     if [ -n "$LDD_SIGROK" ]; then
         echo -e "\e[32m-------- $TOOL_INSTALL successfully installed -------\e[0m"
-        echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/install.log > /dev/null 2>&1;
+        echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
         /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
     else
         echo -e "$TOOL_INSTALL not installed"
-        echo "ERROR: $TOOL_INSTALL not installed" | tee -a $SCRIPT_DIR/install.log > /dev/null 2>&1;
+        echo "ERROR: $TOOL_INSTALL not installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
         /usr/bin/logger "\e[31m------- ERROR: $TOOL_INSTALL not installed -------\e[0m" -t 'Customizing Debian';
     fi
 
+    # sigrok-firmware-fx2lafw
+    TOOL_INSTALL="sigrok-firmware-fx2lafw";
+    echo -e "\e[32m - installing sigrok-firmware-fx2lafw\e[0m";
+    /usr/bin/logger 'installing sigrok-firmware-fx2lafw' -t 'Customizing Debian';
+    cd $SOURCE_DIR/sigrok/;
+    git clone git://sigrok.org/sigrok-firmware-fx2lafw > /dev/null 2>&1;
+    cd sigrok-firmware-fx2lafw > /dev/null 2>&1;
+    ./autogen.sh > /dev/null 2>&1;
+    ./configure > /dev/null 2>&1;
+    make clean > /dev/null 2>&1;
+    make > /dev/null 2>&1;
+    sudo make install > /dev/null 2>&1;
+    echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
+
     # Install pulseview from source
-    cd $SOURCE_DIR;
+    echo -e "\e[32m - installing pulseview\e[0m";
+    /usr/bin/logger 'installing pulseview' -t 'Customizing Debian';
+     cd $SOURCE_DIR/sigrok/;
     TOOL_INSTALL="pulseview"
     git clone git://sigrok.org/pulseview > /dev/null 2>&1;
     cd pulseview > /dev/null 2>&1;
@@ -387,6 +438,9 @@ install_pulseview() {
     sudo make install > /dev/null 2>&1;
     sudo ldconfig;
     check_install;
+
+    # Load udev rules
+    sudo udevadm control --reload > /dev/null 2>&1;
     
     # Back home to where install script is running from
     cd $SCRIPT_DIR
@@ -399,11 +453,11 @@ check_install() {
     which $TOOL_INSTALL > /dev/null 2>&1;
     if [ "$?" == 0 ]; then
         echo -e "\e[32m-------- $TOOL_INSTALL successfully installed -------\e[0m"
-        echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/install.log > /dev/null 2>&1;
+        echo "$TOOL_INSTALL successfully installed from repository" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
         /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
     else
         echo -e "$TOOL_INSTALL not installed"
-        echo "ERROR: $TOOL_INSTALL not installed correctly" | tee -a $SCRIPT_DIR/install.log > /dev/null 2>&1;
+        echo "ERROR: $TOOL_INSTALL not installed correctly" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
         /usr/bin/logger "\e[31m------- ERROR: $TOOL_INSTALL not installed -------\e[0m" -t 'Customizing Debian';
     fi
     sudo echo > /dev/null 2>&1;
@@ -413,11 +467,11 @@ check_fp_install() {
     FP_INSTALL=$(flatpak list | grep -i $TOOL_INSTALL | awk '{print $1}');
     if [ -n "$FP_INSTALL" ]; then
         echo -e "\e[32m-------- $TOOL_INSTALL successfully installed -------\e[0m"
-        echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/install.log > /dev/null 2>&1;
+        echo "$TOOL_INSTALL successfully installed from flatpak.org" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
         /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
     else
         echo -e "$TOOL_INSTALL not installed"
-        echo "ERROR: $TOOL_INSTALL not installed" | tee -a $SCRIPT_DIR/install.log > /dev/null 2>&1;
+        echo "ERROR: $TOOL_INSTALL not installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
         /usr/bin/logger "\e[31m------- ERROR: $TOOL_INSTALL not installed -------\e[0m" -t 'Customizing Debian';
     fi
     sudo echo > /dev/null 2>&1;
@@ -438,10 +492,9 @@ install_hwhacktools() {
     /usr/bin/logger 'Installed st-link-tools' -t 'Customizing Debian';
     check_install;
 
-
     # ESP32 tool
     TOOL_INSTALL="esptool";
-    sudo apt-get -y -qq install esptool > /dev/null 2>&1;
+    sudo apt-get -y install esptool > /dev/null 2>&1;
     check_install;
 
     # flashrom
@@ -461,7 +514,6 @@ install_hwhacktools() {
     export PATH=$PATH:/usr/local/sbin;
     sync
     check_install;
-
     /usr/bin/logger 'Installed flashrom' -t 'Customizing Debian';
 
     # openOCD
@@ -484,7 +536,6 @@ install_hwhacktools() {
     cp $SCRIPT_DIR/files/*.cfg ~/.openocd/ > /dev/null 2>&1;
     sync
     check_install;
-
     /usr/bin/logger 'Installed openOCD' -t 'Customizing Debian';
 
     # SNANDER
@@ -499,7 +550,6 @@ install_hwhacktools() {
     sync;
     sudo cp ./build/snander /usr/bin/ > /dev/null 2>&1;
     check_install;
-
     /usr/bin/logger 'Installed snander' -t 'Customizing Debian';
 
     # ufprog
@@ -514,27 +564,31 @@ install_hwhacktools() {
     sudo make install > /dev/null 2>&1;
     sudo cp -r /usr/share/ufprog/ /usr/lib/ > /dev/null 2>&1;
     check_install;
-
     /usr/bin/logger 'Installed ufprog' -t 'Customizing Debian';
 
     # BUSSide
+    TOOL_INSTALL="BUSSide"
     cd $SOURCE_DIR;
     git clone https://github.com/martinboller/BUSSide.git > /dev/null 2>&1;
-
     source ~/.venv/bin/activate > /dev/null 2>&1;
     cd ./BUSSide/Client > /dev/null 2>&1;
     pip install -r requirements.txt > /dev/null 2>&1;
+    echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;    
     
     # Serial U-BOOT tool (Python)
+    TOOL_INSTALL="sertack"
     cd $SOURCE_DIR;
     git clone https://github.com/martinboller/sertack.git > /dev/null 2>&1;
     sudo apt-get -y -qq install python3-serial > /dev/null 2>&1;
+    /usr/bin/logger 'Installed sertack' -t 'Customizing Debian';
+    echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
 
     # udev stuff to make devices work
     cd ~
     sudo ldconfig;
     sudo cp $SCRIPT_DIR/files/*.rules /etc/udev/rules.d/ > /dev/null 2>&1;
     sudo udevadm control --reload > /dev/null 2>&1;
+    cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_hwhacktools() finished\n\e[0m";
     /usr/bin/logger 'install_hwhacktools() finished' -t 'Customizing Debian';
@@ -544,6 +598,7 @@ config_venv() {
     echo -e "\e[32m - config_venv()\e[0m";
     /usr/bin/logger 'config_venv()' -t 'Customizing Debian';
 
+    TOOL_INSTALL="Python Virtual Environment"
     python3 -m venv ~/.venv > /dev/null 2>&1;
     echo -e "\e[1;36m .... Checking VENV path\e[0m";
     export VENV_PATH=$(grep '.venv/bin' ~/.profile)
@@ -560,6 +615,8 @@ if [ -d "\$HOME/.venv/bin" ] ; then
 fi
 ___EOF___
     fi
+    export PATH="$HOME/.venv/bin:$PATH"
+    echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
 
     echo -e "\e[32m - config_venv() finished\n\e[0m";
     /usr/bin/logger 'config_venv() finished' -t 'Customizing Debian';
@@ -605,6 +662,7 @@ ___EOF___
     TOOL_INSTALL="firmwalker";
     cd $RE_DIR;
     git clone https://github.com/hotelzululima/firmwalker.git > /dev/null 2>&1;
+    echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
 
     # binwally for python3
     TOOL_INSTALL="binwally";
@@ -612,6 +670,7 @@ ___EOF___
     git clone https://github.com/martinboller/binwally.git > /dev/null 2>&1;
     source ~/.venv/bin/activate > /dev/null 2>&1;
     pip install -r $RE_DIR/$TOOL_INSTALL/requirements.txt > /dev/null 2>&1;
+    echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
 
     echo -e "\e[32m - install_reversetools() finished\n\e[0m";
     /usr/bin/logger 'install_reversetools() finished' -t 'Customizing Debian';
@@ -783,10 +842,12 @@ install_gnome_dash_to_panel() {
     echo -e "\e[32m - install_gnome_dash_to_panel()\e[0m";
     /usr/bin/logger 'install_gnome_dash_to_panel()' -t 'Customizing Debian';
 
+    TOOL_INSTALL="Dash-to-Panel Gnome Extension";
     echo -e "\e[36m .... installing the Dash-to-Panel Gnome Extension\e[0m";
     # Requires log out then logon
     sudo apt-get -y -qq install gnome-shell-extension-dash-to-panel > /dev/null 2>&1;
     DASH_UUID="$(gnome-extensions list | grep -i dash)"
+    echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
 
     echo -e "\e[32m - install_gnome_dash_to_panel() finished\n\e[0m";
     /usr/bin/logger 'install_gnome_dash_to_panel() finished' -t 'Customizing Debian';
@@ -796,6 +857,7 @@ install_gnome_caffeine() {
     echo -e "\e[32m - install_gnome_caffeine()\e[0m";
     /usr/bin/logger 'install_gnome_caffeine()' -t 'Customizing Debian';
 
+    TOOL_INSTALL="Caffeine Gnome Extension";
     echo -e "\e[36m .... installing the caffeine Gnome Extension\e[0m";
     # Requires log out then logon
     cd $SCRIPT_DIR;
@@ -803,7 +865,8 @@ install_gnome_caffeine() {
     export CAF_UUID=$(unzip -c $SCRIPT_DIR/caffeinepatapon.info.v60.shell-extension.zip metadata.json | grep uuid | cut -d \" -f4) > /dev/null 2>&1;
     echo -e "\e[36m .... Installing the Dash-to-Panel Gnome Extension $CAF_UUID\e[0m";
     gnome-extensions install $SCRIPT_DIR/caffeinepatapon.info.v60.shell-extension.zip > /dev/null 2>&1;
-     
+    echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
+ 
     echo -e "\e[32m - install_gnome_caffeine() finished\n\e[0m";
     /usr/bin/logger 'install_gnome_caffeine() finished' -t 'Customizing Debian';
 }
@@ -811,7 +874,8 @@ install_gnome_caffeine() {
 enable_gnome_extensions() {
     echo -e "\e[32m - enable_gnome_extensions()\e[0m";
     /usr/bin/logger 'enable_gnome_extensions()' -t 'Customizing Debian';
-    
+
+    TOOL_INSTALL="Enable Gnome Extensions at next logon for user: $USER";    
     mkdir -p ~/.config/autostart
     cat << ___EOF___ > ~/.config/autostart/gnome-extensions.desktop
 [Desktop Entry]
@@ -822,7 +886,8 @@ Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
 ___EOF___
-sudo chmod 755 $SCRIPT_DIR/gnome-extensions.sh > /dev/null 2>&1;
+    sudo chmod 755 $SCRIPT_DIR/gnome-extensions.sh > /dev/null 2>&1;
+    echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
 
     echo -e "\e[32m - enable_gnome_extensions() finished\n\e[0m";
     /usr/bin/logger 'enable_gnome_extensions() finished' -t 'Customizing Debian';
@@ -926,6 +991,7 @@ configure_kb_shortcuts() {
     echo -e "\e[32m - configure_kb_shortcuts()\e[0m";
     /usr/bin/logger 'configure_kb_shortcuts()' -t 'Customizing Debian';
 
+    TOOL_INSTALL="Keyboard Shortcuts";
     # Create custom keybindings myTerminal and myDisks
     echo -e "\e[36m .... Create custom keybindings\e[0m";
     gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/myTerminal/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/myDisks/']"
@@ -952,6 +1018,7 @@ configure_kb_shortcuts() {
         # configure menu key as compose
         gsettings set org.gnome.desktop.input-sources xkb-options "['menu:ctrl_shift_U', 'compose:menu']"
     fi
+    echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
 
     echo -e "\e[32m - configure_kb_shortcuts() finshed\e[0m";
     /usr/bin/logger 'configure_kb_shortcuts() finished' -t 'Customizing Debian';
@@ -961,8 +1028,10 @@ configure_min_max_buttons() {
     echo -e "\e[32m - configure_min_max_buttons()\e[0m";
     /usr/bin/logger 'configure_min_max_buttons()' -t 'Customizing Debian';
 
+    TOOL_INSTALL="Minimize and Maximize Buttons";
     echo -e "\e[36m .... Configuring GNOME Windows Manager to show minimize and maximize buttons\e[0m";
     gsettings set org.gnome.desktop.wm.preferences button-layout ":minimize,maximize,close"
+    echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
 
     echo -e "\e[32m - configure_min_max_buttons() finished\n\e[0m";
     /usr/bin/logger 'configure_min_max_buttons() finished' -t 'Customizing Debian';
@@ -1112,15 +1181,6 @@ main() {
             configure_serial_access;            
         fi
 
-        # Microsoft Debian Packages and PowerShell
-        if [ "$MICROSOFT_APT" == "Yes" ]; then
-            configure_microsoft_apt_repository;
-
-            if [ "$PWSH_INSTALL" == "Yes" ]; then
-                install_pwsh;
-            fi
-        fi
-
         if [ "$PULSEVIEW_INSTALL" == "Yes" ]; then
             install_pulseview;
         fi
@@ -1141,6 +1201,15 @@ main() {
             install_hashcat;
         fi
     
+        # Microsoft Debian Packages repo and PowerShell
+        if [ "$MICROSOFT_APT" == "Yes" ]; then
+            configure_microsoft_apt_repository;
+
+            if [ "$PWSH_INSTALL" == "Yes" ]; then
+                install_pwsh;
+            fi
+        fi
+
     # Cannot sudo
     else
         echo -e "\e[1;36m$USER does not belong to group $SUDOGROUP, please provide root password\e[0m"

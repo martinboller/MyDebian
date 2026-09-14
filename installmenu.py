@@ -1,5 +1,9 @@
+#!/usr/bin/env python3
+
 import re
 import sys
+import os
+clear = lambda: os.system('clear') #on Linux System
 
 # Define configuration sections and their items (Label, Variable)
 CONFIG_GROUPS = [
@@ -82,6 +86,7 @@ def main():
     lines = load_env(filepath)
 
     while True:
+        clear()
         env_data = extract_values(lines)
         option_map = {}
         index = 1
