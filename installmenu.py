@@ -4,9 +4,8 @@ import sys
 # Define configuration sections and their items (Label, Variable)
 CONFIG_GROUPS = [
     ("General Configuration", [
-        ("Configure Nix", "NIX_CONFIGURE"),
-        ("Configure Serial Ports Access", "CONFIGURE_SERIAL"),
-        ("Configure USB Ports Access", "CONFIGURE_USB"),
+        ("Configure Linux OS basics", "NIX_CONFIGURE"),
+        ("Configure Serial and USB Ports Access", "CONFIGURE_SERIAL"),
         ("Install Virtualization", "VIRT_INSTALL"),
         ("Install Docker", "DOCKER_INSTALL"),
         ("Install Hardware Hacking Tools (require Development tools)", "HWHACKTOOLS_INSTALL"),
@@ -42,7 +41,6 @@ CONFIG_GROUPS = [
     ]),
     ("Microsoft Integration", [
         ("Enable Microsoft APT Repo", "MICROSOFT_APT"),
-        ("Microsoft Repo Workaround", "MICROSOFT_APT_WORKAROUND"),
         ("PowerShell Install", "PWSH_INSTALL"),
     ]),
 ]

@@ -57,21 +57,9 @@ configure_env() {
     echo -e "\e[1;35m-------------------------------------------------------------------\e[0m"
     echo -e "\e[1;35menv file version $ENV_VERSION\e[0m"
     echo -e
-    echo -e "\e[1;35mAdding contrib and non-free repositories? $APT_CONFIGURE\e[0m"
-    echo -e "\e[1;35mInstalling latest updates from Debian? $UPDATES_INSTALL\e[0m"
-    echo -e "\e[1;35mConfiguration of Linux? $NIX_CONFIGURE\e[0m"
-    echo -e "\e[1;35mInstall Flatpak? $FLATPAK_INSTALL\e[0m"
-    echo -e "\e[1;35mInstall Flatpak Utilities $FLATPAK_UTILS\e[0m"
-    echo -e "\e[1;35mInstall Debian Packages? $APT_UTILS\e[0m"
-    echo -e "\e[1;35mInstall golang? $GO_INSTALL\e[0m"
-    echo -e "\e[1;35mInstall Backports? $BACKPORTS_INSTALL\e[0m"
-    echo -e "\e[1;35mInstall Requirements for Pulseview? $PULSEVIEW_INSTALL\e[0m"
-    echo -e "\e[1;35mConfigure Minimize and Maximize buttons on Windows? $MM_BUTTONS_CONFIGURE\e[0m"
-    echo -e "\e[1;35mConfigure access to Serial Ports for $USER? $CONFIGURE_SERIAL\e[0m"
+    show_features_enabled;
     echo -e
     echo -e "\e[1;35mGNOME version: $GNOME_VERSION\e[0m"
-    #echo -e "\e[1;35mGNOME version major: $GNOME_VERSION_MAJOR\e[0m"
-    #echo -e "\e[1;35mGNOME version minor: $GNOME_VERSION_MINOR\e[0m"
 
     # OS Version freedesktop.org and systemd
     . /etc/os-release
@@ -91,7 +79,7 @@ configure_env() {
     fi
     echo -e "\e[36mEnvironment configured\e[0m";
 
-    echo -e "\e[32m - configure_env() finished\e[0m";
+    echo -e "\e[32m - configure_env() finished\n\e[0m";
     /usr/bin/logger 'configure_env() finished' -t 'Customizing Debian';
 }
 
@@ -101,16 +89,27 @@ install_updates() {
     
     export DEBIAN_FRONTEND=noninteractive;
     sync
-    echo -e "\e[36m .... update\e[0m" && sudo apt-get -qq update > /dev/null 2>&1
-    echo -e "\e[36m .... full-upgrade\e[0m" && sudo apt-get -qq -y full-upgrade > /dev/null 2>&1
-    echo -e "\e[36m .... cleaning up apt\e[0m";
-    echo -e "\e[36m .... autoremove\e[0m" && sudo apt-get -qq -y --purge autoremove > /dev/null 2>&1
-    echo -e "\e[36m .... autoclean\e[0m" && sudo apt-get -qq autoclean > /dev/null 2>&1
-    echo -e "\e[36m .... Done\e[0m" > /dev/null 2>&1
+    sudo apt-get -qq update > /dev/null 2>&1
+    sudo apt-get -qq -y full-upgrade > /dev/null 2>&1
+    sudo apt-get -qq -y --purge autoremove > /dev/null 2>&1
+    sudo apt-get -qq autoclean > /dev/null 2>&1
     sync;
 
-    echo -e "\e[32m - install_updates() finished\e[0m";
+    echo -e "\e[32m - install_updates() finished\n\e[0m";
     /usr/bin/logger 'install_updates() finished' -t 'Customizing Debian';
+}
+
+show_features_enabled() {
+    echo -e "\e[1;35m ### Installing the following Features ###"
+    while IFS='=' read -r key value; do
+        # Remove leading/trailing spaces and quotes from key and value
+        key=$(echo "$key" | tr -d ' ')
+        value=$(echo "$value" | tr -d ' "' | cut -d'#' -f1)
+
+            if [ "$value" = "Yes" ]; then
+                echo -e "\e[36m\t ++ $key\e[0m"
+            fi
+    done < $SCRIPT_DIR/.env;
 }
 
 install_ntfs() {
@@ -124,7 +123,7 @@ install_ntfs() {
     sync;
     check_install;
     
-    echo -e "\e[32m - install_ntfs() finished\e[0m";
+    echo -e "\e[32m - install_ntfs() finished\n\e[0m";
     /usr/bin/logger 'install_ntfs() finished' -t 'Customizing Debian';
 }
 
@@ -166,7 +165,7 @@ install_utils_apt() {
         config_venv;
     fi
 
-    echo -e "\e[32m - install_utils_apt() finished\e[0m";
+    echo -e "\e[32m - install_utils_apt() finished\n\e[0m";
     /usr/bin/logger 'install_utils_apt() finished' -t 'Customizing Debian';
     
     # Trixie backports
@@ -177,6 +176,7 @@ install_utils_apt() {
 
 install_hashcat() {
     /usr/bin/logger 'installing hashcat' -t 'Customizing Debian';
+    echo -e "\e[32m - install_hashcat()\e[0m";
 
     TOOL_INSTALL="hashcat"
     sudo apt-get -qq -y install libbz2-dev libssl-dev libncurses5-dev libffi-dev libreadline-dev libsqlite3-dev \
@@ -192,11 +192,14 @@ install_hashcat() {
     sync;
     cd $SCRIPT_DIR;
     check_install;
+
+    echo -e "\e[32m - install_hashcat() finished\n\e[0m";
     /usr/bin/logger 'installing hashcat finished' -t 'Customizing Debian';
 }
 
 install_backports() {
     /usr/bin/logger 'installing Debian backports repository ' -t 'Customizing Debian';
+    echo -e "\e[32m - install_backports()\e[0m";
 
     sudo tee /etc/apt/sources.list.d/debian-backports.sources << __EOF__
 Types: deb deb-src
@@ -209,21 +212,25 @@ __EOF__
     sync;
     sudo apt update > /dev/null 2>&1;
 
+    echo -e "\e[32m - install_backports() finished\n\e[0m";
     /usr/bin/logger 'installing Debian backports repository finished' -t 'Customizing Debian';
 }
 
 install_pythontools() {
     /usr/bin/logger 'installing Python stuff from Debian repository ' -t 'Customizing Debian';
+    echo -e "\e[32m - install_pythontools()\e[0m";
 
     echo -e "\e[36m .... Installing Python tools\e[0m";   
     sudo apt-get -y -qq install python3 python3-pip python3-setuptools python3-gnupg python3-venv \
         libpython3-dev > /dev/null 2>&1;
 
+    echo -e "\e[32m - install_pythontools() finished\n\e[0m";
     /usr/bin/logger 'installing Python tools from Debian repository finished' -t 'Customizing Debian';
 }
 
 install_networktools() {
     /usr/bin/logger 'installing Network tools from Debian repository ' -t 'Customizing Debian';
+    echo -e "\e[32m - install_networktools()\e[0m";
 
     TOOL_INSTALL="tcpdump";
     echo -e "\e[36m .... Installing network tools\e[0m";
@@ -233,23 +240,30 @@ install_networktools() {
     sudo apt-get -y -qq install ipcalc-ng tcpdump nmap ncat ngrep ethtool aircrack-ng whois dnsutils > /dev/null 2>&1;
     check_install;
 
+    echo -e "\e[32m - install_networktools() finished\n\e[0m";
     /usr/bin/logger 'installing Network tools from Debian repository finished' -t 'Customizing Debian';
 }
 
 install_forensicstools() {
     /usr/bin/logger 'installing Forensics tools from Debian repository ' -t 'Customizing Debian';
+    echo -e "\e[32m - install_forensicstools()\e[0m";
 
     TOOL_INSTALL="testdisk"
-    echo -e "\e[36m .... Installing forensics tools\e[0m";
+    ### Wireshark is part of forensics-all, so configuration needed if not already installed
+    echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
+
     sudo apt-get -y -qq install forensics-all > /dev/null 2>&1;
     sudo apt-get -y -qq install testdisk sleuthkit geoip-bin geoip-database geoipupdate binwalk > /dev/null 2>&1;
+    sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
     check_install;
 
+    echo -e "\e[32m - install_forensicstools() finished\n\e[0m";
     /usr/bin/logger 'installing Forensics tools from Debian repository finished' -t 'Customizing Debian';
 }
 
 install_systemtools() {
     /usr/bin/logger 'installing System tools from Debian repository ' -t 'Customizing Debian';
+    echo -e "\e[32m - install_systemtools()\e[0m";
 
     TOOL_INSTALL="htop";
     echo -e "\e[36m .... Installing system tools\e[0m";
@@ -257,11 +271,13 @@ install_systemtools() {
     sudo apt-get -y -qq install screen > /dev/null 2>&1;
     check_install;
 
+    echo -e "\e[32m - install_systemtools() finished\e[0m";
     /usr/bin/logger 'installing System tools from Debian repository finished' -t 'Customizing Debian';
 }
 
 install_usertools() {
     /usr/bin/logger 'installing User tools from Debian repository ' -t 'Customizing Debian';
+    echo -e "\e[32m - install_usertools()\e[0m";
 
     TOOL_INSTALL="lolcat";
     echo -e "\e[36m .... Installing user utils and other tools\e[0m";
@@ -269,6 +285,7 @@ install_usertools() {
         rclone-browser figlet lolcat cowsay sl cmatrix > /dev/null 2>&1;
     check_install;
     
+    echo -e "\e[32m - install_usertools() finished\n\e[0m";
     /usr/bin/logger 'installing User tools from Debian repository finished' -t 'Customizing Debian';
 }
 
@@ -286,7 +303,7 @@ install_devtools() {
     check_install;
 
     /usr/bin/logger 'installing Development tools from Debian repository finished' -t 'Customizing Debian';
-    echo -e "\e[36m .... Installing development tools finished\e[0m";
+    echo -e "\e[36m .... Installing development tools finished\n\e[0m";
 }
 
 install_pulseview() {
@@ -308,6 +325,7 @@ install_pulseview() {
         libqt5svg5-dev > /dev/null 2>&1;
     sudo apt-get -qq -y install gpib-user-tools python3-gpib libgpib0 libgpib-dev libhidapi-dev > /dev/null 2>&1;
     sudo apt-get -qq -y install rpcbind libtirpc3 libavahi-client-dev check > /dev/null 2>&1;
+    sudo echo > /dev/null 2>&1;
 
     cd $SOURCE_DIR;
     # Install libsigrokdecode from source
@@ -344,6 +362,19 @@ install_pulseview() {
     make > /dev/null 2>&1;
     sudo make install > /dev/null 2>&1;
     check_install;
+    
+    # check libraries for sigrok are installed
+    TOOL_INSTALL="libsigrok"
+    LDD_SIGROK=$(which sigrok-cli | xargs ldd | grep libsig) > /dev/null 2>&1;
+    if [ -n "$LDD_SIGROK" ]; then
+        echo -e "\e[32m-------- $TOOL_INSTALL successfully installed -------\e[0m"
+        echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/install.log > /dev/null 2>&1;
+        /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
+    else
+        echo -e "$TOOL_INSTALL not installed"
+        echo "ERROR: $TOOL_INSTALL not installed" | tee -a $SCRIPT_DIR/install.log > /dev/null 2>&1;
+        /usr/bin/logger "\e[31m------- ERROR: $TOOL_INSTALL not installed -------\e[0m" -t 'Customizing Debian';
+    fi
 
     # Install pulseview from source
     cd $SOURCE_DIR;
@@ -360,7 +391,7 @@ install_pulseview() {
     # Back home to where install script is running from
     cd $SCRIPT_DIR
 
-    echo -e "\e[32m - install_pulseview() finished\e[0m";
+    echo -e "\e[32m - install_pulseview() finished\n\e[0m";
     /usr/bin/logger 'install_pulseview() finished' -t 'Customizing Debian';
 }
 
@@ -368,9 +399,11 @@ check_install() {
     which $TOOL_INSTALL > /dev/null 2>&1;
     if [ "$?" == 0 ]; then
         echo -e "\e[32m-------- $TOOL_INSTALL successfully installed -------\e[0m"
+        echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/install.log > /dev/null 2>&1;
         /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
     else
         echo -e "$TOOL_INSTALL not installed"
+        echo "ERROR: $TOOL_INSTALL not installed correctly" | tee -a $SCRIPT_DIR/install.log > /dev/null 2>&1;
         /usr/bin/logger "\e[31m------- ERROR: $TOOL_INSTALL not installed -------\e[0m" -t 'Customizing Debian';
     fi
     sudo echo > /dev/null 2>&1;
@@ -380,9 +413,11 @@ check_fp_install() {
     FP_INSTALL=$(flatpak list | grep -i $TOOL_INSTALL | awk '{print $1}');
     if [ -n "$FP_INSTALL" ]; then
         echo -e "\e[32m-------- $TOOL_INSTALL successfully installed -------\e[0m"
+        echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/install.log > /dev/null 2>&1;
         /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
     else
         echo -e "$TOOL_INSTALL not installed"
+        echo "ERROR: $TOOL_INSTALL not installed" | tee -a $SCRIPT_DIR/install.log > /dev/null 2>&1;
         /usr/bin/logger "\e[31m------- ERROR: $TOOL_INSTALL not installed -------\e[0m" -t 'Customizing Debian';
     fi
     sudo echo > /dev/null 2>&1;
@@ -486,7 +521,7 @@ install_hwhacktools() {
     cd $SOURCE_DIR;
     git clone https://github.com/martinboller/BUSSide.git > /dev/null 2>&1;
 
-    source ~/.BUSSide/bin/activate > /dev/null 2>&1;
+    source ~/.venv/bin/activate > /dev/null 2>&1;
     cd ./BUSSide/Client > /dev/null 2>&1;
     pip install -r requirements.txt > /dev/null 2>&1;
     
@@ -501,7 +536,7 @@ install_hwhacktools() {
     sudo cp $SCRIPT_DIR/files/*.rules /etc/udev/rules.d/ > /dev/null 2>&1;
     sudo udevadm control --reload > /dev/null 2>&1;
 
-    echo -e "\e[32m - install_hwhacktools() finished\e[0m";
+    echo -e "\e[32m - install_hwhacktools() finished\n\e[0m";
     /usr/bin/logger 'install_hwhacktools() finished' -t 'Customizing Debian';
 }
 
@@ -526,7 +561,7 @@ fi
 ___EOF___
     fi
 
-    echo -e "\e[32m - config_venv() finished\e[0m";
+    echo -e "\e[32m - config_venv() finished\n\e[0m";
     /usr/bin/logger 'config_venv() finished' -t 'Customizing Debian';
 }
 
@@ -566,7 +601,7 @@ ___EOF___
     sync;
     check_install;
 
-    # firmwalker
+    # firmwalker bash script
     TOOL_INSTALL="firmwalker";
     cd $RE_DIR;
     git clone https://github.com/hotelzululima/firmwalker.git > /dev/null 2>&1;
@@ -578,7 +613,7 @@ ___EOF___
     source ~/.venv/bin/activate > /dev/null 2>&1;
     pip install -r $RE_DIR/$TOOL_INSTALL/requirements.txt > /dev/null 2>&1;
 
-    echo -e "\e[32m - install_reversetools() finished\e[0m";
+    echo -e "\e[32m - install_reversetools() finished\n\e[0m";
     /usr/bin/logger 'install_reversetools() finished' -t 'Customizing Debian';
 }
 
@@ -600,7 +635,7 @@ install_virtualization() {
     sudo apt-get -y install gnome-boxes > /dev/null 2>&1;
     check_install;
 
-    echo -e "\e[32m - install_virtualization() finished\e[0m";
+    echo -e "\e[32m - install_virtualization() finished\n\e[0m";
     /usr/bin/logger 'install_virtualization() finished' -t 'Customizing Debian';
 }
 
@@ -616,7 +651,7 @@ install_flatpak() {
     sync;
     check_install;
 
-    echo -e "\e[32m - install_flatpak() finished\e[0m";
+    echo -e "\e[32m - install_flatpak() finished\n\e[0m";
     /usr/bin/logger 'install_flatpak() finished' -t 'Customizing Debian';
 }
 
@@ -740,7 +775,7 @@ install_utils_flatpak() {
         check_fp_install;
     fi
 
-    echo -e "\e[32m - install_utils_flatpak() finished\e[0m";
+    echo -e "\e[32m - install_utils_flatpak() finished\n\e[0m";
     /usr/bin/logger 'install_utils_flatpak() finished' -t 'Customizing Debian';
 }
 
@@ -753,7 +788,7 @@ install_gnome_dash_to_panel() {
     sudo apt-get -y -qq install gnome-shell-extension-dash-to-panel > /dev/null 2>&1;
     DASH_UUID="$(gnome-extensions list | grep -i dash)"
 
-    echo -e "\e[32m - install_gnome_dash_to_panel() finished\e[0m";
+    echo -e "\e[32m - install_gnome_dash_to_panel() finished\n\e[0m";
     /usr/bin/logger 'install_gnome_dash_to_panel() finished' -t 'Customizing Debian';
 }
 
@@ -769,7 +804,7 @@ install_gnome_caffeine() {
     echo -e "\e[36m .... Installing the Dash-to-Panel Gnome Extension $CAF_UUID\e[0m";
     gnome-extensions install $SCRIPT_DIR/caffeinepatapon.info.v60.shell-extension.zip > /dev/null 2>&1;
      
-    echo -e "\e[32m - install_gnome_caffeine() finished\e[0m";
+    echo -e "\e[32m - install_gnome_caffeine() finished\n\e[0m";
     /usr/bin/logger 'install_gnome_caffeine() finished' -t 'Customizing Debian';
 }
 
@@ -789,7 +824,7 @@ X-GNOME-Autostart-enabled=true
 ___EOF___
 sudo chmod 755 $SCRIPT_DIR/gnome-extensions.sh > /dev/null 2>&1;
 
-    echo -e "\e[32m - enable_gnome_extensions() finished\e[0m";
+    echo -e "\e[32m - enable_gnome_extensions() finished\n\e[0m";
     /usr/bin/logger 'enable_gnome_extensions() finished' -t 'Customizing Debian';
     
 }
@@ -801,7 +836,7 @@ configure_nix() {
     echo -e "\e[36m .... Configuring Linux changes\e[0m";
     # Currently nothing to do
 
-    echo -e "\e[32m - configure_nix() finished\e[0m";
+    echo -e "\e[32m - configure_nix() finished\n\e[0m";
     /usr/bin/logger 'configure_nix() finished' -t 'Customizing Debian';
 }
 
@@ -826,7 +861,7 @@ configure_apt_repositories() {
     sudo sed -ie "s/main/main contrib non-free non-free-firmware/" /etc/apt/sources.list
     sudo apt-get -qq update > /dev/null 2>&1; 
     
-    echo -e "\e[32m - configure_apt_repositories() finished\e[0m";
+    echo -e "\e[32m - configure_apt_repositories() finished\n\e[0m";
     /usr/bin/logger 'configure_apt_respositories() finished' -t 'Customizing Debian';
 }
 
@@ -834,29 +869,19 @@ configure_microsoft_apt_repository() {
     echo -e "\e[32m - configure_microsoft_apt_repository()\e[0m";
     /usr/bin/logger 'configure_microsoft_apt_respository()' -t 'Customizing Debian';
 
+    cd $SCRIPT_DIR;
     echo -e "\e[36m .... adding packages-microsoft-prod.deb to sources.list\e[0m";
     # Download the Microsoft repository GPG keys
     echo -e "\e[36m .... Download the Microsoft repository GPG keys\e[0m";
-    wget -q https://packages.microsoft.com/config/debian/$VER/packages-microsoft-prod.deb
+    wget -q https://packages.microsoft.com/config/debian/$VER/packages-microsoft-prod.deb -O $SCRIPT_DIR/ms.deb
     # Register the Microsoft repository GPG keys
     echo -e "\e[36m .... Register the Microsoft repository GPG keys\e[0m";
-    sudo dpkg -i packages-microsoft-prod.deb  > /dev/null 2>&1;
-    # Delete the Microsoft repository GPG keys file
-    echo -e "\e[36m .... Delete the Microsoft repository GPG keys file\e[0m";
-    rm packages-microsoft-prod.deb > /dev/null 2>&1;
-
-    if [ "$MICROSOFT_APT_WORKAROUND" == "Yes" ]; then
-        # Correct the repo to 11/Bullseye as 12/Debian stuff is mostly empty because Microsoft
-        echo -e "\e[31m .... Correct the repo to 11/Bullseye as 12/Debian stuff is mostly empty because Microsoft\e[0m";
-        echo -e "\e[31m .... This is BAD, and can hopefully be changed soon\e[0m"
-        sudo sed -i "s/$VER/11/" /etc/apt/sources.list.d/microsoft-prod.list
-        sudo sed -i "s/$CODENAME/bullseye/" /etc/apt/sources.list.d/microsoft-prod.list
-    fi
+    sudo dpkg -i ms.deb  > /dev/null 2>&1;
 
     # Update the list of packages after we added packages.microsoft.com
     sudo apt-get -qq update > /dev/null 2>&1;
 
-    echo -e "\e[32m - configure_microsoft_apt_repository() finished\e[0m";
+    echo -e "\e[32m - configure_microsoft_apt_repository() finished\n\e[0m";
     /usr/bin/logger 'configure_microsoft_apt_respository() finished' -t 'Customizing Debian';
 }
 
@@ -864,30 +889,23 @@ configure_serial_access() {
     echo -e "\e[32m - configure_serial_access()\e[0m";
     /usr/bin/logger 'configure_serial_access()' -t 'Customizing Debian';
    
-    if id -nG "$USER" | grep -qw "$SERIALGROUP"; then
+    if id -nG "$USER" | grep -q "$SERIALGROUP"; then
         echo -e "\e[32m - $USER already  belongs to group: $SERIALGROUP, nothing to do\e[0m"
     else
         echo -e "\e[36m .... Adding User: $USER to group $SERIALGROUP";
         echo -e "\e[35m .... $(sudo /sbin/usermod -aG $SERIALGROUP $USER)\e[0m"
     fi
-   
-    echo -e "\e[32m - configure_serial_access() finished\e[0m";
-    /usr/bin/logger 'configure_serial_access() finished' -t 'Customizing Debian';
-}
 
-configure_usb_access() {
-    echo -e "\e[32m - configure_usb_access()\e[0m";
-    /usr/bin/logger 'configure_usb_access()' -t 'Customizing Debian';
-   
-    if id -nG "$USER" | grep -qw "$USBGROUP"; then
+    # USB (plugdev)
+    if id -nG "$USER" | grep -q "$USBGROUP"; then
         echo -e "\e[32m - $USER already  belongs to group: $USBGROUP, nothing to do\e[0m"
     else
         echo -e "\e[36m .... Adding User: $USER to group $USBGROUP";
         echo -e "\e[35m .... $(sudo /sbin/usermod -aG $USBGROUP $USER)\e[0m"
     fi
-   
-    echo -e "\e[32m - configure_usb_access() finished\e[0m";
-    /usr/bin/logger 'configure_usb_access() finished' -t 'Customizing Debian';
+
+    echo -e "\e[32m - configure_serial_access() finished\n\e[0m";
+    /usr/bin/logger 'configure_serial_access() finished' -t 'Customizing Debian';
 }
 
 install_pwsh() {
@@ -900,7 +918,7 @@ install_pwsh() {
     sudo apt-get -qq -y install powershell > /dev/null 2>&1;
     check_install;
 
-    echo -e "\e[32m - install_pwsh() finished\e[0m";
+    echo -e "\e[32m - install_pwsh() finished\n\e[0m";
     /usr/bin/logger 'install_pwsh() finished' -t 'Customizing Debian';
 }
 
@@ -946,7 +964,7 @@ configure_min_max_buttons() {
     echo -e "\e[36m .... Configuring GNOME Windows Manager to show minimize and maximize buttons\e[0m";
     gsettings set org.gnome.desktop.wm.preferences button-layout ":minimize,maximize,close"
 
-    echo -e "\e[32m - configure_min_max_buttons() finished\e[0m";
+    echo -e "\e[32m - configure_min_max_buttons() finished\n\e[0m";
     /usr/bin/logger 'configure_min_max_buttons() finished' -t 'Customizing Debian';
 }
 
@@ -978,10 +996,8 @@ install_golang() {
     PATH=$PATH:/usr/local/go/bin
     check_install;
 
-    echo -e "\e[36m .... Installed $(/usr/local/go/bin/go version)\e[0m"
+    echo -e "\e[36m .... Installed $(/usr/local/go/bin/go version)\n\e[0m"
     /usr/bin/logger "Installed $(/usr/local/go/bin/go version)" -t 'Customizing Debian';
-    echo -e "\e[32m - install_golang() finished\e[0m";
-    /usr/bin/logger 'install_golang() finished' -t 'Customizing Debian';
 }
 
 install_docker() {
@@ -992,8 +1008,8 @@ install_docker() {
     sudo apt-get -y install docker.io docker-compose > /dev/null 2>&1;
     check_install;
 
-    echo -e "\e[32m - install_docker()\e[0m";
-    /usr/bin/logger 'install_docker()' -t 'Customizing Debian';
+    echo -e "\e[32m - install_docker() finished\n\e[0m";
+    /usr/bin/logger 'install_docker() finished' -t 'Customizing Debian';
 }
 
 #################################################################################################################
@@ -1091,14 +1107,9 @@ main() {
             install_golang;            
         fi
 
-        # Serial ports
+        # Serial and USB ports
         if [ "$CONFIGURE_SERIAL" == "Yes" ]; then
             configure_serial_access;            
-        fi
-
-        # USB ports
-        if [ "$CONFIGURE_USB" == "Yes" ]; then
-            configure_usb_access;            
         fi
 
         # Microsoft Debian Packages and PowerShell
@@ -1145,7 +1156,6 @@ main() {
     export DO_IT_NOW=$(echo $DO_REBOOT | tr a-z A-Z);
     if [ "$DO_IT_NOW" == "Y" ]; then
         sync;
-        sleep 2;
         systemctl reboot;
     else
          echo -e "\e[1;31mYou should reboot soon, or at least logout to enable GNOME Extensions\e[0m"
