@@ -319,7 +319,7 @@ install_devtools() {
     
     # Required to build Proxmark and others
     check_install;
-    TOOL_INSTALL="vbindiff"
+    TOOL_INSTALL="cmake"
     sudo apt-get -qq -y install --install-recommends ca-certificates pkg-config libreadline-dev gcc-arm-none-eabi \
         libnewlib-dev qtbase5-dev libbz2-dev liblz4-dev libbluetooth-dev libssl-dev cmake > /dev/null 2>&1;
     check_install;
