@@ -194,6 +194,9 @@ install_hashcat() {
     sync;
     check_install;
     cd $SCRIPT_DIR;
+    TOOL_INSTALL="libhashcat.so";
+    TOOL_ELF="hashcat";
+    check_ldd_install;
 
     echo -e "\e[32m - install_hashcat() finished\n\e[0m";
     /usr/bin/logger 'installing hashcat finished' -t 'Customizing Debian';
@@ -223,9 +226,11 @@ install_pythontools() {
     /usr/bin/logger 'installing Python stuff from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[32m - install_pythontools()\e[0m";
 
+    TOOL_INSTALL="python-dotenv";
     echo -e "\e[36m .... Installing Python tools\e[0m";   
     sudo apt-get -y -qq install python3 python3-pip python3-setuptools python3-gnupg python3-venv \
         libpython3-dev > /dev/null 2>&1;
+    check_install;
     cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_pythontools() finished\n\e[0m";
@@ -236,11 +241,13 @@ install_networktools() {
     /usr/bin/logger 'installing Network tools from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[32m - install_networktools()\e[0m";
 
-    TOOL_INSTALL="tcpdump";
+    TOOL_INSTALL="wireshark";
     echo -e "\e[36m .... Installing network tools\e[0m";
     echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
     sudo apt-get -y -qq install wireshark > /dev/null 2>&1;
     sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
+    check_install;
+    TOOL_INSTALL="tcpdump";
     sudo apt-get -y -qq install ipcalc-ng tcpdump nmap ncat ngrep ethtool aircrack-ng whois dnsutils > /dev/null 2>&1;
     check_install;
     cd $SCRIPT_DIR;
@@ -253,11 +260,12 @@ install_forensicstools() {
     /usr/bin/logger 'installing Forensics tools from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[32m - install_forensicstools()\e[0m";
 
-    TOOL_INSTALL="testdisk"
+    TOOL_INSTALL="btscanner"
     ### Wireshark is part of forensics-all, so configuration needed if not already installed
     echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
-
     sudo apt-get -y -qq install forensics-all > /dev/null 2>&1;
+    check_install;
+    TOOL_INSTALL="testdisk"
     sudo apt-get -y -qq install testdisk sleuthkit geoip-bin geoip-database geoipupdate binwalk > /dev/null 2>&1;
     sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
     check_install;
@@ -301,11 +309,17 @@ install_devtools() {
     /usr/bin/logger 'installing Development tools from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[36m .... Installing development tools\e[0m";
     
-    TOOL_INSTALL="vbindiff"
+    TOOL_INSTALL="git"
     sudo apt-get -y -qq install git devscripts build-essential gnupg2 dirmngr --install-recommends > /dev/null 2>&1;
+    check_install;
+
     # Some additional helpful tools
+    TOOL_INSTALL="vbindiff"
     sudo apt-get -y -qq install gawk xxd vbindiff --install-recommends > /dev/null 2>&1;
+    
     # Required to build Proxmark and others
+    check_install;
+    TOOL_INSTALL="vbindiff"
     sudo apt-get -qq -y install --install-recommends ca-certificates pkg-config libreadline-dev gcc-arm-none-eabi \
         libnewlib-dev qtbase5-dev libbz2-dev liblz4-dev libbluetooth-dev libssl-dev cmake > /dev/null 2>&1;
     check_install;
@@ -399,17 +413,13 @@ install_pulseview() {
     check_install;
 
     # check libraries for sigrok are installed
-    TOOL_INSTALL="libsigrok"
-    LDD_SIGROK=$(which sigrok-cli | xargs ldd | grep libsig) > /dev/null 2>&1;
-    if [ -n "$LDD_SIGROK" ]; then
-        echo -e "\e[32m-------- $TOOL_INSTALL successfully installed -------\e[0m"
-        echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
-        /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
-    else
-        echo -e "$TOOL_INSTALL not installed"
-        echo "ERROR: $TOOL_INSTALL not installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
-        /usr/bin/logger "\e[31m------- ERROR: $TOOL_INSTALL not installed -------\e[0m" -t 'Customizing Debian';
-    fi
+    TOOL_INSTALL="libsigrok.so";
+    TOOL_ELF="sigrok-cli";
+    check_ldd_install;
+
+    TOOL_INSTALL="libsigrokdecode.so"
+    TOOL_ELF="sigrok-cli";
+    check_ldd_install;
 
     # sigrok-firmware-fx2lafw
     TOOL_INSTALL="sigrok-firmware-fx2lafw";
@@ -453,7 +463,7 @@ check_install() {
     which $TOOL_INSTALL > /dev/null 2>&1;
     if [ "$?" == 0 ]; then
         echo -e "\e[32m-------- $TOOL_INSTALL successfully installed -------\e[0m"
-        echo "$TOOL_INSTALL successfully installed from repository" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
+        echo "$TOOL_INSTALL successfully installed from source or repository" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
         /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
     else
         echo -e "$TOOL_INSTALL not installed"
@@ -475,6 +485,20 @@ check_fp_install() {
         /usr/bin/logger "\e[31m------- ERROR: $TOOL_INSTALL not installed -------\e[0m" -t 'Customizing Debian';
     fi
     sudo echo > /dev/null 2>&1;
+}
+
+check_ldd_install() {
+    # check libraries for sigrok are installed
+    LDD_TOOL=$(which $TOOL_ELF | xargs ldd | grep $TOOL_INSTALL) > /dev/null 2>&1;
+    if [ -n "$LDD_TOOL" ]; then
+        echo -e "\e[32m-------- $TOOL_INSTALL successfully installed -------\e[0m"
+        echo "$TOOL_INSTALL successfully installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
+        /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
+    else
+        echo -e "$TOOL_INSTALL not installed"
+        echo "ERROR: $TOOL_INSTALL not installed" | tee -a $SCRIPT_DIR/features.log > /dev/null 2>&1;
+        /usr/bin/logger "\e[31m------- ERROR: $TOOL_INSTALL not installed -------\e[0m" -t 'Customizing Debian';
+    fi
 }
 
 install_hwhacktools() {
