@@ -79,6 +79,9 @@ configure_env() {
         exit 1;
     fi
     echo -e "\e[36mEnvironment configured\e[0m";
+    touch $SCRIPT_DIR/features.log;
+    # Start new terminal window tailing features.log
+    x-terminal-emulator -e bash -c "tail -f $SCRIPT_DIR/features.log" &
 
     echo -e "\e[32m - configure_env() finished\n\e[0m";
     /usr/bin/logger 'configure_env() finished' -t 'Customizing Debian';
@@ -331,7 +334,7 @@ install_devtools() {
     echo -e "\e[36m .... Installing development tools\e[0m";
     
     TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="Development Tools"
+    TOOL_INSTALL="Core Development Tools"
     sudo apt-get -y install git devscripts build-essential gnupg2 dirmngr --install-recommends > /dev/null 2>&1;
     check_apt_install;
 
@@ -340,7 +343,7 @@ install_devtools() {
     sudo apt-get -y install gawk xxd vbindiff --install-recommends > /dev/null 2>&1;
         # Required to build Proxmark and others
     check_apt_install;
-    TOOL_INSTALL="cmake and QT tools"
+    TOOL_INSTALL="cmake and QT Development Tools"
     sudo apt-get -y install --install-recommends ca-certificates pkg-config libreadline-dev gcc-arm-none-eabi \
         libnewlib-dev qtbase5-dev libbz2-dev liblz4-dev libbluetooth-dev libssl-dev cmake > /dev/null 2>&1;
     check_apt_install;
@@ -359,10 +362,10 @@ install_pulseview() {
     
     # Installing from source    
     # Installing prerequisites
-    echo -e "\e[32m - installing pulseview prerequisites\e[0m";
+    echo -e "\e[32m - installing pulseview Prerequisites\e[0m";
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="Sigrok Prerequisite Packages (i)";
-    /usr/bin/logger 'installing pulseview prerequisites' -t 'Customizing Debian';
+    /usr/bin/logger 'installing pulseview Prerequisites' -t 'Customizing Debian';
     sudo apt-get -y install autoconf autoconf-archive automake sdcc libtool libboost-all-dev asciidoctor \
         libzip-dev ruby-dev > /dev/null 2>&1;
     check_apt_install;
@@ -601,7 +604,7 @@ install_hwhacktools() {
 
     # openOCD
     cd $SOURCE_DIR;
-    TOOL_INSTALL="Openocd prerequisites";
+    TOOL_INSTALL="Openocd Prerequisites";
     TOOL_SOURCE="Debian Repository";
     sudo apt-get -y install libtool pkg-config texinfo libusb-dev libusb-1.0-0-dev libftdi-dev autoconf automake make \
         git libftdi* libhidapi-hidraw0 > /dev/null 2>&1;
@@ -629,7 +632,7 @@ install_hwhacktools() {
     # SNANDER
     cd $SOURCE_DIR;
     TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="snander prerequisites";
+    TOOL_INSTALL="snander Prerequisites";
     sudo apt-get -y install mingw-w64 gcc-mingw-w64-x86-64 libusb-1.0-0-dev > /dev/null 2>&1;
     check_apt_install;
     sudo ldconfig > /dev/null 2>&1;
@@ -647,7 +650,7 @@ install_hwhacktools() {
 
     # ufprog
     cd $SOURCE_DIR;
-    TOOL_INSTALL="ufprog prerequisites";
+    TOOL_INSTALL="ufprog Prerequisites";
     TOOL_SOURCE="Debian Repository";
     sudo apt-get -y install libjson-c-dev libhidapi-dev libusb-dev libusb-1.0-0-dev > /dev/null 2>&1;
     check_apt_install;
@@ -815,7 +818,8 @@ install_flatpak() {
     sudo apt-get -y install flatpak gnome-software-plugin-flatpak > /dev/null 2>&1;
     check_apt_install;
 
-    TOOL_SOURCE="Add flathub.org Repository";
+    TOOL_INSTALL="flathub.org Repository";
+    TOOL_SOURCE="Linux";
     echo -e "\e[36m .... Adding flathub repository\e[0m";
     sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo > /dev/null 2>&1;
     check_apt_install;
@@ -1210,10 +1214,26 @@ install_docker() {
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="docker";
     sudo apt-get -y install docker.io docker-compose > /dev/null 2>&1;
-    check_install;
+    check_apt_install;
 
     echo -e "\e[32m - install_docker() finished\n\e[0m";
     /usr/bin/logger 'install_docker() finished' -t 'Customizing Debian';
+}
+
+show_errors() {
+    # Show any errors logged in features.log
+    COUNT_FEATURE_ERRORS=$(grep "ERROR:" $SCRIPT_DIR/features.log | wc -l) > /dev/null 2>&1;
+    FEATURE_ERRORS=$(grep "ERROR:" $SCRIPT_DIR/features.log) > /dev/null 2>&1;
+    # PKG_COUNT will already have counted up for the next package, so detract 1
+    let "PKG_COUNT=$PKG_COUNT-1";
+    if [ -n $FEATURE_ERRORS ]; then
+        echo -e "\e[32mNo ERRORs during install. $PKG_COUNT features installed\e[0m" | tee -a $SCRIPT_DIR/features.log;
+        /usr/bin/logger "No ERRORs during install. $PKG_COUNT features installed" -t 'Customizing Debian';
+    else
+        echo -e "\e[31m$COUNT_FEATURE_ERRORS of $PKG_COUNT features errored out during installation\e[0m";
+        echo -e "\e[31mThese features failed installation:\r\n $FEATURE_ERRORS\e[0m";
+        /usr/bin/logger "\e[31m$COUNT_FEATURE_ERRORS of $PKG_COUNT features errored out during installation\e[0m" -t 'Customizing Debian';
+    fi
 }
 
 #################################################################################################################
@@ -1349,6 +1369,8 @@ main() {
         configure_sudo;
         echo -e "\e[1;31mNow rerun this script\e[0m"
     fi
+
+    show_errors;
 
     # Show finishing message
     do_outro;
