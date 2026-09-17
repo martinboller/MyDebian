@@ -88,10 +88,15 @@ install_updates() {
     echo -e "\e[32m - install_updates()\e[0m";
     /usr/bin/logger 'install_updates()' -t 'Customizing Debian';
     
-    export DEBIAN_FRONTEND=noninteractive;
-    sync
+    export DEBIAN_FRONTEND=noninteractive; 
+    TOOL_INSTALL="apt update";
     sudo apt-get update > /dev/null 2>&1
+    check_apt_install;
+
+    TOOL_INSTALL="apt full-upgrade";
     sudo apt-get -y full-upgrade > /dev/null 2>&1
+    check_apt_install;
+
     sudo apt-get -y --purge autoremove > /dev/null 2>&1
     sudo apt-get autoclean > /dev/null 2>&1
     sync;
@@ -118,13 +123,16 @@ install_ntfs() {
      echo -e "\e[32m - install_ntfs()\e[0m";
     /usr/bin/logger 'install_ntfs()' -t 'Customizing Debian';
     
-    TOOL_SOURCE="Debian Repo";
-    TOOL_INSTALL="ntfsinfo";
+    TOOL_SOURCE="Debian Repository";
     export DEBIAN_FRONTEND=noninteractive;
+    TOOL_INSTALL="ntfs-3g";
     sudo apt-get -y install ntfs-3g > /dev/null 2>&1;
+    check_apt_install;
+
+    TOOL_INSTALL="exfat";
     sudo apt-get -y install exfat-fuse exfatprogs > /dev/null 2>&1;
-    sync;
-    check_install;
+    check_apt_install;
+
     cd $SCRIPT_DIR;
     
     echo -e "\e[32m - install_ntfs() finished\n\e[0m";
@@ -181,12 +189,15 @@ install_utils_apt() {
 install_hashcat() {
     /usr/bin/logger 'installing hashcat' -t 'Customizing Debian';
     echo -e "\e[32m - install_hashcat()\e[0m";
-
+    TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="hashcat"
     sudo apt-get -y install libbz2-dev libssl-dev libncurses5-dev libffi-dev libreadline-dev libsqlite3-dev \
         liblzma-dev > /dev/null 2>&1;
+    check_apt_install;
     curl --silent https://pyenv.run | bash > /dev/null 2>&1;
     mkdir -p ~/git > /dev/null 2>&1;
+
+    TOOL_SOURCE="Source";
     cd $SOURCE_DIR;
     git clone https://github.com/hashcat/hashcat.git > /dev/null 2>&1;
     cd hashcat
@@ -208,6 +219,8 @@ install_backports() {
     /usr/bin/logger 'installing Debian backports repository ' -t 'Customizing Debian';
     echo -e "\e[32m - install_backports()\e[0m";
 
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="Trixie backports";
     sudo tee /etc/apt/sources.list.d/debian-backports.sources << __EOF__
 Types: deb deb-src
 URIs: http://deb.debian.org/debian
@@ -218,6 +231,7 @@ Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 __EOF__
     sync;
     sudo apt update > /dev/null 2>&1;
+    check_apt_install;
     cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_backports() finished\n\e[0m";
@@ -228,11 +242,12 @@ install_pythontools() {
     /usr/bin/logger 'installing Python stuff from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[32m - install_pythontools()\e[0m";
 
+    TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="python-dotenv";
     echo -e "\e[36m .... Installing Python tools\e[0m";   
     sudo apt-get -y install python3 python3-pip python3-setuptools python3-gnupg python3-venv \
         libpython3-dev > /dev/null 2>&1;
-    check_install;
+    check_apt_install;
     cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_pythontools() finished\n\e[0m";
@@ -243,15 +258,17 @@ install_networktools() {
     /usr/bin/logger 'installing Network tools from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[32m - install_networktools()\e[0m";
 
-    TOOL_INSTALL="wireshark";
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="Wireshark";
     echo -e "\e[36m .... Installing network tools\e[0m";
     echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
     sudo apt-get -y install wireshark > /dev/null 2>&1;
+    check_apt_install;
     sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
-    check_install;
-    TOOL_INSTALL="tcpdump";
+
+    TOOL_INSTALL="Network Tools";
     sudo apt-get -y install ipcalc-ng tcpdump nmap ncat ngrep ethtool aircrack-ng whois dnsutils > /dev/null 2>&1;
-    check_install;
+    check_apt_install;
     cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_networktools() finished\n\e[0m";
@@ -262,15 +279,16 @@ install_forensicstools() {
     /usr/bin/logger 'installing Forensics tools from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[32m - install_forensicstools()\e[0m";
 
-    TOOL_INSTALL="btscanner"
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="Forensics Tools"
     ### Wireshark is part of forensics-all, so configuration needed if not already installed
     echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
     sudo apt-get -y install forensics-all > /dev/null 2>&1;
-    check_install;
-    TOOL_INSTALL="testdisk"
+    check_apt_install;
+    TOOL_INSTALL="Additional Forensics Tools"
     sudo apt-get -y install testdisk sleuthkit geoip-bin geoip-database geoipupdate binwalk > /dev/null 2>&1;
+    check_apt_install;
     sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
-    check_install;
     cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_forensicstools() finished\n\e[0m";
@@ -281,11 +299,11 @@ install_systemtools() {
     /usr/bin/logger 'installing System tools from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[32m - install_systemtools()\e[0m";
 
-    TOOL_INSTALL="htop";
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="System Tools";
     echo -e "\e[36m .... Installing system tools\e[0m";
-    sudo apt-get -y install gparted wget nano p7zip p7zip-full unzip dconf-editor htop > /dev/null 2>&1;
-    sudo apt-get -y install screen > /dev/null 2>&1;
-    check_install;
+    sudo apt-get -y install gparted wget nano p7zip p7zip-full unzip dconf-editor htop screen > /dev/null 2>&1;
+    check_apt_install;
     cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_systemtools() finished\e[0m";
@@ -296,11 +314,12 @@ install_usertools() {
     /usr/bin/logger 'installing User tools from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[32m - install_usertools()\e[0m";
 
-    TOOL_INSTALL="lolcat";
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="User Tools";
     echo -e "\e[36m .... Installing user utils and other tools\e[0m";
     sudo apt-get -y install curl transmission-gtk vlc ffmpeg libavcodec-extra default-jdk sshpass rclone \
-        rclone-browser figlet lolcat cowsay sl cmatrix > /dev/null 2>&1;
-    check_install;
+        rclone-browser figlet lolcat cowsay sl cmatrix dconf-editor > /dev/null 2>&1;
+    check_apt_install;
     cd $SCRIPT_DIR;
     
     echo -e "\e[32m - install_usertools() finished\n\e[0m";
@@ -311,20 +330,20 @@ install_devtools() {
     /usr/bin/logger 'installing Development tools from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[36m .... Installing development tools\e[0m";
     
-    TOOL_INSTALL="git"
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="Development Tools"
     sudo apt-get -y install git devscripts build-essential gnupg2 dirmngr --install-recommends > /dev/null 2>&1;
-    check_install;
+    check_apt_install;
 
     # Some additional helpful tools
-    TOOL_INSTALL="vbindiff"
+    TOOL_INSTALL="Additional Development Tools"
     sudo apt-get -y install gawk xxd vbindiff --install-recommends > /dev/null 2>&1;
-    
-    # Required to build Proxmark and others
-    check_install;
-    TOOL_INSTALL="cmake"
+        # Required to build Proxmark and others
+    check_apt_install;
+    TOOL_INSTALL="cmake and QT tools"
     sudo apt-get -y install --install-recommends ca-certificates pkg-config libreadline-dev gcc-arm-none-eabi \
         libnewlib-dev qtbase5-dev libbz2-dev liblz4-dev libbluetooth-dev libssl-dev cmake > /dev/null 2>&1;
-    check_install;
+    check_apt_install;
     cd $SCRIPT_DIR;
 
     /usr/bin/logger 'installing Development tools from Debian repository finished' -t 'Customizing Debian';
@@ -341,17 +360,33 @@ install_pulseview() {
     # Installing from source    
     # Installing prerequisites
     echo -e "\e[32m - installing pulseview prerequisites\e[0m";
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="Sigrok Prerequisite Packages (i)";
     /usr/bin/logger 'installing pulseview prerequisites' -t 'Customizing Debian';
     sudo apt-get -y install autoconf autoconf-archive automake sdcc libtool libboost-all-dev asciidoctor \
         libzip-dev ruby-dev > /dev/null 2>&1;
+    check_apt_install;
+
+    TOOL_INSTALL="Sigrok Prerequisite Packages (ii)";
     sudo apt-get -y install pkg-config libglib2.0-dev libglib2.0-dev libzip5 libtirpc-dev libserialport0 libvisa0 libvisa-dev \
         libusb-1.0-0 libusb-1.0-0-dev libhidapi-hidraw0 libhidapi-libusb0 libftdi1-dev python3-pyvisa-py libieee1284-3-dev \
         libgio-2.0-dev libghc-nettle-dev check doxygen graphviz swig libglibmm-2.68-dev python-setuptools-doc python-gi-dev \
         python3-numpy python3-numpy-dev python3-doxypypy ruby openjdk-25-jdk > /dev/null 2>&1;
+    check_apt_install;
+
+    TOOL_INSTALL="Sigrok Prerequisite Packages (iii)";
     sudo apt-get -y install qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools qttools5-dev-tools qttools5-dev \
         libqt5svg5-dev > /dev/null 2>&1;
+    check_apt_install;
+
+    TOOL_INSTALL="Sigrok Prerequisite Packages (iv)";
     sudo apt-get -y install gpib-user-tools python3-gpib libgpib0 libgpib-dev libhidapi-dev > /dev/null 2>&1;
+    check_apt_install;
+
+    TOOL_INSTALL="Sigrok Prerequisite Packages (v)";
     sudo apt-get -y install rpcbind libtirpc3 libavahi-client-dev check > /dev/null 2>&1;
+    check_apt_install;
+
     sudo echo > /dev/null 2>&1;
     
     echo -e "\e[1;36m .... Checking VENV path\e[0m";
@@ -373,6 +408,7 @@ install_pulseview() {
     cd $SOURCE_DIR/sigrok/;
     # Install libsigrokdecode from source
     # Note: Depending on trixie backports
+
     TOOL_INSTALL="libsigrokdecode";
     echo -e "\e[32m - installing libsigrokdecode\e[0m";
     /usr/bin/logger 'installing libsigrokdecode' -t 'Customizing Debian';
@@ -390,9 +426,11 @@ install_pulseview() {
     echo -e "\e[32m - installing libsigrok\e[0m";
     /usr/bin/logger 'installing libsigrok' -t 'Customizing Debian';
     cd $SOURCE_DIR/sigrok/;
+    TOOL_INSTALL="libsigrok";
     git clone https://github.com/martinboller/libsigrok > /dev/null 2>&1;
     #git clone -b slogic-dev https://github.com/sipeed/libsigrok > /dev/null 2>&1;
     #git clone git://sigrok.org/libsigrok > /dev/null 2>&1;
+
     cd libsigrok > /dev/null 2>&1;
     ./autogen.sh > /dev/null 2>&1;
     ./configure > /dev/null 2>&1;
@@ -442,7 +480,7 @@ install_pulseview() {
     # Install pulseview from source
     echo -e "\e[32m - installing pulseview\e[0m";
     /usr/bin/logger 'installing pulseview' -t 'Customizing Debian';
-     cd $SOURCE_DIR/sigrok/;
+    cd $SOURCE_DIR/sigrok/;
     TOOL_INSTALL="pulseview"
     git clone git://sigrok.org/pulseview > /dev/null 2>&1;
     cd pulseview > /dev/null 2>&1;
@@ -454,6 +492,8 @@ install_pulseview() {
     check_install;
 
     # Load udev rules
+    TOOL_SOURCE="Load UDEV Rules";
+    TOOL_SOURCE="Linux";
     sudo udevadm control --reload > /dev/null 2>&1;
     
     # Back home to where install script is running from
@@ -476,10 +516,22 @@ check_install() {
     sudo echo > /dev/null 2>&1;
 }
 
+check_apt_install() {
+    if [ "$?" == 0 ]; then
+        /usr/bin/logger "$TOOL_INSTALL successfully installed from $TOOL_SOURCE" -t 'Customizing Debian';
+       echo -e "\e[32m$PKG_COUNT.\t$TOOL_INSTALL successfully installed from $TOOL_SOURCE\e[0m" | tee -a $SCRIPT_DIR/features.log;
+     else
+        echo -e "\e[31m$PKG_COUNT.\tERROR: $TOOL_INSTALL not installed correctly\e[0m" | tee -a $SCRIPT_DIR/features.log;
+        /usr/bin/logger "\e[31m------- ERROR: $TOOL_INSTALL not installed -------\e[0m" -t 'Customizing Debian';
+    fi
+    let "PKG_COUNT=$PKG_COUNT+1"
+    sudo echo > /dev/null 2>&1;
+}
+
 check_fp_install() {
     FP_INSTALL=$(flatpak list | grep -i $TOOL_INSTALL | awk '{print $1}');
     if [ -n "$FP_INSTALL" ]; then
-        echo -e "\e[32m$PKG_COUNT.\t$TOOL_INSTALL successfully installed from flatpak.org\e[0m" | tee -a $SCRIPT_DIR/features.log;
+        echo -e "\e[32m$PKG_COUNT.\t$TOOL_INSTALL successfully installed from flatpak repository\e[0m" | tee -a $SCRIPT_DIR/features.log;
         /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
     else
         echo -e "\e[31m$PKG_COUNT.\tERROR: $TOOL_INSTALL not installed correctly\e[0m" | tee -a $SCRIPT_DIR/features.log;
@@ -513,22 +565,25 @@ install_hwhacktools() {
     cd $SOURCE_DIR;
 
     #ST-LINK (STM microcontrollers)
-    TOOL_INSTALL="st-info";
-    TOOL_SOURCE="Debian Repo";
+    TOOL_INSTALL="ST Link Tools";
+    TOOL_SOURCE="Debian Repository";
     sudo apt-get -y install stlink-tools > /dev/null 2>&1;
     /usr/bin/logger 'Installed st-link-tools' -t 'Customizing Debian';
-    check_install;
+    check_apt_install;
 
     # ESP32 tool
-    TOOL_INSTALL="esptool";
+    TOOL_INSTALL="ESP Tool";
     sudo apt-get -y install esptool > /dev/null 2>&1;
-    check_install;
+    check_apt_install;
 
     # flashrom
-    TOOL_INSTALL="flashrom";
-    TOOL_SOURCE="Source";
+    TOOL_INSTALL="Flashrom Prerequisites";
     sudo apt-get -y install gcc meson ninja-build pkg-config python3-sphinx libcmocka-dev libpci-dev libusb-1.0-0-dev \
         libftdi1-dev libjaylink-dev > /dev/null 2>&1;
+    check_apt_install;
+
+    TOOL_INSTALL="flashrom";
+    TOOL_SOURCE="Source";
     cd $SOURCE_DIR;
     git clone https://github.com/whid-injector/flashrom-whidboard > /dev/null 2>&1;
     cd $SOURCE_DIR/flashrom-whidboard/ > /dev/null 2>&1;
@@ -546,10 +601,15 @@ install_hwhacktools() {
 
     # openOCD
     cd $SOURCE_DIR;
-    TOOL_INSTALL="openocd"
+    TOOL_INSTALL="Openocd prerequisites";
+    TOOL_SOURCE="Debian Repository";
     sudo apt-get -y install libtool pkg-config texinfo libusb-dev libusb-1.0-0-dev libftdi-dev autoconf automake make \
         git libftdi* libhidapi-hidraw0 > /dev/null 2>&1;
+    check_apt_install;
     sudo ldconfig > /dev/null 2>&1;
+
+    TOOL_INSTALL="openocd";
+    TOOL_SOURCE="Source";
     git clone --recursive https://github.com/whid-injector/openocd-linux > /dev/null 2>&1;
     cd ./openocd-linux/ > /dev/null 2>&1;
     sudo mkdir -p /usr/bin > /dev/null 2>&1;
@@ -568,9 +628,14 @@ install_hwhacktools() {
 
     # SNANDER
     cd $SOURCE_DIR;
-    TOOL_INSTALL="snander";
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="snander prerequisites";
     sudo apt-get -y install mingw-w64 gcc-mingw-w64-x86-64 libusb-1.0-0-dev > /dev/null 2>&1;
+    check_apt_install;
     sudo ldconfig > /dev/null 2>&1;
+
+    TOOL_INSTALL="snander";
+    TOOL_SOURCE="Source";
     sudo mkdir -p /usr/bin > /dev/null 2>&1;
     git clone https://github.com/martinboller/SNANDer > /dev/null 2>&1;
     cd SNANDer > /dev/null 2>&1;
@@ -582,8 +647,13 @@ install_hwhacktools() {
 
     # ufprog
     cd $SOURCE_DIR;
-    TOOL_INSTALL="ufsnorprog";
+    TOOL_INSTALL="ufprog prerequisites";
+    TOOL_SOURCE="Debian Repository";
     sudo apt-get -y install libjson-c-dev libhidapi-dev libusb-dev libusb-1.0-0-dev > /dev/null 2>&1;
+    check_apt_install;
+
+    TOOL_INSTALL="ufsnorprog";
+    TOOL_SOURCE="Source";
     git clone https://github.com/whid-injector/ufprog > /dev/null 2>&1;
     cd ufprog > /dev/null 2>&1;
     cmake -DCMAKE_BUILD_TYPE=None -DBUILD_PORTABLE=OFF -DCMAKE_INSTALL_PREFIX=/usr -B build > /dev/null 2>&1;
@@ -594,7 +664,6 @@ install_hwhacktools() {
     check_install;
     /usr/bin/logger 'Installed ufprog' -t 'Customizing Debian';
 
-    TOOL_SOURCE="Source";
     # BUSSide
     TOOL_INSTALL="BUSSide"
     cd $SOURCE_DIR;
@@ -602,7 +671,7 @@ install_hwhacktools() {
     source ~/.venv/bin/activate > /dev/null 2>&1;
     cd ./BUSSide/Client > /dev/null 2>&1;
     pip install -r requirements.txt > /dev/null 2>&1;
-    echo -e "\e[32m$PKG_COUNT.\t$TOOL_INSTALL successfully installed\e[0m" | tee -a $SCRIPT_DIR/features.log;    
+    echo -e "\e[32m$PKG_COUNT.\t$TOOL_INSTALL successfully installed from $TOOL_SOURCE\e[0m" | tee -a $SCRIPT_DIR/features.log;    
     let "PKG_COUNT=$PKG_COUNT+1";
 
     # Serial U-BOOT tool (Python)
@@ -611,7 +680,7 @@ install_hwhacktools() {
     git clone https://github.com/martinboller/sertack.git > /dev/null 2>&1;
     sudo apt-get -y install python3-serial > /dev/null 2>&1;
     /usr/bin/logger 'Installed sertack' -t 'Customizing Debian';
-    echo -e "\e[32m$PKG_COUNT.\t$TOOL_INSTALL successfully installed\e[0m" | tee -a $SCRIPT_DIR/features.log;
+    echo -e "\e[32m$PKG_COUNT.\t$TOOL_INSTALL successfully installed from $TOOL_SOURCE\e[0m" | tee -a $SCRIPT_DIR/features.log;
     let "PKG_COUNT=$PKG_COUNT+1";
 
     # udev stuff to make devices work
@@ -658,7 +727,7 @@ install_reversetools() {
     echo -e "\e[32m - install_reversetools()\e[0m";
     /usr/bin/logger 'install_reversetools()' -t 'Customizing Debian';
     
-    TOOL_SOURCE="Debian Repo";
+    TOOL_SOURCE="Debian Repository";
     # Reverse Engineering tools
     mkdir -p $RE_DIR;
     cd $RE_DIR;
@@ -667,10 +736,10 @@ install_reversetools() {
     #git clone https://github.com/ReFirmLabs/binwalk.git
     # binwalk require cargo and some other packages which may not be installed depending on config
     sudo apt-get -y install cargo build-essential libfontconfig1-dev liblzma-dev > /dev/null 2>&1;
-    check_install;
+    check_apt_install;
 
     TOOL_INSTALL="binwalk";
-    TOOL_SOURCE="cargo";
+    TOOL_SOURCE="Cargo Repository";
     cargo install binwalk > /dev/null 2>&1;
     sudo cp -r /usr/share/ufprog/ /usr/lib/ > /dev/null 2>&1;
     PATH="$HOME/.cargo/bin:$PATH"
@@ -717,10 +786,10 @@ install_virtualization() {
     echo -e "\e[32m - install_virtualization()\e[0m";
     /usr/bin/logger 'install_virtualization()' -t 'Customizing Debian';
     
-    TOOL_SOURCE="Debian Repo";
+    TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="virsh";
     sudo apt-get -y install qemu-system-x86 libvirt-daemon-system libvirt-clients bridge-utils > /dev/null 2>&1;
-    check_install;
+    check_apt_install;
 
     # Configure user rights to kvm and libvirt
     sudo usermod -aG kvm $USER > /dev/null 2>&1;
@@ -730,7 +799,7 @@ install_virtualization() {
     
     TOOL_INSTALL="gnome-boxes";
     sudo apt-get -y install gnome-boxes > /dev/null 2>&1;
-    check_install;
+    check_apt_install;
 
     echo -e "\e[32m - install_virtualization() finished\n\e[0m";
     /usr/bin/logger 'install_virtualization() finished' -t 'Customizing Debian';
@@ -741,12 +810,15 @@ install_flatpak() {
     /usr/bin/logger 'install_flatpak()' -t 'Customizing Debian';
 
     TOOL_INSTALL="flatpak"
+    TOOL_SOURCE="Debian Repository";
     echo -e "\e[36m .... Installing flatpak and gnome software plugin\e[0m";
     sudo apt-get -y install flatpak gnome-software-plugin-flatpak > /dev/null 2>&1;
+    check_apt_install;
+
+    TOOL_SOURCE="Add flathub.org Repository";
     echo -e "\e[36m .... Adding flathub repository\e[0m";
     sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo > /dev/null 2>&1;
-    sync;
-    check_install;
+    check_apt_install;
 
     echo -e "\e[32m - install_flatpak() finished\n\e[0m";
     /usr/bin/logger 'install_flatpak() finished' -t 'Customizing Debian';
@@ -881,11 +953,16 @@ install_gnome_dash_to_panel() {
     /usr/bin/logger 'install_gnome_dash_to_panel()' -t 'Customizing Debian';
 
     TOOL_SOURCE="Gnome Extensions";
-    TOOL_INSTALL="Dash-to-Panel Gnome Extension";
+    TOOL_INSTALL="$GNOME_DASH_TO_PANEL_NAME";
     echo -e "\e[36m .... installing the Dash-to-Panel Gnome Extension\e[0m";
     # Requires log out then logon
-    sudo apt-get -y install gnome-shell-extension-dash-to-panel > /dev/null 2>&1;
-    DASH_UUID="$(gnome-extensions list | grep -i dash)"
+    cd $SCRIPT_DIR;
+    wget "$EXTENSIONS_URL/$GNOME_DASH_TO_PANEL_NAME" > /dev/null 2>&1; 
+    export D2P_UUID=$(unzip -c $SCRIPT_DIR/$GNOME_DASH_TO_PANEL_NAME metadata.json | grep uuid | cut -d \" -f4) > /dev/null 2>&1;
+    echo -e "\e[36m .... Installing the Dash-to-Panel Gnome Extension $D2P_UUID\e[0m";
+    gnome-extensions install $SCRIPT_DIR/$GNOME_DASH_TO_PANEL_NAME > /dev/null 2>&1;
+    sudo cp ~/.local/share/gnome-shell/extensions/$D2P_UUID/schemas/*.gschema.xml /usr/share/glib-2.0/schemas/
+    sudo glib-compile-schemas /usr/share/glib-2.0/schemas/
     echo -e "\e[32m$PKG_COUNT.\t$TOOL_INSTALL successfully installed from $TOOL_SOURCE\e[0m" | tee -a $SCRIPT_DIR/features.log;
     let "PKG_COUNT=$PKG_COUNT+1";
 
@@ -898,14 +975,16 @@ install_gnome_caffeine() {
     /usr/bin/logger 'install_gnome_caffeine()' -t 'Customizing Debian';
 
     TOOL_SOURCE="Gnome Extensions";
-    TOOL_INSTALL="Caffeine Gnome Extension";
-    echo -e "\e[36m .... installing the caffeine Gnome Extension\e[0m";
+    TOOL_INSTALL="$GNOME_CAFFEINE_NAME";
+    echo -e "\e[36m .... installing the $GNOME_CAFFEINE_NAME Gnome Extension\e[0m";
     # Requires log out then logon
     cd $SCRIPT_DIR;
-    wget https://extensions.gnome.org/extension-data/caffeinepatapon.info.v60.shell-extension.zip > /dev/null 2>&1; 
-    export CAF_UUID=$(unzip -c $SCRIPT_DIR/caffeinepatapon.info.v60.shell-extension.zip metadata.json | grep uuid | cut -d \" -f4) > /dev/null 2>&1;
+    wget "$EXTENSIONS_URL/$GNOME_CAFFEINE_NAME" > /dev/null 2>&1; 
+    export CAF_UUID=$(unzip -c $SCRIPT_DIR/$GNOME_CAFFEINE_NAME metadata.json | grep uuid | cut -d \" -f4) > /dev/null 2>&1;
     echo -e "\e[36m .... Installing the Dash-to-Panel Gnome Extension $CAF_UUID\e[0m";
-    gnome-extensions install $SCRIPT_DIR/caffeinepatapon.info.v60.shell-extension.zip > /dev/null 2>&1;
+    gnome-extensions install $SCRIPT_DIR/$GNOME_CAFFEINE_NAME > /dev/null 2>&1;
+    sudo cp ~/.local/share/gnome-shell/extensions/$CAF_UUID/schemas/*.gschema.xml /usr/share/glib-2.0/schemas/
+    sudo glib-compile-schemas /usr/share/glib-2.0/schemas/
     echo -e "\e[32m$PKG_COUNT.\t$TOOL_INSTALL successfully installed from $TOOL_SOURCE\e[0m" | tee -a $SCRIPT_DIR/features.log;
     let "PKG_COUNT=$PKG_COUNT+1";
  
@@ -965,10 +1044,13 @@ configure_apt_repositories() {
     echo -e "\e[32m - configure_apt_repositories()\e[0m";
     /usr/bin/logger 'configure_apt_respositories()' -t 'Customizing Debian';
 
+    TOOL_INSTALL="apt repositories contrib, non-free, and non-free-firmware";
+    TOOL_SOURCE="Debian Repository";
     echo -e "\e[36m .... adding contrib, non-free, and non-free-firmware repositories to sources.list\e[0m";
     sudo sed -ie "s/main/main contrib non-free non-free-firmware/" /etc/apt/sources.list
     sudo apt-get update > /dev/null 2>&1; 
-    
+    check_apt_install
+
     echo -e "\e[32m - configure_apt_repositories() finished\n\e[0m";
     /usr/bin/logger 'configure_apt_respositories() finished' -t 'Customizing Debian';
 }
@@ -977,6 +1059,8 @@ configure_microsoft_apt_repository() {
     echo -e "\e[32m - configure_microsoft_apt_repository()\e[0m";
     /usr/bin/logger 'configure_microsoft_apt_respository()' -t 'Customizing Debian';
 
+    TOOL_INSTALL="Microsoft Linux Repo";
+    TOOL_SOURCE="Microsoft Repo .deb package";
     cd $SCRIPT_DIR;
     echo -e "\e[36m .... adding packages-microsoft-prod.deb to sources.list\e[0m";
     # Download the Microsoft repository GPG keys
@@ -985,9 +1069,12 @@ configure_microsoft_apt_repository() {
     # Register the Microsoft repository GPG keys
     echo -e "\e[36m .... Register the Microsoft repository GPG keys\e[0m";
     sudo dpkg -i ms.deb  > /dev/null 2>&1;
+    check_apt_install;
 
+    TOOL_INSTALL="Update Microsoft Repository informatoin locally";
     # Update the list of packages after we added packages.microsoft.com
     sudo apt-get update > /dev/null 2>&1;
+    check_apt_install;
 
     echo -e "\e[32m - configure_microsoft_apt_repository() finished\n\e[0m";
     /usr/bin/logger 'configure_microsoft_apt_respository() finished' -t 'Customizing Debian';
@@ -1025,7 +1112,7 @@ install_pwsh() {
     TOOL_INSTALL="pwsh";
     echo -e "\e[36m .... Installing Powershell\e[0m";
     sudo apt-get -y install powershell > /dev/null 2>&1;
-    check_install;
+    check_apt_install;
 
     echo -e "\e[32m - install_pwsh() finished\n\e[0m";
     /usr/bin/logger 'install_pwsh() finished' -t 'Customizing Debian';
@@ -1120,7 +1207,7 @@ install_docker() {
     echo -e "\e[32m - install_docker()\e[0m";
     /usr/bin/logger 'install_docker()' -t 'Customizing Debian';
 
-    TOOL_SOURCE="Debian Repo";
+    TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="docker";
     sudo apt-get -y install docker.io docker-compose > /dev/null 2>&1;
     check_install;
@@ -1163,7 +1250,7 @@ main() {
         fi
 
         # Install updates from repositories
-        if [ "$UPDATES_INSTALL" == "Yes" ]; then
+        if [ "$UPDATES_INSTALL" == "Always" ]; then
             install_updates;
         fi
 
@@ -1197,15 +1284,13 @@ main() {
         fi
 
         # Flatpak
-        if [ "$FLATPAK_INSTALL" == "Yes" ]; then
+        if [ "$FLATPAK_UTILS" == "Always" ]; then
             install_flatpak;
-            if [ "$FLATPAK_UTILS" == "Yes" ]; then
-                install_utils_flatpak;
-            fi
+            install_utils_flatpak;
         fi
 
         # Debian APT packages
-        if [ "$APT_UTILS" == "Yes" ]; then
+        if [ "$APT_UTILS" == "Always" ]; then
             install_utils_apt;
         fi
 

@@ -22,7 +22,6 @@ CONFIG_GROUPS = [
         ("Install User Tools", "USERTOOLS_INSTALL"),
         ("Install System Tools", "SYSTOOLS_INSTALL"),
         ("Install Python Environment", "PYTHON_INSTALL"),
-        ("Flatpak Support", "FLATPAK_INSTALL"),
         ("Install NTFS Support", "NTFS_INSTALL"),
         ("Install Debian Backports", "BACKPORTS_INSTALL"),
         ("Install Development Tools from Debian Packages", "DEVTOOLS_INSTALL"),
@@ -81,6 +80,12 @@ def toggle_in_lines(lines, var_name, new_val):
             lines[i] = pattern.sub(rf'\g<1>{new_val}\g<3>', line)
             break
 
+def set_all_values(lines, new_val):
+    """Bulk sets all defined variables in CONFIG_GROUPS to target value."""
+    for _, items in CONFIG_GROUPS:
+        for _, var_name in items:
+            toggle_in_lines(lines, var_name, new_val)
+
 def main():
     filepath = ".env"
     lines = load_env(filepath)
@@ -101,10 +106,12 @@ def main():
                 option_map[index] = var_name
                 index += 1
 
-        print("\n  [S] Save Changes")
+        print("\n  [E] Enable All")
+        print("  [D] Disable All")
+        print("  [S] Save Changes")
         print("  [Q] Quit Without Saving")
         
-        choice = input("\nSelect an option to toggle (or S/Q): ").strip().lower()
+        choice = input("\nSelect an option to toggle (or E/D/S/Q): ").strip().lower()
 
         if choice == 's':
             save_env(lines, filepath)
@@ -112,6 +119,10 @@ def main():
         elif choice == 'q':
             print("Exiting without saving.")
             break
+        elif choice == 'e':
+            set_all_values(lines, "Yes")
+        elif choice == 'd':
+            set_all_values(lines, "No")
         elif choice.isdigit() and int(choice) in option_map:
             var_to_toggle = option_map[int(choice)]
             current_val = env_data.get(var_to_toggle, "No")
