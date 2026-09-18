@@ -7,33 +7,6 @@ clear = lambda: os.system('clear') #on Linux System
 
 # Define configuration sections and their items (Label, Variable)
 CONFIG_GROUPS = [
-    ("General Configuration", [
-        ("Configure Linux OS basics", "NIX_CONFIGURE"),
-        ("Configure Serial and USB Ports Access", "CONFIGURE_SERIAL"),
-        ("Install Virtualization", "VIRT_INSTALL"),
-        ("Install Docker", "DOCKER_INSTALL"),
-        ("Install Hardware Hacking Tools (require Development tools)", "HWHACKTOOLS_INSTALL"),
-        ("Install Reverse Engineering Tools (require Development tools)", "REVERSETOOLS_INSTALL"),
-        ("Install Go Language Support", "GO_INSTALL"),
-    ]),
-    ("Debian Packages", [
-        ("Install Forensics Tools", "FORTOOLS_INSTALL"),
-        ("Install Network Tools", "NETTOOLS_INSTALL"),
-        ("Install User Tools", "USERTOOLS_INSTALL"),
-        ("Install System Tools", "SYSTOOLS_INSTALL"),
-        ("Install Python Environment", "PYTHON_INSTALL"),
-        ("Install NTFS Support", "NTFS_INSTALL"),
-        ("Install Debian Backports", "BACKPORTS_INSTALL"),
-        ("Install Development Tools from Debian Packages", "DEVTOOLS_INSTALL"),
-        ("Install Pulseview (require Development tools)", "PULSEVIEW_INSTALL"),
-        ("Install Hashcat (require Development tools)", "HASHCAT_INSTALL"),
-    ]),
-    ("Flatpak Packages", [
-        ("Install Flatpak User Tools", "FP_USERTOOLS_INSTALL"),
-        ("Install Flatpak Development Tools", "FP_DEVTOOLS_INSTALL"),
-        ("Install Flatpak Electronics Tools", "FP_ELECTRONICSTOOLS_INSTALL"),
-        ("Install Flatpak 3D Tools", "FP_3DTOOLS_INSTALL"),
-    ]),
     ("GNOME Desktop", [
         ("Enable GNOME Desktop Configurations", "GNOME_SETTINGS"),
         ("Enable Minimize/Maximize Buttons", "MM_BUTTONS_CONFIGURE"),
@@ -41,6 +14,35 @@ CONFIG_GROUPS = [
         ("Configure Keyboard Shortcuts", "KB_SHORTCUTS"),
         ("Install Dash to Panel Gnome Extension", "GNOME_DASH_TO_PANEL"),
         ("Install Caffeine GNOME Extension", "GNOME_CAFFEINE"),        
+    ]),
+    ("Virtualization", [
+        ("Install Virtualization", "VIRT_INSTALL"),
+        ("Install Docker", "DOCKER_INSTALL"),
+    ]),
+    ("Forensics and Networking", [
+        ("Install Forensics Tools", "FORTOOLS_INSTALL"),
+        ("Install Network Tools", "NETTOOLS_INSTALL"),
+        ("Install System Tools", "SYSTOOLS_INSTALL"),
+    ]),
+    ("Hacking & Reverse Engineering", [
+        ("Install Development Tools from Debian Packages", "DEVTOOLS_INSTALL"),
+        ("Install Debian Backports", "BACKPORTS_INSTALL"),
+        ("Install Hardware Hacking Tools (require Backports, Development and Python tools)", "HWHACKTOOLS_INSTALL"),
+        ("Install Sigrok Client & Pulseview (require Backports, Development and Python tools)", "PULSEVIEW_INSTALL"),
+        ("Install Hashcat (require Development tools)", "HASHCAT_INSTALL"),
+        ("Install Reverse Engineering Tools (require Development tools)", "REVERSETOOLS_INSTALL"),
+    ]),
+    ("Development", [
+        ("Install Development Tools from Debian Packages", "DEVTOOLS_INSTALL"),
+        ("Install Flatpak Development Tools", "FP_DEVTOOLS_INSTALL"),
+        ("Install Go Language Support", "GO_INSTALL"),
+        ("Install Python Environment", "PYTHON_INSTALL"),
+    ]),
+    ("User Tools", [
+        ("Install Debian User Tools", "USERTOOLS_INSTALL"),
+        ("Install Flatpak User Tools", "FP_USERTOOLS_INSTALL"),
+        ("Install Flatpak Electronics Tools", "FP_ELECTRONICSTOOLS_INSTALL"),
+        ("Install Flatpak 3D Tools", "FP_3DTOOLS_INSTALL"),
     ]),
     ("Microsoft Integration", [
         ("Enable Microsoft APT Repo", "MICROSOFT_APT"),
@@ -86,6 +88,27 @@ def set_all_values(lines, new_val):
         for _, var_name in items:
             toggle_in_lines(lines, var_name, new_val)
 
+def apply_preset(lines, target_group_titles, explicit_vars=None):
+    """
+    Enables variables in target groups and explicit variable overrides,
+    disabling all other variables.
+    """
+    if explicit_vars is None:
+        explicit_vars = set()
+
+    enabled_vars = set(explicit_vars)
+    all_vars = set()
+
+    for group_title, items in CONFIG_GROUPS:
+        for _, var_name in items:
+            all_vars.add(var_name)
+            if group_title in target_group_titles:
+                enabled_vars.add(var_name)
+
+    for var_name in all_vars:
+        new_val = "Yes" if var_name in enabled_vars else "No"
+        toggle_in_lines(lines, var_name, new_val)
+
 def main():
     filepath = ".env"
     lines = load_env(filepath)
@@ -106,12 +129,11 @@ def main():
                 option_map[index] = var_name
                 index += 1
 
-        print("\n  [E] Enable All")
-        print("  [D] Disable All")
-        print("  [S] Save Changes")
-        print("  [Q] Quit Without Saving")
+        print("\n  [A] Enable All          - [D] Disable All")
+        print("  [H] Hacking & Forensics - [P] Productivity")
+        print("  [Q] Quit Without Saving - [S] Save Changes")
         
-        choice = input("\nSelect an option to toggle (or E/D/S/Q): ").strip().lower()
+        choice = input("\nSelect an option to toggle (or A/D/H/P/Q/S): ").strip().lower()
 
         if choice == 's':
             save_env(lines, filepath)
@@ -119,7 +141,25 @@ def main():
         elif choice == 'q':
             print("Exiting without saving.")
             break
-        elif choice == 'e':
+        elif choice == 'h':
+            hacker_groups = [
+                "General Configuration",
+                "GNOME Desktop",
+                "Virtualization",
+                "Forensics and Networking",
+                "Hacking & Reverse Engineering",
+                "Development",
+            ]
+            hacker_extra_vars = {"FP_ELECTRONICSTOOLS_INSTALL", "FP_3DTOOLS_INSTALL"}
+            apply_preset(lines, hacker_groups, explicit_vars=hacker_extra_vars)
+        elif choice == 'p':
+            productivity_groups = [
+                "General Configuration",
+                "GNOME Desktop",
+                "User Tools",
+            ]
+            apply_preset(lines, productivity_groups)
+        elif choice == 'a':
             set_all_values(lines, "Yes")
         elif choice == 'd':
             set_all_values(lines, "No")

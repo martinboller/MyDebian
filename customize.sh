@@ -78,13 +78,26 @@ configure_env() {
         echo -e "\e[1;31mNOT running Debian $DEBIAN_SUPPORTED, but $OS, $VER codename $CODENAME. Script shall exit\e[0m"
         exit 1;
     fi
-    echo -e "\e[36mEnvironment configured\e[0m";
-    touch $SCRIPT_DIR/features.log;
-    # Start new terminal window tailing features.log
-    x-terminal-emulator -e bash -c "tail -f $SCRIPT_DIR/features.log" &
 
     echo -e "\e[32m - configure_env() finished\n\e[0m";
     /usr/bin/logger 'configure_env() finished' -t 'Customizing Debian';
+}
+
+check_connectivity_ping() {
+    # Checking that we can reach debian.org over http
+    until ping -c 1 -W 2 debian.org > /dev/null 2>&1; do
+        echo "Waiting for connectivity to debian.org..."
+        sleep 2
+    done
+    echo -e "\e[36mEnvironment configured access to debian.org. Continuing installation...\e[0m";
+}
+
+check_connectivity_http() {
+    until curl -s --head --request GET https://debian.org &> /dev/null; do
+        echo "Waiting for network access to debian.org..."
+        sleep 2
+    done
+        echo "Connected with http"
 }
 
 install_updates() {
@@ -120,6 +133,12 @@ show_features_enabled() {
                 echo -e "\e[36m\t ++ $key\e[0m"
             fi
     done < $SCRIPT_DIR/.env;
+}
+
+open_featureslog() {
+    touch $SCRIPT_DIR/features.log;
+    # Start new terminal window tailing features.log
+    x-terminal-emulator -e bash -c "tail -f $SCRIPT_DIR/features.log" &
 }
 
 install_ntfs() {
@@ -580,7 +599,7 @@ install_hwhacktools() {
     check_apt_install;
 
     # flashrom
-    TOOL_INSTALL="Flashrom Prerequisites";
+    TOOL_INSTALL="flashrom Prerequisites";
     sudo apt-get -y install gcc meson ninja-build pkg-config python3-sphinx libcmocka-dev libpci-dev libusb-1.0-0-dev \
         libftdi1-dev libjaylink-dev > /dev/null 2>&1;
     check_apt_install;
@@ -604,7 +623,7 @@ install_hwhacktools() {
 
     # openOCD
     cd $SOURCE_DIR;
-    TOOL_INSTALL="Openocd Prerequisites";
+    TOOL_INSTALL="openocd Prerequisites";
     TOOL_SOURCE="Debian Repository";
     sudo apt-get -y install libtool pkg-config texinfo libusb-dev libusb-1.0-0-dev libftdi-dev autoconf automake make \
         git libftdi* libhidapi-hidraw0 > /dev/null 2>&1;
@@ -812,7 +831,7 @@ install_flatpak() {
     echo -e "\e[32m - install_flatpak()\e[0m";
     /usr/bin/logger 'install_flatpak()' -t 'Customizing Debian';
 
-    TOOL_INSTALL="flatpak"
+    TOOL_INSTALL="Flatpak Support"
     TOOL_SOURCE="Debian Repository";
     echo -e "\e[36m .... Installing flatpak and gnome software plugin\e[0m";
     sudo apt-get -y install flatpak gnome-software-plugin-flatpak > /dev/null 2>&1;
@@ -1024,9 +1043,20 @@ configure_nix() {
     echo -e "\e[32m - configure_nix()\e[0m";
     /usr/bin/logger 'configure_nix()' -t 'Customizing Debian';
 
-    echo -e "\e[36m .... Configuring Linux changes\e[0m";
-    # Currently nothing to do
+    # curl and wget must always be there
+    TOOL_INSTALL="cURL and wget prerequisites for script";
+    TOOL_SOURCE="Debian Repository";
+    sudo apt-get -y install curl wget > /dev/null 2>&1;
+    check_apt_install;
 
+    echo -e "\e[36m .... Configuring Linux changes\e[0m";
+    # NTFS and EXFAT Support
+    install_ntfs;
+
+    # Serial and USB ports
+    if [ "$CONFIGURE_SERIAL" == "Always" ]; then
+        configure_serial_access;            
+    fi
     echo -e "\e[32m - configure_nix() finished\n\e[0m";
     /usr/bin/logger 'configure_nix() finished' -t 'Customizing Debian';
 }
@@ -1258,12 +1288,13 @@ main() {
         echo -e "\e[35m - Sudo password needed"
         echo -e "\e[35m - $(sudo echo .)\e[0m"
 
+        # Separate window for features.log
+        open_featureslog;
+        
+        # Check internet access
+        check_connectivity_ping;
 
-        # APT Repositories
-        if [ "$NIX_CONFIGURE" == "Yes" ]; then
-          configure_nix;
-        fi
-
+        # Configure repos and install updates as the first thing
         # APT Repositories
         if [ "$APT_CONFIGURE" == "Yes" ]; then
             configure_apt_repositories;
@@ -1272,6 +1303,11 @@ main() {
         # Install updates from repositories
         if [ "$UPDATES_INSTALL" == "Always" ]; then
             install_updates;
+        fi
+
+        # Core NIX configuration
+        if [ "$NIX_CONFIGURE" == "Always" ]; then
+          configure_nix;
         fi
 
         if [ "$GNOME_SETTINGS" == "Yes" ]; then
@@ -1296,11 +1332,6 @@ main() {
             fi
 
             enable_gnome_extensions;
-        fi
-    
-        # Install NTFS support
-        if [ "$NTFS_INSTALL" == "Yes" ]; then
-            install_ntfs;
         fi
 
         # Flatpak
@@ -1327,11 +1358,6 @@ main() {
         # GOLANG
         if [ "$GO_INSTALL" == "Yes" ]; then
             install_golang;            
-        fi
-
-        # Serial and USB ports
-        if [ "$CONFIGURE_SERIAL" == "Yes" ]; then
-            configure_serial_access;            
         fi
 
         if [ "$PULSEVIEW_INSTALL" == "Yes" ]; then
