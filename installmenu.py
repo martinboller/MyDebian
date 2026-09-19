@@ -163,11 +163,12 @@ def main():
                 option_map[index] = var_name
                 index += 1
 
-        print("\n  [A] Toggle All\t\t[M] Toggle Microsoft Integration")
-        print("  [H] Hacking Preset\t\t[P] Productivity Preset")
+        print("\n  [A] Toggle All\t\t[G] Toggle GNOME")
+        print("  [H] Hacking Preset\t\t[P] Productivity Preset ")
+        print("  [M] Toggle MS Integration")
         print("  [Q] Quit Without Saving\t[S] Save Changes")
         
-        choice = input("\nSelect an option to toggle (or A/H/P/M/Q/S): ").strip().lower()
+        choice = input("\nSelect an option to toggle (or A/G/H/P/M/Q/S): ").strip().lower()
 
         if choice == 's':
             save_env(lines, filepath)
@@ -197,11 +198,13 @@ def main():
             apply_preset(lines, productivity_groups)
         elif choice == 'm':
             toggle_vars(lines, ["MICROSOFT_APT", "PWSH_INSTALL"])
+        elif choice == "g":
+            toggle_vars(lines, ["GNOME_SETTINGS", "MENU_IS_COMPOSE", "MM_BUTTONS_CONFIGURE", "KB_SHORTCUTS", "GNOME_DASH_TO_PANEL", "GNOME_CAFFEINE"])
         elif choice.isdigit() and int(choice) in option_map:
             var_to_toggle = option_map[int(choice)]
             current_val = env_data.get(var_to_toggle, "No")
             new_val = "No" if current_val == "Yes" else "Yes"
-            toggle_in_lines(lines, var_to_toggle, new_val)
+            toggle_in_lines(lines, var_to_toggle, new_val)            
         else:
             print("\nInvalid choice. Press Enter to try again...")
 
