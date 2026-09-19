@@ -1177,7 +1177,7 @@ configure_nix() {
     echo -e "\e[32m - configure_nix()\e[0m";
     /usr/bin/logger 'configure_nix()' -t 'Customizing Debian';
 
-    TEST_URL="debian.org",
+    TEST_URL="debian.org";
     check_connectivity_ping;
 
     # curl and wget must always be there
