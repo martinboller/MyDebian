@@ -84,26 +84,30 @@ configure_env() {
 }
 
 check_connectivity_ping() {
-    # Checking that we can reach debian.org over http
-    until ping -c 1 -W 2 debian.org > /dev/null 2>&1; do
-        echo "Waiting for connectivity to debian.org..."
-        sleep 2
+    # Checking that we can reach $TEST_URL over icmp
+    until ping -c 1 -W 2 $TEST_URL > /dev/null 2>&1; do
+        echo -e "\e[31 ---\tWaiting for connectivity to $TEST_URL...\e[0m"
+        sleep 5
     done
-    echo -e "\e[36mEnvironment configured access to debian.org. Continuing installation...\e[0m";
+    echo -e "\e[32m ---\tICMP access to $TEST_URL. Continuing installation...\e[0m";
 }
 
 check_connectivity_http() {
-    until curl -s --head --request GET https://debian.org &> /dev/null; do
-        echo "Waiting for network access to debian.org..."
-        sleep 2
+    # Checking that we can reach $TEST_URL over HTTP
+    until curl -s --head --request GET https://$TEST_URL > /dev/null 2>&1; do
+        echo -e "\e[31m ---\tWaiting for network access to $TEST_URL...\e[0m"
+        sleep 5
     done
-        echo "Connected with http"
+        echo -e "\e[32m ---\tConnected to $TEST_URL\e[0m"
 }
 
 install_updates() {
     echo -e "\e[32m - install_updates()\e[0m";
     /usr/bin/logger 'install_updates()' -t 'Customizing Debian';
     
+    TEST_URL="debian.org";
+    check_connectivity_ping;
+
     export DEBIAN_FRONTEND=noninteractive; 
     TOOL_INSTALL="apt update";
     sudo apt-get update > /dev/null 2>&1
@@ -145,6 +149,8 @@ install_ntfs() {
      echo -e "\e[32m - install_ntfs()\e[0m";
     /usr/bin/logger 'install_ntfs()' -t 'Customizing Debian';
     
+    TEST_URL="debian.org";
+    check_connectivity_http;
     TOOL_SOURCE="Debian Repository";
     export DEBIAN_FRONTEND=noninteractive;
     TOOL_INSTALL="ntfs-3g";
@@ -167,6 +173,10 @@ install_utils_apt() {
 
     export DEBIAN_FRONTEND=noninteractive;
     echo -e "\e[36m .... Installing some additional tools and utilities\e[0m";
+
+    # Check that debian.org is reachable
+    TEST_URL="debian.org";
+    check_connectivity_http;
 
     # NETTOOLS_INSTALL
     if [ "$NETTOOLS_INSTALL" == "Yes" ]; then
@@ -196,7 +206,9 @@ install_utils_apt() {
     # PYTHON_INSTALL
     if [ "$PYTHON_INSTALL" == "Yes" ]; then
         install_pythontools;
+        VENV_NAME=".venv";
         config_venv;
+        install_jupyterlab;
     fi
 
     echo -e "\e[32m - install_utils_apt() finished\n\e[0m";
@@ -211,6 +223,7 @@ install_utils_apt() {
 install_hashcat() {
     /usr/bin/logger 'installing hashcat' -t 'Customizing Debian';
     echo -e "\e[32m - install_hashcat()\e[0m";
+
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="hashcat"
     sudo apt-get -y install libbz2-dev libssl-dev libncurses5-dev libffi-dev libreadline-dev libsqlite3-dev \
@@ -218,6 +231,10 @@ install_hashcat() {
     check_apt_install;
     curl --silent https://pyenv.run | bash > /dev/null 2>&1;
     mkdir -p ~/git > /dev/null 2>&1;
+
+    # Check that github is reachable
+    TEST_URL="github.com";
+    check_connectivity_http;
 
     TOOL_SOURCE="Source";
     cd $SOURCE_DIR;
@@ -264,6 +281,10 @@ install_pythontools() {
     /usr/bin/logger 'installing Python stuff from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[32m - install_pythontools()\e[0m";
 
+    # Check that debian.org is reachable
+    TEST_URL="debian.org";
+    check_connectivity_http;
+
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="python-dotenv";
     echo -e "\e[36m .... Installing Python tools\e[0m";   
@@ -280,6 +301,11 @@ install_networktools() {
     /usr/bin/logger 'installing Network tools from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[32m - install_networktools()\e[0m";
 
+    # Check that debian.org is reachable
+    TEST_URL="debian.org";
+    check_connectivity_http;
+
+    # Set tool source and what to install
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="Wireshark";
     echo -e "\e[36m .... Installing network tools\e[0m";
@@ -301,6 +327,10 @@ install_forensicstools() {
     /usr/bin/logger 'installing Forensics tools from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[32m - install_forensicstools()\e[0m";
 
+    # Check that debian.org is reachable
+    TEST_URL="debian.org";
+    check_connectivity_http;
+
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="Forensics Tools"
     ### Wireshark is part of forensics-all, so configuration needed if not already installed
@@ -321,6 +351,10 @@ install_systemtools() {
     /usr/bin/logger 'installing System tools from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[32m - install_systemtools()\e[0m";
 
+    # Check that debian.org is reachable
+    TEST_URL="debian.org";
+    check_connectivity_http;
+
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="System Tools";
     echo -e "\e[36m .... Installing system tools\e[0m";
@@ -335,6 +369,10 @@ install_systemtools() {
 install_usertools() {
     /usr/bin/logger 'installing User tools from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[32m - install_usertools()\e[0m";
+
+    # Check that debian.org is reachable
+    TEST_URL="debian.org";
+    check_connectivity_http;
 
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="User Tools";
@@ -352,6 +390,10 @@ install_devtools() {
     /usr/bin/logger 'installing Development tools from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[36m .... Installing development tools\e[0m";
     
+    # Check that debian.org is reachable
+    TEST_URL="debian.org";
+    check_connectivity_http;
+
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="Core Development Tools"
     sudo apt-get -y install git devscripts build-essential gnupg2 dirmngr --install-recommends > /dev/null 2>&1;
@@ -362,14 +404,46 @@ install_devtools() {
     sudo apt-get -y install gawk xxd vbindiff --install-recommends > /dev/null 2>&1;
         # Required to build Proxmark and others
     check_apt_install;
+   
+    # cmake and QT development tools
     TOOL_INSTALL="cmake and QT Development Tools"
     sudo apt-get -y install --install-recommends ca-certificates pkg-config libreadline-dev gcc-arm-none-eabi \
         libnewlib-dev qtbase5-dev libbz2-dev liblz4-dev libbluetooth-dev libssl-dev cmake > /dev/null 2>&1;
     check_apt_install;
-    cd $SCRIPT_DIR;
 
+    # Back to script directory
+    cd $SCRIPT_DIR;
+    
     /usr/bin/logger 'installing Development tools from Debian repository finished' -t 'Customizing Debian';
     echo -e "\e[36m .... Installing development tools finished\n\e[0m";
+}
+
+install_jupyterlab() {
+    echo -e "\e[32m - install_jupyterlab()\e[0m";
+    /usr/bin/logger 'install_jupyterlab()' -t 'Customizing Debian';
+    
+    # Check that PyPi is reachable
+    TEST_URL="pypi.org";
+    check_connectivity_http;
+
+    TOOL_INSTALL="jupyter";
+    TOOL_SOURCE="PIP Repository";
+    # venv for jupyterlab
+    VENV_NAME=".$TOOL_INSTALL";
+    export VENV_PATH=$(grep "$VENV_NAME/bin" ~/.profile)
+    if [ -n "$VENV_PATH" ]; then
+        echo -e "\e[1;36m .... VENV already configured\e[0m";
+    else
+        echo -e "\e[1;36m .... installing Python Virtual Environment\e[0m";
+        config_venv;
+    fi
+ 
+    source ~/$VENV_NAME/bin/activate > /dev/null 2>&1;
+    pip install jupyterlab > /dev/null 2>&1;
+    check_apt_install;
+
+    echo -e "\e[32m - install_jupyterlab() finished\e[0m";
+    /usr/bin/logger 'install_jupyterlab() finished' -t 'Customizing Debian';
 }
 
 install_pulseview() {
@@ -379,6 +453,15 @@ install_pulseview() {
     # Installing Debian Package
     #sudo apt-get -y install pulseview > /dev/null 2>&1;
     
+    # Check that debian.org is reachable
+    TEST_URL="debian.org";
+    check_connectivity_http;
+
+    # Check that GitHub is reachable
+    TEST_URL="github.com";
+    check_connectivity_http;
+
+
     # Installing from source    
     # Installing prerequisites
     echo -e "\e[32m - installing pulseview Prerequisites\e[0m";
@@ -410,9 +493,10 @@ install_pulseview() {
     check_apt_install;
 
     sudo echo > /dev/null 2>&1;
-    
+
+    VENV_NAME=".venv";    
     echo -e "\e[1;36m .... Checking VENV path\e[0m";
-    export VENV_PATH=$(grep '.venv/bin' ~/.profile)
+    export VENV_PATH=$(grep "$VENV_NAME/bin" ~/.profile)
 
     if [ -n "$VENV_PATH" ]; then
         echo -e "\e[1;36m .... VENV already configured\e[0m";
@@ -421,9 +505,11 @@ install_pulseview() {
         config_venv;
     fi
     # Activate Python VENV
-    source ~/.venv/bin/activate > /dev/null 2>&1;
+    source ~/$VENV_NAME/bin/activate > /dev/null 2>&1;
     # Python pip modules needed for libsigrok
+    TOOL_SOURCE="PIP Repository";
     pip install setuptools numpy > /dev/null 2>&1;
+    check_apt_install;
 
     TOOL_SOURCE="Source";
     mkdir -p $SOURCE_DIR/sigrok;
@@ -586,6 +672,14 @@ install_hwhacktools() {
     mkdir -p $SOURCE_DIR;
     cd $SOURCE_DIR;
 
+    # Check that debian.org is reachable
+    TEST_URL="debian.org";
+    check_connectivity_http;
+
+    # Check that GitHub is reachable
+    TEST_URL="github.com";
+    check_connectivity_http;
+
     #ST-LINK (STM microcontrollers)
     TOOL_INSTALL="ST Link Tools";
     TOOL_SOURCE="Debian Repository";
@@ -692,12 +786,14 @@ install_hwhacktools() {
     git clone https://github.com/martinboller/BUSSide.git > /dev/null 2>&1;
     source ~/.venv/bin/activate > /dev/null 2>&1;
     cd ./BUSSide/Client > /dev/null 2>&1;
+    TOOL_SOURCE="PIP Repository";
     pip install -r requirements.txt > /dev/null 2>&1;
     echo -e "\e[32m$PKG_COUNT.\t$TOOL_INSTALL successfully installed from $TOOL_SOURCE\e[0m" | tee -a $SCRIPT_DIR/features.log;    
     let "PKG_COUNT=$PKG_COUNT+1";
 
     # Serial U-BOOT tool (Python)
     TOOL_INSTALL="sertack"
+    TOOL_SOURCE="Source";
     cd $SOURCE_DIR;
     git clone https://github.com/martinboller/sertack.git > /dev/null 2>&1;
     sudo apt-get -y install python3-serial > /dev/null 2>&1;
@@ -721,23 +817,23 @@ config_venv() {
     /usr/bin/logger 'config_venv()' -t 'Customizing Debian';
 
     TOOL_INSTALL="Python Virtual Environment"
-    python3 -m venv ~/.venv > /dev/null 2>&1;
+    python3 -m venv ~/$VENV_NAME #> /dev/null 2>&1;
     echo -e "\e[1;36m .... Checking VENV path\e[0m";
-    export VENV_PATH=$(grep '.venv/bin' ~/.profile)
+    export VENV_PATH=$(grep "$VENV_NAME/bin" ~/.profile)
 
     if [ -n "$VENV_PATH" ]; then
         echo -e "\e[1;36m .... VENV path already configured\e[0m";
     else
-        echo -e "\e[1;36m .... Adding VENV path to $HOME\.profile\e[0m";
+        echo -e "\e[1;36m .... Adding VENV path to $HOME/.profile\e[0m";
         cat << ___EOF___ >> ~/.profile
 
-# set PATH so it includes user's private .venv/bin if it exists
-if [ -d "\$HOME/.venv/bin" ] ; then
-    PATH="\$HOME/.venv/bin:\$PATH"
+# set PATH so it includes user's private virtual environment/bin if it exists
+if [ -d "\$HOME/$VENV_NAME/bin" ] ; then
+    PATH="\$HOME/$VENV_NAME/bin:\$PATH"
 fi
 ___EOF___
     fi
-    export PATH="$HOME/.venv/bin:$PATH"
+    export PATH="$HOME/$VENV_NAME/bin:$PATH"
     echo -e "\e[32m$PKG_COUNT.\t$TOOL_INSTALL successfully configured\e[0m" | tee -a $SCRIPT_DIR/features.log;
     let "PKG_COUNT=$PKG_COUNT+1";
 
@@ -749,6 +845,10 @@ install_reversetools() {
     echo -e "\e[32m - install_reversetools()\e[0m";
     /usr/bin/logger 'install_reversetools()' -t 'Customizing Debian';
     
+    # Check that debian.org is reachable
+    TEST_URL="debian.org";
+    check_connectivity_http;
+
     TOOL_SOURCE="Debian Repository";
     # Reverse Engineering tools
     mkdir -p $RE_DIR;
@@ -760,8 +860,10 @@ install_reversetools() {
     sudo apt-get -y install cargo build-essential libfontconfig1-dev liblzma-dev > /dev/null 2>&1;
     check_apt_install;
 
+    TEST_URL="crates.io"; # Cargo repository
+    check_connectivity_http;
     TOOL_INSTALL="binwalk";
-    TOOL_SOURCE="Cargo Repository";
+    TOOL_SOURCE="Cargo Repository (crates.io)";
     cargo install binwalk > /dev/null 2>&1;
     sudo cp -r /usr/share/ufprog/ /usr/lib/ > /dev/null 2>&1;
     PATH="$HOME/.cargo/bin:$PATH"
@@ -796,6 +898,7 @@ ___EOF___
     cd $RE_DIR;
     git clone https://github.com/martinboller/binwally.git > /dev/null 2>&1;
     source ~/.venv/bin/activate > /dev/null 2>&1;
+    TOOL_SOURCE="PIP Repository";
     pip install -r $RE_DIR/$TOOL_INSTALL/requirements.txt > /dev/null 2>&1;
     echo -e "\e[32m$PKG_COUNT.\t$TOOL_INSTALL successfully installed from $TOOL_SOURCE\e[0m" | tee -a $SCRIPT_DIR/features.log;
     let "PKG_COUNT=$PKG_COUNT+1";
@@ -807,6 +910,10 @@ ___EOF___
 install_virtualization() {
     echo -e "\e[32m - install_virtualization()\e[0m";
     /usr/bin/logger 'install_virtualization()' -t 'Customizing Debian';
+
+    # Check that debian.org is reachable
+    TEST_URL="debian.org";
+    check_connectivity_http;
     
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="virsh";
@@ -831,6 +938,10 @@ install_flatpak() {
     echo -e "\e[32m - install_flatpak()\e[0m";
     /usr/bin/logger 'install_flatpak()' -t 'Customizing Debian';
 
+    # Check that debian.org is reachable
+    TEST_URL="debian.org";
+    check_connectivity_http;
+
     TOOL_INSTALL="Flatpak Support"
     TOOL_SOURCE="Debian Repository";
     echo -e "\e[36m .... Installing flatpak and gnome software plugin\e[0m";
@@ -850,6 +961,11 @@ install_flatpak() {
 install_utils_flatpak() {
     echo -e "\e[32m - install_utils_flatpak()\e[0m";
     /usr/bin/logger 'install_utils_flatpak()' -t 'Customizing Debian';
+
+    # Check that flathub.org is reachable
+    TEST_URL="flathub.org";
+    check_connectivity_http;
+
 
     # FP_DEVTOOLS_INSTALL
     if [ "$FP_DEVTOOLS_INSTALL" == "Yes" ]; then
@@ -877,6 +993,11 @@ install_utils_flatpak() {
         TOOL_INSTALL="arduino";
         echo -e "\e[36m .... installing Arduino IDE v2\e[0m";
         flatpak --assumeyes install cc.arduino.IDE2 > /dev/null 2>&1;
+        check_fp_install;
+
+        TOOL_INSTALL="STM32CubeMX";
+        echo -e "\e[36m .... installing $TOOL_INSTALL\e[0m";
+        flatpak --assumeyes install com.st.STM32CubeMX > /dev/null 2>&1;
         check_fp_install;
     fi
 
@@ -943,6 +1064,11 @@ install_utils_flatpak() {
         echo -e "\e[36m .... installing Anki\e[0m";
         flatpak --assumeyes install net.ankiweb.Anki > /dev/null 2>&1;
         check_fp_install;
+        
+        TOOL_INSTALL="draw.io";
+        echo -e "\e[36m .... installing $TOOL_INSTALL\e[0m";
+        flatpak --assumeyes install com.jgraph.drawio.desktop > /dev/null 2>&1;
+        check_fp_install;
     fi
     
     # FP_ELECTRONICSTOOLS_INSTALL
@@ -975,6 +1101,10 @@ install_gnome_dash_to_panel() {
     echo -e "\e[32m - install_gnome_dash_to_panel()\e[0m";
     /usr/bin/logger 'install_gnome_dash_to_panel()' -t 'Customizing Debian';
 
+    # Check that gnome.org is reachable
+    TEST_URL="gnome.org";
+    check_connectivity_http;
+
     TOOL_SOURCE="Gnome Extensions";
     TOOL_INSTALL="$GNOME_DASH_TO_PANEL_NAME";
     echo -e "\e[36m .... installing the Dash-to-Panel Gnome Extension\e[0m";
@@ -986,7 +1116,7 @@ install_gnome_dash_to_panel() {
     gnome-extensions install $SCRIPT_DIR/$GNOME_DASH_TO_PANEL_NAME > /dev/null 2>&1;
     sudo cp ~/.local/share/gnome-shell/extensions/$D2P_UUID/schemas/*.gschema.xml /usr/share/glib-2.0/schemas/
     sudo glib-compile-schemas /usr/share/glib-2.0/schemas/
-    echo -e "\e[32m$PKG_COUNT.\t$TOOL_INSTALL successfully installed from $TOOL_SOURCE\e[0m" | tee -a $SCRIPT_DIR/features.log;
+    echo -e "\e[32m$PKG_COUNT.\t$D2P_UUID successfully installed from $TOOL_SOURCE\e[0m" | tee -a $SCRIPT_DIR/features.log;
     let "PKG_COUNT=$PKG_COUNT+1";
 
     echo -e "\e[32m - install_gnome_dash_to_panel() finished\n\e[0m";
@@ -997,6 +1127,10 @@ install_gnome_caffeine() {
     echo -e "\e[32m - install_gnome_caffeine()\e[0m";
     /usr/bin/logger 'install_gnome_caffeine()' -t 'Customizing Debian';
 
+    # Check that gnome.org is reachable
+    TEST_URL="gnome.org";
+    check_connectivity_http;
+
     TOOL_SOURCE="Gnome Extensions";
     TOOL_INSTALL="$GNOME_CAFFEINE_NAME";
     echo -e "\e[36m .... installing the $GNOME_CAFFEINE_NAME Gnome Extension\e[0m";
@@ -1004,11 +1138,11 @@ install_gnome_caffeine() {
     cd $SCRIPT_DIR;
     wget "$EXTENSIONS_URL/$GNOME_CAFFEINE_NAME" > /dev/null 2>&1; 
     export CAF_UUID=$(unzip -c $SCRIPT_DIR/$GNOME_CAFFEINE_NAME metadata.json | grep uuid | cut -d \" -f4) > /dev/null 2>&1;
-    echo -e "\e[36m .... Installing the Dash-to-Panel Gnome Extension $CAF_UUID\e[0m";
+    echo -e "\e[36m .... Installing the Gnome Extension $CAF_UUID\e[0m";
     gnome-extensions install $SCRIPT_DIR/$GNOME_CAFFEINE_NAME > /dev/null 2>&1;
     sudo cp ~/.local/share/gnome-shell/extensions/$CAF_UUID/schemas/*.gschema.xml /usr/share/glib-2.0/schemas/
     sudo glib-compile-schemas /usr/share/glib-2.0/schemas/
-    echo -e "\e[32m$PKG_COUNT.\t$TOOL_INSTALL successfully installed from $TOOL_SOURCE\e[0m" | tee -a $SCRIPT_DIR/features.log;
+    echo -e "\e[32m$PKG_COUNT.\t$CAF_UUID successfully installed from $TOOL_SOURCE\e[0m" | tee -a $SCRIPT_DIR/features.log;
     let "PKG_COUNT=$PKG_COUNT+1";
  
     echo -e "\e[32m - install_gnome_caffeine() finished\n\e[0m";
@@ -1032,7 +1166,7 @@ NoDisplay=false
 X-GNOME-Autostart-enabled=true
 ___EOF___
     sudo chmod 755 $SCRIPT_DIR/gnome-extensions.sh > /dev/null 2>&1;
-    echo -e "\e[32m$PKG_COUNT.\t$TOOL_INSTALL successfully installed\e[0m" | tee -a $SCRIPT_DIR/features.log;
+    echo -e "\e[32m$PKG_COUNT.\t$TOOL_INSTALL successfully installed as autostart\e[0m" | tee -a $SCRIPT_DIR/features.log;
     let "PKG_COUNT=$PKG_COUNT+1";
 
     echo -e "\e[32m - enable_gnome_extensions() finished\n\e[0m";
@@ -1042,6 +1176,9 @@ ___EOF___
 configure_nix() {
     echo -e "\e[32m - configure_nix()\e[0m";
     /usr/bin/logger 'configure_nix()' -t 'Customizing Debian';
+
+    TEST_URL="debian.org",
+    check_connectivity_ping;
 
     # curl and wget must always be there
     TOOL_INSTALL="cURL and wget prerequisites for script";
@@ -1093,6 +1230,10 @@ configure_microsoft_apt_repository() {
     echo -e "\e[32m - configure_microsoft_apt_repository()\e[0m";
     /usr/bin/logger 'configure_microsoft_apt_respository()' -t 'Customizing Debian';
 
+    # Check that microsoft.com is reachable
+    TEST_URL="microsoft.com";
+    check_connectivity_http;
+
     TOOL_INSTALL="Microsoft Linux Repo";
     TOOL_SOURCE="Microsoft Repo .deb package";
     cd $SCRIPT_DIR;
@@ -1140,6 +1281,10 @@ configure_serial_access() {
 install_pwsh() {
     echo -e "\e[32m - install_pwsh()\e[0m";
     /usr/bin/logger 'install_pwsh()' -t 'Customizing Debian';
+
+    # Check that microsoft.com is reachable
+    TEST_URL="microsoft.com";
+    check_connectivity_http;
 
     TOOL_SOURCE="Microsoft Repo";
     # Install PowerShell
@@ -1208,6 +1353,10 @@ install_golang() {
     echo -e "\e[32m - install_golang()\e[0m";
     /usr/bin/logger 'install_golang()' -t 'Customizing Debian';
 
+    # Check that go.dev is reachable
+    TEST_URL="go.dev";
+    check_connectivity_http;
+
     cd $SCRIPT_DIR;
     TOOL_INSTALL="go"
     echo -e "\e[1;36m .... Downloading golang $GO_URL\e[0m";
@@ -1240,6 +1389,10 @@ install_golang() {
 install_docker() {
     echo -e "\e[32m - install_docker()\e[0m";
     /usr/bin/logger 'install_docker()' -t 'Customizing Debian';
+
+    # Check that debian.org is reachable
+    TEST_URL="debian.org";
+    check_connectivity_http;
 
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="docker";
@@ -1292,6 +1445,7 @@ main() {
         open_featureslog;
         
         # Check internet access
+        TEST_URL="debian.org";
         check_connectivity_ping;
 
         # Configure repos and install updates as the first thing

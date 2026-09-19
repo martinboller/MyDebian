@@ -3,6 +3,8 @@
 import re
 import sys
 import os
+from datetime import datetime
+
 clear = lambda: os.system('clear') #on Linux System
 
 # Define configuration sections and their items (Label, Variable)
@@ -25,7 +27,6 @@ CONFIG_GROUPS = [
         ("Install System Tools", "SYSTOOLS_INSTALL"),
     ]),
     ("Hacking & Reverse Engineering", [
-        ("Install Development Tools from Debian Packages", "DEVTOOLS_INSTALL"),
         ("Install Debian Backports", "BACKPORTS_INSTALL"),
         ("Install Hardware Hacking Tools (require Backports, Development and Python tools)", "HWHACKTOOLS_INSTALL"),
         ("Install Sigrok Client & Pulseview (require Backports, Development and Python tools)", "PULSEVIEW_INSTALL"),
@@ -59,8 +60,18 @@ def load_env(filepath=".env"):
         print(f"Error: Could not find '{filepath}'. Place the script in the same folder.")
         sys.exit(1)
 
+def update_env_version(lines):
+    """Updates the ENV_VERSION variable with the current timestamp."""
+    now_iso = datetime.now().astimezone().isoformat(timespec='seconds')
+    pattern = re.compile(r'^(\s*ENV_VERSION\s*=\s*)["\']?.*?["\']?(\s*(?:#.*)?)$')
+    for i, line in enumerate(lines):
+        if re.match(r'^\s*ENV_VERSION\s*=', line):
+            lines[i] = pattern.sub(rf"\g<1>'{now_iso}'\g<2>", line)
+            break
+
 def save_env(lines, filepath=".env"):
     """Writes updated lines back to the environment file."""
+    update_env_version(lines)
     with open(filepath, "w") as f:
         f.writelines(lines)
     print("\n[+] Configuration saved successfully.")
@@ -88,10 +99,21 @@ def set_all_values(lines, new_val):
         for _, var_name in items:
             toggle_in_lines(lines, var_name, new_val)
 
+def toggle_all_values(lines):
+    """
+    Toggles all variables: if every variable is currently set to 'Yes',
+    sets them all to 'No'. Otherwise, sets them all to 'Yes'.
+    """
+    env_data = extract_values(lines)
+    all_vars = {var_name for _, items in CONFIG_GROUPS for _, var_name in items}
+    all_enabled = all(env_data.get(v, "No") == "Yes" for v in all_vars)
+    new_val = "No" if all_enabled else "Yes"
+    set_all_values(lines, new_val)
+
 def apply_preset(lines, target_group_titles, explicit_vars=None):
     """
-    Enables variables in target groups and explicit variable overrides,
-    disabling all other variables.
+    Sets target groups and explicit variables to 'Yes' while disabling ('No')
+    all other variables.
     """
     if explicit_vars is None:
         explicit_vars = set()
@@ -109,6 +131,18 @@ def apply_preset(lines, target_group_titles, explicit_vars=None):
         new_val = "Yes" if var_name in enabled_vars else "No"
         toggle_in_lines(lines, var_name, new_val)
 
+def toggle_vars(lines, var_names):
+    """
+    Toggles a specific set of variables: if all are 'Yes', sets them to 'No'.
+    Otherwise, sets them all to 'Yes'. Leaves unrelated options untouched.
+    """
+    env_data = extract_values(lines)
+    all_enabled = all(env_data.get(var, "No") == "Yes" for var in var_names)
+    new_val = "No" if all_enabled else "Yes"
+
+    for var in var_names:
+        toggle_in_lines(lines, var, new_val)
+
 def main():
     filepath = ".env"
     lines = load_env(filepath)
@@ -119,7 +153,7 @@ def main():
         option_map = {}
         index = 1
 
-        print("#####     Environment Component Configuration     #####")
+        print("#####     Environment Features Configuration     #####")
     
         for group_title, items in CONFIG_GROUPS:
             print(f"-- {group_title} --")
@@ -129,11 +163,11 @@ def main():
                 option_map[index] = var_name
                 index += 1
 
-        print("\n  [A] Enable All          - [D] Disable All")
-        print("  [H] Hacking & Forensics - [P] Productivity")
-        print("  [Q] Quit Without Saving - [S] Save Changes")
+        print("\n  [A] Toggle All\t\t[M] Toggle Microsoft Integration")
+        print("  [H] Hacking Preset\t\t[P] Productivity Preset")
+        print("  [Q] Quit Without Saving\t[S] Save Changes")
         
-        choice = input("\nSelect an option to toggle (or A/D/H/P/Q/S): ").strip().lower()
+        choice = input("\nSelect an option to toggle (or A/H/P/M/Q/S): ").strip().lower()
 
         if choice == 's':
             save_env(lines, filepath)
@@ -141,6 +175,8 @@ def main():
         elif choice == 'q':
             print("Exiting without saving.")
             break
+        elif choice == 'a':
+            toggle_all_values(lines)
         elif choice == 'h':
             hacker_groups = [
                 "General Configuration",
@@ -159,10 +195,8 @@ def main():
                 "User Tools",
             ]
             apply_preset(lines, productivity_groups)
-        elif choice == 'a':
-            set_all_values(lines, "Yes")
-        elif choice == 'd':
-            set_all_values(lines, "No")
+        elif choice == 'm':
+            toggle_vars(lines, ["MICROSOFT_APT", "PWSH_INSTALL"])
         elif choice.isdigit() and int(choice) in option_map:
             var_to_toggle = option_map[int(choice)]
             current_val = env_data.get(var_to_toggle, "No")

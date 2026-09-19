@@ -1,5 +1,15 @@
 # myDebian
-Install some basics on Debian 12 and 13
+Configuring Gnome Desktop and installing different sets of applications on Debian 13 Trixie.
+Application categories are:
+- GNOME Desktop
+- Virtualization
+- Forensics and Networking
+- Hacking & Reverse Engineering
+- Development
+- User Tools (Productivity)
+- Microsoft Integration
+
+But have a look by starting installmenu.py on the command line.
 
 ### Design principles:
   - Controlled by .env file that can now be managed through installmenu.py
@@ -10,6 +20,14 @@ Install some basics on Debian 12 and 13
   - Configures GNOME to my liking, adding 2 extensions
 
 ## Latest changes ##
+
+### 2026-09-19
+- Install Menu Python simplified
+- Checks connectivity with ping (icmp) first, then https with cURL.
+- More logging in features.log
+- STM32CubeMX installation
+- JupyterLab
+- And more
 
 ### 2026-09-13
 - Installing pulseview from source
