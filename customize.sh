@@ -991,6 +991,12 @@ install_virtualization() {
     # enable libvirtd
     sudo systemctl enable --now libvirtd > /dev/null 2>&1;
     
+    # Install Virtual Machine Manager. Manage Virtual machines outside of virsh
+    TOOL_INSTALL="Virtual Machine Manager";
+    sudo apt-get -y install virt-manager > /dev/null 2>&1;
+    check_status_install;
+    
+    # Lightweight and quick way to manage simple virtual machines in Gnome
     TOOL_INSTALL="gnome-boxes";
     sudo apt-get -y install gnome-boxes > /dev/null 2>&1;
     check_status_install;
