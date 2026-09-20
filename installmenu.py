@@ -10,7 +10,6 @@ clear = lambda: os.system('clear') #on Linux System
 # Define configuration sections and their items (Label, Variable)
 CONFIG_GROUPS = [
     ("GNOME Desktop", [
-        ("Enable GNOME Desktop Configurations", "GNOME_SETTINGS"),
         ("Enable Minimize/Maximize Buttons", "MM_BUTTONS_CONFIGURE"),
         ("Configure Menu Key as Compose Key", "MENU_IS_COMPOSE"),
         ("Configure Keyboard Shortcuts", "KB_SHORTCUTS"),
@@ -213,7 +212,7 @@ def main():
             networking_extra_vars = {"NETTOOLS_INSTALL", "SYSTOOLS_INSTALL", "PYTHON_INSTALL"}
             apply_preset(lines, networking_groups, explicit_vars=networking_extra_vars)
         elif choice == "g":
-            toggle_vars(lines, ["GNOME_SETTINGS", "MENU_IS_COMPOSE", "MM_BUTTONS_CONFIGURE", "KB_SHORTCUTS", "GNOME_DASH_TO_PANEL", "GNOME_CAFFEINE"])
+            toggle_vars(lines, ["MENU_IS_COMPOSE", "MM_BUTTONS_CONFIGURE", "KB_SHORTCUTS", "GNOME_DASH_TO_PANEL", "GNOME_CAFFEINE"])
         elif choice == 't':
             val = input(f"\nEnter GRUB Timeout in seconds (0-10, current: {grub_timeout}): ").strip()
             if val.isdigit() and 0 <= int(val) <= 10:

@@ -1562,29 +1562,27 @@ main() {
           configure_nix;
         fi
 
-        if [ "$GNOME_SETTINGS" == "Yes" ]; then
-            # Gnome Keyboard Shortcuts
-            if [ "$KB_SHORTCUTS" == "Yes" ]; then
-                configure_kb_shortcuts;
-            fi
-
-            # Gnome Extensions
-            # Gnome Extension Dash to Panel
-            if [ "$GNOME_DASH_TO_PANEL" == "Yes" ]; then
-                install_gnome_dash_to_panel;
-            fi
-            # Gnome Extension Caffeine
-            if [ "$GNOME_CAFFEINE" == "Yes" ]; then
-                install_gnome_caffeine;
-            fi
-
-            # Gnome show minimize and maximize buttons
-            if [ "$MM_BUTTONS_CONFIGURE" == "Yes" ]; then
-                configure_min_max_buttons;
-            fi
-
-            enable_gnome_extensions;
+        # Gnome Keyboard Shortcuts
+        if [ "$KB_SHORTCUTS" == "Yes" ]; then
+            configure_kb_shortcuts;
         fi
+
+        # Gnome Extensions
+        # Gnome Extension Dash to Panel
+        if [ "$GNOME_DASH_TO_PANEL" == "Yes" ]; then
+            install_gnome_dash_to_panel;
+        fi
+        # Gnome Extension Caffeine
+        if [ "$GNOME_CAFFEINE" == "Yes" ]; then
+            install_gnome_caffeine;
+        fi
+
+        # Gnome show minimize and maximize buttons
+        if [ "$MM_BUTTONS_CONFIGURE" == "Yes" ]; then
+            configure_min_max_buttons;
+        fi
+
+        enable_gnome_extensions;
 
         # Flatpak
         if [ "$FLATPAK_UTILS" == "Always" ]; then
