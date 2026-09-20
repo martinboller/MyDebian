@@ -1484,8 +1484,8 @@ show_errors() {
     # PKG_COUNT will already have counted up for the next package, so detract 1
     let "PKG_COUNT=$PKG_COUNT-1";
     if [ -n $FEATURE_ERRORS ]; then
-        echo -e "\e[32mNo ERRORs during install. $PKG_COUNT features installed\e[0m" | tee -a $SCRIPT_DIR/features.log;
-        /usr/bin/logger "No ERRORs during install. $PKG_COUNT features installed" -t 'Customizing Debian';
+        echo -e "\e[32mNo errors during install. $PKG_COUNT features installed\e[0m" | tee -a $SCRIPT_DIR/features.log;
+        /usr/bin/logger "No errors during install. $PKG_COUNT features installed" -t 'Customizing Debian';
     else
         echo -e "\e[31m$COUNT_FEATURE_ERRORS of $PKG_COUNT features errored out during installation\e[0m";
         echo -e "\e[31mThese features failed installation:\r\n $FEATURE_ERRORS\e[0m";

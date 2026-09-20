@@ -80,18 +80,22 @@ def extract_values(lines):
     """Parses current key-value pairs from file contents."""
     data = {}
     for line in lines:
-        match = re.match(r'^\s*([A-Za-z0-9_]+)\s*=\s*["\']?(Yes|No)["\']?', line)
+        match = re.match(r'^\s*([A-Za-z0-9_]+)\s*=\s*["\']?([^"\']*)["\']?', line)
         if match:
             data[match.group(1)] = match.group(2)
     return data
 
+def update_var_in_lines(lines, var_name, new_val):
+    """Updates any variable's value while retaining original formatting."""
+    pattern = re.compile(rf'^(\s*{var_name}\s*=\s*["\']?).*?(["\']?\s*(?:#.*)?)$')
+    for i, line in enumerate(lines):
+        if re.match(rf'^\s*{var_name}\s*=', line):
+            lines[i] = pattern.sub(rf'\g<1>{new_val}\g<2>', line)
+            break
+
 def toggle_in_lines(lines, var_name, new_val):
     """Updates a variable's value while retaining original formatting."""
-    pattern = re.compile(rf'^(\s*{var_name}\s*=\s*["\']?)(Yes|No)(["\']?.*)$')
-    for i, line in enumerate(lines):
-        if pattern.match(line):
-            lines[i] = pattern.sub(rf'\g<1>{new_val}\g<3>', line)
-            break
+    update_var_in_lines(lines, var_name, new_val)
 
 def set_all_values(lines, new_val):
     """Bulk sets all defined variables in CONFIG_GROUPS to target value."""
@@ -163,12 +167,15 @@ def main():
                 option_map[index] = var_name
                 index += 1
 
-        print("\n  [A] Toggle All\t\t[G] Toggle GNOME")
+        grub_timeout = env_data.get("GRUB_TIMEOUT", "N/A")
+
+        print("\n  [A] Toggle All\t\t[G] Toggle GNOME features")
         print("  [H] Hacking Preset\t\t[P] Productivity Preset ")
-        print("  [M] Toggle MS Integration")
-        print("  [Q] Quit Without Saving\t[S] Save Changes")
+        print("  [M] Toggle MS Integration\t[N] Networking Preset")
+        print(f"  [T] Set GRUB Timeout [{grub_timeout}s]\t[Q] Quit Without Saving")
+        print("  [S] Save Changes")
         
-        choice = input("\nSelect an option to toggle (or A/G/H/P/M/Q/S): ").strip().lower()
+        choice = input("\nSelect an option to toggle (or A/G/H/P/M/N/T/Q/S): ").strip().lower()
 
         if choice == 's':
             save_env(lines, filepath)
@@ -198,15 +205,28 @@ def main():
             apply_preset(lines, productivity_groups)
         elif choice == 'm':
             toggle_vars(lines, ["MICROSOFT_APT", "PWSH_INSTALL"])
+        elif choice == 'n':
+            networking_groups = [
+                "General Configuration",
+                "GNOME Desktop",
+            ]
+            networking_extra_vars = {"NETTOOLS_INSTALL", "SYSTOOLS_INSTALL", "PYTHON_INSTALL"}
+            apply_preset(lines, networking_groups, explicit_vars=networking_extra_vars)
         elif choice == "g":
             toggle_vars(lines, ["GNOME_SETTINGS", "MENU_IS_COMPOSE", "MM_BUTTONS_CONFIGURE", "KB_SHORTCUTS", "GNOME_DASH_TO_PANEL", "GNOME_CAFFEINE"])
+        elif choice == 't':
+            val = input(f"\nEnter GRUB Timeout in seconds (0-10, current: {grub_timeout}): ").strip()
+            if val.isdigit() and 0 <= int(val) <= 10:
+                update_var_in_lines(lines, "GRUB_TIMEOUT", val)
+            else:
+                input("\nInvalid value! Timeout must be an integer between 0 and 10. Press Enter to continue...")
         elif choice.isdigit() and int(choice) in option_map:
             var_to_toggle = option_map[int(choice)]
             current_val = env_data.get(var_to_toggle, "No")
             new_val = "No" if current_val == "Yes" else "Yes"
             toggle_in_lines(lines, var_to_toggle, new_val)            
         else:
-            print("\nInvalid choice. Press Enter to try again...")
+            input("\nInvalid choice. Press Enter to try again...")
 
 if __name__ == "__main__":
     main()
