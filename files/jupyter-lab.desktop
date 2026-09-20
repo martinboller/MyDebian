@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name[en_GB]=Jupyter Lab
+Name=Jupyter Lab
+Comment[en_GB]=Start Jupyter Lab
+Comment=Start and interact with Jupyter Lab from your browser
+Keywords=Jupyter;Notebook;Lab
+Exec=jupyter lab
+# Translators: Do NOT translate or transliterate this text (this is an icon file name)!
+Icon=org.gnome.Terminal
+#org.gnome.Software
+Terminal=false
+Type=Application
+StartupNotify=true
+Categories=Jupyter;Lab;

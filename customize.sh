@@ -558,6 +558,11 @@ install_jupyterlab() {
     TOOL_INSTALL="jupyterlab";
     pip install jupyterlab > /dev/null 2>&1;
     check_status_install;
+    
+    #Adding desktop shortcut for jupyter lab
+    cp $SCRIPT_DIR/files/jupyter-lab.desktop ~/.local/share/applications/;
+    chmod 700 ~/.local/share/applications/jupyter-lab.desktop;
+    chown $USER:$USER ~/.local/share/applications/jupyter-lab.desktop;
 
     echo -e "\e[32m - install_jupyterlab() finished\e[0m";
     /usr/bin/logger 'install_jupyterlab() finished' -t 'Customizing Debian';
@@ -1326,7 +1331,7 @@ configure_microsoft_apt_repository() {
     sudo dpkg -i ms.deb  > /dev/null 2>&1;
     check_status_install;
 
-    TOOL_INSTALL="Update Microsoft Repository informatoin locally";
+    TOOL_INSTALL="Update Microsoft Repository information locally";
     # Update the list of packages after we added packages.microsoft.com
     sudo apt-get update > /dev/null 2>&1;
     check_status_install;
