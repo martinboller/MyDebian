@@ -132,19 +132,19 @@ configure_grub() {
 check_connectivity_ping() {
     # Checking that we can reach $TEST_URL over icmp
     until ping -c 1 -W 2 $TEST_URL > /dev/null 2>&1; do
-        echo -e "\e[31 ---\tWaiting for connectivity to $TEST_URL...\e[0m"
+        echo -e "\e[31m --- \tWaiting for connectivity to $TEST_URL...\e[0m"
         sleep 5
     done
-    echo -e "\e[36m ---\tICMP access to $TEST_URL. Continuing installation...\e[0m";
+    echo -e "\e[36m ---\t ICMP access to $TEST_URL. Continuing installation...\e[0m";
 }
 
 check_connectivity_http() {
     # Checking that we can reach $TEST_URL over HTTP
     until curl --user-agent $USER_AGENT --silent --head --request GET https://$TEST_URL > /dev/null 2>&1; do
-        echo -e "\e[31m ---\tWaiting for network access to $TEST_URL...\e[0m"
+        echo -e "\e[31m ---\t Waiting for network access to $TEST_URL...\e[0m"
         sleep 5
     done
-        echo -e "\e[36m ---\tHTTPS access to $TEST_URL\e[0m"
+        echo -e "\e[36m ---\t HTTPS access to $TEST_URL\e[0m"
 }
 
 check_already_installed() {
@@ -223,15 +223,15 @@ install_updates() {
 
     export DEBIAN_FRONTEND=noninteractive; 
     TOOL_INSTALL="apt update";
-    sudo apt-get update > /dev/null 2>&1
+    sudo DEBIAN_FRONTEND=noninteractive apt-get update > /dev/null 2>&1
     check_status_install;
 
     TOOL_INSTALL="apt full-upgrade";
-    sudo apt-get -y full-upgrade > /dev/null 2>&1
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y full-upgrade > /dev/null 2>&1
     check_status_install;
 
-    sudo apt-get -y --purge autoremove > /dev/null 2>&1
-    sudo apt-get autoclean > /dev/null 2>&1
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y --purge autoremove > /dev/null 2>&1
+    sudo DEBIAN_FRONTEND=noninteractive apt-get autoclean > /dev/null 2>&1
     sync;
     cd $SCRIPT_DIR;
 
@@ -267,11 +267,11 @@ install_ntfs() {
     TOOL_SOURCE="Debian Repository";
     export DEBIAN_FRONTEND=noninteractive;
     TOOL_INSTALL="ntfs-3g";
-    sudo apt-get -y install ntfs-3g > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install ntfs-3g > /dev/null 2>&1;
     check_status_install;
 
     TOOL_INSTALL="exfat";
-    sudo apt-get -y install exfat-fuse exfatprogs > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install exfat-fuse exfatprogs > /dev/null 2>&1;
     check_status_install;
 
     cd $SCRIPT_DIR;
@@ -341,7 +341,7 @@ install_hashcat() {
     check_already_installed;
         
     if [ $TOOL_INSTALLED == False ]; then
-        sudo apt-get -y install libbz2-dev libssl-dev libncurses5-dev libffi-dev libreadline-dev libsqlite3-dev \
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install libbz2-dev libssl-dev libncurses5-dev libffi-dev libreadline-dev libsqlite3-dev \
             liblzma-dev > /dev/null 2>&1;
         check_status_install;
         curl --user-agent $USER_AGENT --silent https://pyenv.run | bash > /dev/null 2>&1;
@@ -404,7 +404,7 @@ install_pythontools() {
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="python-dotenv";
     echo -e "\e[36m .... Installing Python tools\e[0m";   
-    sudo apt-get -y install python3 python3-pip python3-setuptools python3-gnupg python3-venv \
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install python3 python3-pip python3-setuptools python3-gnupg python3-venv \
         libpython3-dev > /dev/null 2>&1;
     check_status_install;
     cd $SCRIPT_DIR;
@@ -426,13 +426,36 @@ install_networktools() {
     TOOL_INSTALL="Wireshark";
     echo -e "\e[36m .... Installing network tools\e[0m";
     echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
-    sudo apt-get -y install wireshark > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install wireshark > /dev/null 2>&1;
     check_status_install;
     sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
 
     TOOL_INSTALL="Network Tools";
-    sudo apt-get -y install ipcalc-ng tcpdump nmap ncat ngrep ethtool aircrack-ng whois dnsutils > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install iputils-arping iputils-tracepath arpwatch arpalert tcpdump nmap ncat ngrep ethtool aircrack-ng \
+        whois dnsutils flent net-tools tshark termshark > /dev/null 2>&1;
     check_status_install;
+
+    TOOL_INSTALL="Network Engineering Tools";
+    echo 'iperf3  iperf3/start_daemon     boolean false' | sudo debconf-set-selections
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install tcpflow-nox ipcalc-ng arp-scan fping lldpd netsniff-ng iperf3 mtr-tiny socat frr python3-scapy dnsenum \
+        dnsmap onesixtyone sslscan > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_INSTALL="Avahi (mDNS) Tools";
+    # Avahi Tools to verify test avahi (avoid mdns on corp)
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install avahi-utils mdns-scan > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_INSTALL="AirCrack-ng Tools";
+    # Aircrack Tools to test wireless
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y aircrack-ng airgraph-ng mdk4 wifite > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_INSTALL="Bettercap Tools";
+    # bettercap Tools
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y bettercap > /dev/null 2>&1;
+    check_status_install;
+
     cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_networktools() finished\n\e[0m";
@@ -451,12 +474,21 @@ install_forensicstools() {
     TOOL_INSTALL="Forensics Tools"
     ### Wireshark is part of forensics-all, so configuration needed if not already installed
     echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
-    sudo apt-get -y install forensics-all > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install wireshark > /dev/null 2>&1;
+    check_status_install;
+    
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install forensics-all > /dev/null 2>&1;
     check_status_install;
     TOOL_INSTALL="Additional Forensics Tools"
-    sudo apt-get -y install testdisk sleuthkit geoip-bin geoip-database > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install testdisk sleuthkit geoip-bin geoip-database > /dev/null 2>&1;
+    check_status_install;
+    TOOL_INSTALL="Forensics Extra Package"
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install forensics-extra > /dev/null 2>&1;
     check_status_install;
     sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install tcpflow-nox > /dev/null 2>&1;
+    check_status_install;
+    
     cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_forensicstools() finished\n\e[0m";
@@ -474,7 +506,7 @@ install_systemtools() {
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="System Tools";
     echo -e "\e[36m .... Installing system tools\e[0m";
-    sudo apt-get -y install gparted wget nano p7zip p7zip-full unzip dconf-editor htop screen > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gparted wget nano p7zip p7zip-full unzip dconf-editor htop screen > /dev/null 2>&1;
     check_status_install;
     cd $SCRIPT_DIR;
 
@@ -493,7 +525,7 @@ install_usertools() {
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="User Tools";
     echo -e "\e[36m .... Installing user utils and other tools\e[0m";
-    sudo apt-get -y install curl transmission-gtk vlc ffmpeg libavcodec-extra default-jdk sshpass rclone \
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install curl transmission-gtk vlc ffmpeg libavcodec-extra default-jdk sshpass rclone \
         rclone-browser figlet lolcat cowsay sl cmatrix dconf-editor > /dev/null 2>&1;
     check_status_install;
     cd $SCRIPT_DIR;
@@ -512,18 +544,18 @@ install_devtools() {
 
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="Core Development Tools"
-    sudo apt-get -y install git devscripts build-essential gnupg2 dirmngr --install-recommends > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install git devscripts build-essential gnupg2 dirmngr --install-recommends > /dev/null 2>&1;
     check_status_install;
 
     # Some additional helpful tools
     TOOL_INSTALL="Additional Development Tools"
-    sudo apt-get -y install gawk xxd vbindiff --install-recommends > /dev/null 2>&1;
-        # Required to build Proxmark and others
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gawk xxd vbindiff gdb gdb-multiarch ddd binutils strace ltrace --install-recommends > /dev/null 2>&1;
+    # Required to build Proxmark and others
     check_status_install;
    
     # cmake and QT development tools
     TOOL_INSTALL="cmake and QT Development Tools"
-    sudo apt-get -y install --install-recommends ca-certificates pkg-config libreadline-dev gcc-arm-none-eabi \
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends ca-certificates pkg-config libreadline-dev gcc-arm-none-eabi \
         libnewlib-dev qtbase5-dev libbz2-dev liblz4-dev libbluetooth-dev libssl-dev cmake > /dev/null 2>&1;
     check_status_install;
 
@@ -573,7 +605,7 @@ install_pulseview() {
     /usr/bin/logger 'install_pulseview()' -t 'Customizing Debian';
     
     # Installing Debian Package
-    #sudo apt-get -y install pulseview > /dev/null 2>&1;
+    #sudo DEBIAN_FRONTEND=noninteractive apt-get -y install pulseview > /dev/null 2>&1;
     
     # Check that debian.org is reachable
     TEST_URL="debian.org";
@@ -590,28 +622,28 @@ install_pulseview() {
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="Sigrok Prerequisite Packages (i)";
     /usr/bin/logger 'installing pulseview Prerequisites' -t 'Customizing Debian';
-    sudo apt-get -y install autoconf autoconf-archive automake sdcc libtool libboost-all-dev asciidoctor \
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install autoconf autoconf-archive automake sdcc libtool libboost-all-dev asciidoctor \
         libzip-dev ruby-dev > /dev/null 2>&1;
     check_status_install;
 
     TOOL_INSTALL="Sigrok Prerequisite Packages (ii)";
-    sudo apt-get -y install pkg-config libglib2.0-dev libglib2.0-dev libzip5 libtirpc-dev libserialport0 libvisa0 libvisa-dev \
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install pkg-config libglib2.0-dev libglib2.0-dev libzip5 libtirpc-dev libserialport0 libvisa0 libvisa-dev \
         libusb-1.0-0 libusb-1.0-0-dev libhidapi-hidraw0 libhidapi-libusb0 libftdi1-dev python3-pyvisa-py libieee1284-3-dev \
         libgio-2.0-dev libghc-nettle-dev check doxygen graphviz swig libglibmm-2.68-dev python-setuptools-doc python-gi-dev \
         python3-numpy python3-numpy-dev python3-doxypypy ruby openjdk-25-jdk > /dev/null 2>&1;
     check_status_install;
 
     TOOL_INSTALL="Sigrok Prerequisite Packages (iii)";
-    sudo apt-get -y install qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools qttools5-dev-tools qttools5-dev \
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools qttools5-dev-tools qttools5-dev \
         libqt5svg5-dev > /dev/null 2>&1;
     check_status_install;
 
     TOOL_INSTALL="Sigrok Prerequisite Packages (iv)";
-    sudo apt-get -y install gpib-user-tools python3-gpib libgpib0 libgpib-dev libhidapi-dev > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gpib-user-tools python3-gpib libgpib0 libgpib-dev libhidapi-dev > /dev/null 2>&1;
     check_status_install;
 
     TOOL_INSTALL="Sigrok Prerequisite Packages (v)";
-    sudo apt-get -y install rpcbind libtirpc3 libavahi-client-dev check > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install rpcbind libtirpc3 libavahi-client-dev check > /dev/null 2>&1;
     check_status_install;
 
     sudo echo > /dev/null 2>&1;
@@ -753,18 +785,18 @@ install_hwhacktools() {
     #ST-LINK (STM microcontrollers)
     TOOL_INSTALL="ST Link Tools";
     TOOL_SOURCE="Debian Repository";
-    sudo apt-get -y install stlink-tools > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install stlink-tools > /dev/null 2>&1;
     /usr/bin/logger 'Installed st-link-tools' -t 'Customizing Debian';
     check_status_install;
 
     # ESP32 tool
     TOOL_INSTALL="ESP Tool";
-    sudo apt-get -y install esptool > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install esptool > /dev/null 2>&1;
     check_status_install;
 
     # flashrom
     TOOL_INSTALL="flashrom Prerequisites";
-    sudo apt-get -y install gcc meson ninja-build pkg-config python3-sphinx libcmocka-dev libpci-dev libusb-1.0-0-dev \
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gcc meson ninja-build pkg-config python3-sphinx libcmocka-dev libpci-dev libusb-1.0-0-dev \
         libftdi1-dev libjaylink-dev > /dev/null 2>&1;
     check_status_install;
 
@@ -789,7 +821,7 @@ install_hwhacktools() {
     cd $SOURCE_DIR;
     TOOL_INSTALL="openocd Prerequisites";
     TOOL_SOURCE="Debian Repository";
-    sudo apt-get -y install libtool pkg-config texinfo libusb-dev libusb-1.0-0-dev libftdi-dev autoconf automake make \
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install libtool pkg-config texinfo libusb-dev libusb-1.0-0-dev libftdi-dev autoconf automake make \
         git libftdi* libhidapi-hidraw0 > /dev/null 2>&1;
     check_status_install;
     sudo ldconfig > /dev/null 2>&1;
@@ -816,7 +848,7 @@ install_hwhacktools() {
     cd $SOURCE_DIR;
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="snander Prerequisites";
-    sudo apt-get -y install mingw-w64 gcc-mingw-w64-x86-64 libusb-1.0-0-dev > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install mingw-w64 gcc-mingw-w64-x86-64 libusb-1.0-0-dev > /dev/null 2>&1;
     check_status_install;
     sudo ldconfig > /dev/null 2>&1;
 
@@ -835,7 +867,7 @@ install_hwhacktools() {
     cd $SOURCE_DIR;
     TOOL_INSTALL="ufprog Prerequisites";
     TOOL_SOURCE="Debian Repository";
-    sudo apt-get -y install libjson-c-dev libhidapi-dev libusb-dev libusb-1.0-0-dev > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install libjson-c-dev libhidapi-dev libusb-dev libusb-1.0-0-dev > /dev/null 2>&1;
     check_status_install;
 
     TOOL_INSTALL="ufsnorprog";
@@ -884,7 +916,7 @@ install_hwhacktools() {
     
     TOOL_INSTALL="python3-serial"
     TOOL_SOURCE="Debian Repository";
-    sudo apt-get -y install python3-serial > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install python3-serial > /dev/null 2>&1;
     /usr/bin/logger 'Installed sertack' -t 'Customizing Debian';
     check_status_install;
     
@@ -915,7 +947,7 @@ install_reversetools() {
     TOOL_INSTALL="cargo";
     #git clone https://github.com/ReFirmLabs/binwalk.git
     # binwalk require cargo and some other packages which may not be installed depending on config
-    sudo apt-get -y install cargo build-essential libfontconfig1-dev liblzma-dev > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install cargo build-essential libfontconfig1-dev liblzma-dev > /dev/null 2>&1;
     check_status_install;
 
     TEST_URL="crates.io"; # Cargo repository
@@ -972,6 +1004,14 @@ ___EOF___
     TOOL_SOURCE="PIP Repository";
     pip install -r $RE_DIR/binwally/requirements.txt > /dev/null 2>&1;
     check_status_install;
+    
+    TOOL_INSTALL="Didier Stevens Suite";
+    TOOL_SOURCE="Source"
+    cd $RE_DIR;
+    git clone https://github.com/DidierStevens/DidierStevensSuite.git > /dev/null 2>&1;
+    check_status_install;
+    
+    cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_reversetools() finished\n\e[0m";
     /usr/bin/logger 'install_reversetools() finished' -t 'Customizing Debian';
@@ -987,7 +1027,7 @@ install_virtualization() {
     
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="virsh";
-    sudo apt-get -y install qemu-system-x86 libvirt-daemon-system libvirt-clients bridge-utils > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-x86 libvirt-daemon-system libvirt-clients bridge-utils > /dev/null 2>&1;
     check_status_install;
 
     # Configure user rights to kvm and libvirt
@@ -998,12 +1038,12 @@ install_virtualization() {
     
     # Install Virtual Machine Manager. Manage Virtual machines outside of virsh
     TOOL_INSTALL="Virtual Machine Manager";
-    sudo apt-get -y install virt-manager > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install virt-manager > /dev/null 2>&1;
     check_status_install;
     
     # Lightweight and quick way to manage simple virtual machines in Gnome
     TOOL_INSTALL="gnome-boxes";
-    sudo apt-get -y install gnome-boxes > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gnome-boxes > /dev/null 2>&1;
     check_status_install;
 
     echo -e "\e[32m - install_virtualization() finished\n\e[0m";
@@ -1021,7 +1061,7 @@ install_flatpak() {
     TOOL_INSTALL="Flatpak Support"
     TOOL_SOURCE="Debian Repository";
     echo -e "\e[36m .... Installing flatpak and gnome software plugin\e[0m";
-    sudo apt-get -y install flatpak gnome-software-plugin-flatpak > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install flatpak gnome-software-plugin-flatpak > /dev/null 2>&1;
     check_status_install;
 
     TOOL_INSTALL="flathub.org Repository";
@@ -1259,7 +1299,7 @@ configure_nix() {
     # curl and wget must always be there
     TOOL_INSTALL="cURL and wget prerequisites for script";
     TOOL_SOURCE="Debian Repository";
-    sudo apt-get -y install curl wget > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install curl wget > /dev/null 2>&1;
     check_status_install;
 
     configure_grub;
@@ -1296,15 +1336,16 @@ configure_apt_repositories() {
     TOOL_INSTALL="apt repositories contrib, non-free, and non-free-firmware";
     TOOL_SOURCE="Debian Repository";
     
-    export NON_FREE=$(grep -i "non-free" /etc/apt/sources.list)
+    export NON_FREE=$(grep -i "$TOOL_INSTALL" /etc/apt/sources.list)
     if [ -n "$NON_FREE" ]; then
         echo -e "\e[1;36m .... apt repositories contrib, non-free, and non-free-firmware already configured\e[0m";
         check_status_install;
     else
         echo -e "\e[36m .... adding contrib, non-free, and non-free-firmware repositories to sources.list\e[0m";
         sudo sed -ie "s/main/main contrib non-free non-free-firmware/" /etc/apt/sources.list
-        sudo apt-get update > /dev/null 2>&1; 
+        sudo DEBIAN_FRONTEND=noninteractive apt-get update > /dev/null 2>&1; 
         check_status_install
+        echo "#$TOOL_INSTALL" | sudo tee -a /etc/apt/sources.list; 
     fi
 
     echo -e "\e[32m - configure_apt_repositories() finished\n\e[0m";
@@ -1333,7 +1374,7 @@ configure_microsoft_apt_repository() {
 
     TOOL_INSTALL="Update Microsoft Repository information locally";
     # Update the list of packages after we added packages.microsoft.com
-    sudo apt-get update > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get update > /dev/null 2>&1;
     check_status_install;
 
     echo -e "\e[32m - configure_microsoft_apt_repository() finished\n\e[0m";
@@ -1375,7 +1416,7 @@ install_pwsh() {
     # Install PowerShell
     TOOL_INSTALL="pwsh";
     echo -e "\e[36m .... Installing Powershell\e[0m";
-    sudo apt-get -y install powershell > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install powershell > /dev/null 2>&1;
     check_status_install;
 
     echo -e "\e[32m - install_pwsh() finished\n\e[0m";
@@ -1481,7 +1522,7 @@ install_docker() {
 
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="docker";
-    sudo apt-get -y install docker.io docker-compose > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install docker.io docker-compose > /dev/null 2>&1;
     check_status_install;
 
     echo -e "\e[32m - install_docker() finished\n\e[0m";

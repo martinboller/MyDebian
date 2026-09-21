@@ -171,10 +171,10 @@ def main():
         print("\n  [A] Toggle All\t\t[G] Toggle GNOME features")
         print("  [H] Hacking Preset\t\t[P] Productivity Preset ")
         print("  [M] Toggle MS Integration\t[N] Networking Preset")
-        print(f"  [T] Set GRUB Timeout [{grub_timeout}s]\t[Q] Quit Without Saving")
-        print("  [S] Save Changes")
+        print(f"  [T] Set GRUB Timeout [{grub_timeout}s]\t[R] Reverse Engineering Preset")
+        print("  [Q] Quit Without Saving\t[S] Save Changes")
         
-        choice = input("\nSelect an option to toggle (or A/G/H/P/M/N/T/Q/S): ").strip().lower()
+        choice = input("\nSelect an option to toggle (or A/G/H/P/M/N/T/R/Q/S): ").strip().lower()
 
         if choice == 's':
             save_env(lines, filepath)
@@ -186,7 +186,6 @@ def main():
             toggle_all_values(lines)
         elif choice == 'h':
             hacker_groups = [
-                "General Configuration",
                 "GNOME Desktop",
                 "Virtualization",
                 "Forensics and Networking",
@@ -195,9 +194,16 @@ def main():
             ]
             hacker_extra_vars = {"FP_ELECTRONICSTOOLS_INSTALL", "FP_3DTOOLS_INSTALL"}
             apply_preset(lines, hacker_groups, explicit_vars=hacker_extra_vars)
+        elif choice == 'r':
+            re_groups = [
+                "GNOME Desktop",
+                "Virtualization",
+                "Development",
+            ]
+            re_extra_vars = {"REVERSETOOLS_INSTALL", "HASHCAT_INSTALL"}
+            apply_preset(lines, re_groups, explicit_vars=re_extra_vars)
         elif choice == 'p':
             productivity_groups = [
-                "General Configuration",
                 "GNOME Desktop",
                 "User Tools",
             ]
@@ -206,7 +212,6 @@ def main():
             toggle_vars(lines, ["MICROSOFT_APT", "PWSH_INSTALL"])
         elif choice == 'n':
             networking_groups = [
-                "General Configuration",
                 "GNOME Desktop",
             ]
             networking_extra_vars = {"NETTOOLS_INSTALL", "SYSTOOLS_INSTALL", "PYTHON_INSTALL"}
