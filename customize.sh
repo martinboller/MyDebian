@@ -448,12 +448,16 @@ install_networktools() {
 
     TOOL_INSTALL="AirCrack-ng Tools";
     # Aircrack Tools to test wireless
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y aircrack-ng airgraph-ng mdk4 wifite > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install aircrack-ng airgraph-ng mdk4 wifite > /dev/null 2>&1;
     check_status_install;
 
     TOOL_INSTALL="Bettercap Tools";
     # bettercap Tools
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y bettercap > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install bettercap > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_INSTALL="TCPFLOW No X Dependencies";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install tcpflow-nox > /dev/null 2>&1;
     check_status_install;
 
     cd $SCRIPT_DIR;
@@ -471,12 +475,13 @@ install_forensicstools() {
     check_connectivity_http;
 
     TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="Forensics Tools"
+    TOOL_INSTALL="Wireshark"
     ### Wireshark is part of forensics-all, so configuration needed if not already installed
     echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install wireshark > /dev/null 2>&1;
     check_status_install;
-    
+
+    TOOL_INSTALL="Forensics Tools"    
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install forensics-all > /dev/null 2>&1;
     check_status_install;
     TOOL_INSTALL="Additional Forensics Tools"
@@ -486,8 +491,6 @@ install_forensicstools() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install forensics-extra > /dev/null 2>&1;
     check_status_install;
     sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install tcpflow-nox > /dev/null 2>&1;
-    check_status_install;
     
     cd $SCRIPT_DIR;
 
