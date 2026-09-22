@@ -119,11 +119,17 @@ configure_grub() {
     /usr/bin/logger 'configure_grub()' -t 'Customizing Debian';
 
     # change grub timeout
-    TOOL_INSTALL="GRUB_TIMEOUT=$GRUB_TIMEOUT";
     TOOL_SOURCE="Grand Unified Bootloader";
-    sudo sed -i "s/GRUB_TIMEOUT=5/GRUB_TIMEOUT=$GRUB_TIMEOUT/" /etc/default/grub
-    sudo update-grub > /dev/null 2>&1;
-    check_status_install;
+    
+    if [ $(grep "GRUB_TIMEOUT=$GRUB_TIMEOUT" /etc/default/grub) ]; then 
+        TOOL_INSTALL="GRUB Timeout already set to $GRUB_TIMEOUT. Nothing to do.";
+        check_status_install;
+    else
+        TOOL_INSTALL="GRUB_TIMEOUT=$GRUB_TIMEOUT";
+        sudo sed -i "s/GRUB_TIMEOUT=5/GRUB_TIMEOUT=$GRUB_TIMEOUT/" /etc/default/grub
+        sudo update-grub > /dev/null 2>&1;
+        check_status_install;
+    fi
 
     echo -e "\e[32m - configure_grub() finished\e[0m";
     /usr/bin/logger 'configure_grub() finished' -t 'Customizing Debian';
