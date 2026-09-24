@@ -356,23 +356,28 @@ install_hashcat() {
     /usr/bin/logger 'installing hashcat' -t 'Customizing Debian';
     echo -e "\e[32m - install_hashcat()\e[0m";
 
-    TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="hashcat";
     TOOL_ELF="hashcat";
     check_already_installed;
         
     if [ $TOOL_INSTALLED == False ]; then
-        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install libbz2-dev libssl-dev libncurses5-dev libffi-dev libreadline-dev libsqlite3-dev \
+        TOOL_SOURCE="Debian Repository";
+        TOOL_INSTALL="hashcat prerequisites";
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install libpocl-dev libbz2-dev libssl-dev libncurses5-dev libffi-dev libreadline-dev libsqlite3-dev \
             liblzma-dev > /dev/null 2>&1;
         check_status_install;
+        
+        # install .pyenv for hashcat
+        TOOL_INSTALL="hashcat prerequisites";
+        TOOL_SOURCE="PYENV";
         curl --user-agent $USER_AGENT --silent https://pyenv.run | bash > /dev/null 2>&1;
-        mkdir -p ~/git > /dev/null 2>&1;
+        check_status_install;
 
         # Check that github is reachable
         TEST_URL="github.com";
         check_connectivity_http;
 
         TOOL_SOURCE="Source";
+        TOOL_INSTALL="hashcat";
         cd $SOURCE_DIR;
         git clone https://github.com/hashcat/hashcat.git > /dev/null 2>&1;
         cd hashcat
@@ -679,6 +684,7 @@ install_pulseview() {
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gpib-user-tools python3-gpib libgpib0 libgpib-dev libhidapi-dev > /dev/null 2>&1;
         check_status_install;
 
+        # These require Debian Backports
         TOOL_INSTALL="Sigrok Prerequisite Packages (v)";
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install rpcbind libtirpc3 libavahi-client-dev check > /dev/null 2>&1;
         check_status_install;
@@ -1648,6 +1654,13 @@ cleanup() {
     sudo apt -y autoremove --purge > /dev/null 2>&1;
     check_status_install;
     sudo apt autoclean > /dev/null 2>&1;
+
+    # update flatpaks
+    TOOL_SOURCE="Flatpak";
+    TOOL_INSTALL="updates";
+    flatpak --assumeyes update > /dev/null 2>&1;
+    check_status_install;
+
     sync;
 
     echo -e "\e[32m - cleanup() finished\e[0m";
