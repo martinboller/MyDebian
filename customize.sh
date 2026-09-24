@@ -79,6 +79,10 @@ configure_env() {
         exit 1;
     fi
 
+    mkdir -p $GIT_HOME;
+    mkdir -p $SOURCE_DIR;
+    mkdir -p $RE_DIR;
+
     echo -e "\e[32m - configure_env() finished\n\e[0m";
     /usr/bin/logger 'configure_env() finished' -t 'Customizing Debian';
 }
@@ -89,26 +93,34 @@ config_venv() {
 
     TOOL_INSTALL="Python VENV $VENV_NAME for $TOOL_INSTALL";
     TOOL_SOURCE="Python Virtual Environment";
-    python3 -m venv ~/$VENV_NAME #> /dev/null 2>&1;
-    check_status_install;
-    
-    echo -e "\e[1;36m .... Checking VENV path\e[0m";
-    export VENV_PATH=$(grep "$VENV_NAME/bin" ~/.profile)
 
-    if [ -n "$VENV_PATH" ]; then
-        echo -e "\e[1;36m .... VENV path already configured\e[0m";
+    if [ -d "\$HOME/$VENV_NAME/bin" ] ; then
+        echo -e "\e[32m$PKG_COUNT.\t\e[34m$TOOL_INSTALL\e[32m already installed from $TOOL_SOURCE\e[0m"   
+        check_status_install;
     else
-        echo -e "\e[1;36m .... Adding VENV path to $HOME/.profile\e[0m";
-        cat << ___EOF___ >> ~/.profile
+        python3 -m venv ~/$VENV_NAME #> /dev/null 2>&1;
+        check_status_install;
+
+        echo -e "\e[1;36m .... Checking VENV path\e[0m";
+        export VENV_PATH=$(grep "$VENV_NAME/bin" ~/.profile)
+        if [ -n "$VENV_PATH" ]; then
+            echo -e "\e[1;36m .... VENV path already configured\e[0m";
+        else
+            echo -e "\e[1;36m .... Adding VENV path to $HOME/.profile\e[0m";
+            cat << ___EOF___ >> ~/.profile
 
 # set PATH so it includes user's private virtual environment/bin if it exists
 if [ -d "\$HOME/$VENV_NAME/bin" ] ; then
     PATH="\$HOME/$VENV_NAME/bin:\$PATH"
 fi
 ___EOF___
+        fi
     fi
     
     export PATH="$HOME/$VENV_NAME/bin:$PATH"
+    # activate Virtual Env
+    source ~/$VENV_NAME/bin/activate
+
 
     echo -e "\e[32m - config_venv() finished\n\e[0m";
     /usr/bin/logger 'config_venv() finished' -t 'Customizing Debian';
@@ -207,7 +219,7 @@ check_fp_install() {
 }
 
 check_ldd_install() {
-    # check libraries for sigrok are installed
+    # check libraries for TOOL_ELF are installed
     LDD_TOOL=$(which $TOOL_ELF | xargs ldd | grep $TOOL_INSTALL) > /dev/null 2>&1;
     if [ -n "$LDD_TOOL" ]; then
         echo -e "\e[32m$PKG_COUNT.\t\e[34m$TOOL_INSTALL\e[32m successfully installed from $TOOL_SOURCE\e[0m" | tee -a $SCRIPT_DIR/features.log;
@@ -321,6 +333,9 @@ install_utils_apt() {
     if [ "$PYTHON_INSTALL" == "Yes" ]; then
         install_pythontools;
         install_jupyterlab;
+        if [ "$USERTOOLS_INSTALL" == "Yes" ]; then
+            install_ytdlp;
+        fi
     fi
 
     # DEVTOOLS_INSTALL
@@ -379,10 +394,14 @@ install_hashcat() {
 install_backports() {
     /usr/bin/logger 'installing Debian backports repository ' -t 'Customizing Debian';
     echo -e "\e[32m - install_backports()\e[0m";
-
+    
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="Trixie backports";
-    sudo tee /etc/apt/sources.list.d/debian-backports.sources << __EOF__
+    if [ -f /etc/apt/sources.list.d/debian-backports.sources ]; then
+        echo -e "\e[32m - backports already configured\n\e[0m";
+        check_status_install;
+    else    
+    sudo tee /etc/apt/sources.list.d/debian-backports.sources << __EOF__ /etc/apt/sources.list.d/debian-backports.sources > /dev/null
 Types: deb deb-src
 URIs: http://deb.debian.org/debian
 Suites: trixie-backports
@@ -393,6 +412,8 @@ __EOF__
     sync;
     sudo apt update > /dev/null 2>&1;
     check_status_install;
+    fi
+
     cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_backports() finished\n\e[0m";
@@ -430,11 +451,16 @@ install_networktools() {
     # Set tool source and what to install
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="Wireshark";
-    echo -e "\e[36m .... Installing network tools\e[0m";
-    echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install wireshark > /dev/null 2>&1;
-    check_status_install;
-    sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
+    if [ $(which wireshark) ]; then
+        echo -e "\e[36m .... Wireshark already installed\e[0m";
+        check_status_install;
+    else
+        echo -e "\e[36m .... Installing network tools\e[0m";
+        echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install wireshark > /dev/null 2>&1;
+        check_status_install;
+        sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
+    fi
 
     TOOL_INSTALL="Network Tools";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install iputils-arping iputils-tracepath arpwatch arpalert tcpdump nmap ncat ngrep ethtool aircrack-ng \
@@ -481,11 +507,17 @@ install_forensicstools() {
     check_connectivity_http;
 
     TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="Wireshark"
-    ### Wireshark is part of forensics-all, so configuration needed if not already installed
-    echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install wireshark > /dev/null 2>&1;
-    check_status_install;
+    TOOL_INSTALL="Wireshark";
+    if [ $(which wireshark) ]; then
+        echo -e "\e[36m .... Wireshark already installed\e[0m";
+        check_status_install;
+    else
+        echo -e "\e[36m .... Installing network tools\e[0m";
+        echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install wireshark > /dev/null 2>&1;
+        check_status_install;
+        sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
+    fi
 
     TOOL_INSTALL="Forensics Tools"    
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install forensics-all > /dev/null 2>&1;
@@ -519,7 +551,7 @@ install_systemtools() {
     check_status_install;
     cd $SCRIPT_DIR;
 
-    echo -e "\e[32m - install_systemtools() finished\e[0m";
+    echo -e "\e[32m - install_systemtools() finished\n\e[0m";
     /usr/bin/logger 'installing System tools from Debian repository finished' -t 'Customizing Debian';
 }
 
@@ -583,19 +615,12 @@ install_jupyterlab() {
     TEST_URL="pypi.org";
     check_connectivity_http;
 
-    TOOL_INSTALL="jupyter";
-    TOOL_SOURCE="PIP Repository";
+    TOOL_INSTALL="jupyter Virtual Environment";
+    TOOL_SOURCE="Python VENV";
     # venv for jupyterlab
     VENV_NAME=".jupyter";
-    export VENV_PATH=$(grep "$VENV_NAME/bin" ~/.profile)
-    if [ -n "$VENV_PATH" ]; then
-        echo -e "\e[1;36m .... VENV already configured\e[0m";
-    else
-        echo -e "\e[1;36m .... installing Python Virtual Environment\e[0m";
-        config_venv;
-    fi
- 
-    source ~/$VENV_NAME/bin/activate > /dev/null 2>&1;
+    config_venv;
+    TOOL_SOURCE="PIP Repository";
     TOOL_INSTALL="jupyterlab";
     pip install jupyterlab > /dev/null 2>&1;
     check_status_install;
@@ -605,7 +630,7 @@ install_jupyterlab() {
     chmod 700 ~/.local/share/applications/jupyter-lab.desktop;
     chown $USER:$USER ~/.local/share/applications/jupyter-lab.desktop;
 
-    echo -e "\e[32m - install_jupyterlab() finished\e[0m";
+    echo -e "\e[32m - install_jupyterlab()\n\e[0m";
     /usr/bin/logger 'install_jupyterlab() finished' -t 'Customizing Debian';
 }
 
@@ -613,160 +638,154 @@ install_pulseview() {
     echo -e "\e[32m - install_pulseview()\e[0m";
     /usr/bin/logger 'install_pulseview()' -t 'Customizing Debian';
     
-    # Installing Debian Package
-    #sudo DEBIAN_FRONTEND=noninteractive apt-get -y install pulseview > /dev/null 2>&1;
-    
-    # Check that debian.org is reachable
-    TEST_URL="debian.org";
-    check_connectivity_http;
+    TOOL_ELF="pulseview";
+    check_already_installed;
+    if [ $TOOL_INSTALLED == False ]; then
+        # Installing Debian Package
+        #sudo DEBIAN_FRONTEND=noninteractive apt-get -y install pulseview > /dev/null 2>&1;
+        
+        # Check that debian.org is reachable
+        TEST_URL="debian.org";
+        check_connectivity_http;
 
-    # Check that GitHub is reachable
-    TEST_URL="github.com";
-    check_connectivity_http;
+        # Check that GitHub is reachable
+        TEST_URL="github.com";
+        check_connectivity_http;
 
 
-    # Installing from source    
-    # Installing prerequisites
-    echo -e "\e[32m - installing pulseview Prerequisites\e[0m";
-    TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="Sigrok Prerequisite Packages (i)";
-    /usr/bin/logger 'installing pulseview Prerequisites' -t 'Customizing Debian';
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install autoconf autoconf-archive automake sdcc libtool libboost-all-dev asciidoctor \
-        libzip-dev ruby-dev > /dev/null 2>&1;
-    check_status_install;
+        # Installing from source    
+        # Installing prerequisites
+        echo -e "\e[32m - installing pulseview Prerequisites\e[0m";
+        TOOL_SOURCE="Debian Repository";
+        TOOL_INSTALL="Sigrok Prerequisite Packages (i)";
+        /usr/bin/logger 'installing pulseview Prerequisites' -t 'Customizing Debian';
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install autoconf autoconf-archive automake sdcc libtool libboost-all-dev asciidoctor \
+            libzip-dev ruby-dev > /dev/null 2>&1;
+        check_status_install;
 
-    TOOL_INSTALL="Sigrok Prerequisite Packages (ii)";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install pkg-config libglib2.0-dev libglib2.0-dev libzip5 libtirpc-dev libserialport0 libvisa0 libvisa-dev \
-        libusb-1.0-0 libusb-1.0-0-dev libhidapi-hidraw0 libhidapi-libusb0 libftdi1-dev python3-pyvisa-py libieee1284-3-dev \
-        libgio-2.0-dev libghc-nettle-dev check doxygen graphviz swig libglibmm-2.68-dev python-setuptools-doc python-gi-dev \
-        python3-numpy python3-numpy-dev python3-doxypypy ruby openjdk-25-jdk > /dev/null 2>&1;
-    check_status_install;
+        TOOL_INSTALL="Sigrok Prerequisite Packages (ii)";
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install pkg-config libglib2.0-dev libglib2.0-dev libzip5 libtirpc-dev libserialport0 libvisa0 libvisa-dev \
+            libusb-1.0-0 libusb-1.0-0-dev libhidapi-hidraw0 libhidapi-libusb0 libftdi1-dev python3-pyvisa-py libieee1284-3-dev \
+            libgio-2.0-dev libghc-nettle-dev check doxygen graphviz swig libglibmm-2.68-dev python-setuptools-doc python-gi-dev \
+            python3-numpy python3-numpy-dev python3-doxypypy ruby openjdk-25-jdk > /dev/null 2>&1;
+        check_status_install;
 
-    TOOL_INSTALL="Sigrok Prerequisite Packages (iii)";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools qttools5-dev-tools qttools5-dev \
-        libqt5svg5-dev > /dev/null 2>&1;
-    check_status_install;
+        TOOL_INSTALL="Sigrok Prerequisite Packages (iii)";
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools qttools5-dev-tools qttools5-dev \
+            libqt5svg5-dev > /dev/null 2>&1;
+        check_status_install;
 
-    TOOL_INSTALL="Sigrok Prerequisite Packages (iv)";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gpib-user-tools python3-gpib libgpib0 libgpib-dev libhidapi-dev > /dev/null 2>&1;
-    check_status_install;
+        TOOL_INSTALL="Sigrok Prerequisite Packages (iv)";
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gpib-user-tools python3-gpib libgpib0 libgpib-dev libhidapi-dev > /dev/null 2>&1;
+        check_status_install;
 
-    TOOL_INSTALL="Sigrok Prerequisite Packages (v)";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install rpcbind libtirpc3 libavahi-client-dev check > /dev/null 2>&1;
-    check_status_install;
+        TOOL_INSTALL="Sigrok Prerequisite Packages (v)";
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install rpcbind libtirpc3 libavahi-client-dev check > /dev/null 2>&1;
+        check_status_install;
 
-    sudo echo > /dev/null 2>&1;
-
-    VENV_NAME=".venv";    
-    echo -e "\e[1;36m .... Checking VENV path\e[0m";
-    export VENV_PATH=$(grep "$VENV_NAME/bin" ~/.profile)
-
-    if [ -n "$VENV_PATH" ]; then
-        echo -e "\e[1;36m .... VENV already configured\e[0m";
-    else
-        echo -e "\e[1;36m .... installing Python Virtual Environment\e[0m";
+        TOOL_INSTALL="Sigrok Python Virtual Environment";
+        TOOL_SOURCE="Python VENV";
+        VENV_NAME=".venv";    
         config_venv;
+        # Python pip modules needed for libsigrok
+        TOOL_INSTALL="Sigrok Python Prerequisites";
+        TOOL_SOURCE="PIP Repository";
+        pip install setuptools numpy > /dev/null 2>&1;
+        check_status_install;
+
+        TOOL_SOURCE="Source";
+        mkdir -p $SOURCE_DIR/sigrok;
+        cd $SOURCE_DIR/sigrok/;
+        # Install libsigrokdecode from source
+        # Note: Depending on trixie backports
+
+        TOOL_INSTALL="libsigrokdecode";
+        echo -e "\e[32m - installing libsigrokdecode\e[0m";
+        /usr/bin/logger 'installing libsigrokdecode' -t 'Customizing Debian';
+        git clone git://sigrok.org/libsigrokdecode > /dev/null 2>&1;
+        cd libsigrokdecode > /dev/null 2>&1;
+        ./autogen.sh > /dev/null 2>&1;
+        ./configure > /dev/null 2>&1;
+        make clean > /dev/null 2>&1;
+        make > /dev/null 2>&1;
+        sudo make install > /dev/null 2>&1;
+        /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
+        sudo echo > /dev/null 2>&1;
+
+        # Install fork of libsigrok with support for SiPEED SLogic 8 and 16
+        TOOL_INSTALL="libsigrok"
+        echo -e "\e[32m - installing libsigrok\e[0m";
+        /usr/bin/logger 'installing libsigrok' -t 'Customizing Debian';
+        cd $SOURCE_DIR/sigrok/;
+        TOOL_INSTALL="libsigrok";
+        git clone https://github.com/martinboller/libsigrok > /dev/null 2>&1;
+        #git clone -b slogic-dev https://github.com/sipeed/libsigrok > /dev/null 2>&1;
+        #git clone git://sigrok.org/libsigrok > /dev/null 2>&1;
+        cd libsigrok > /dev/null 2>&1;
+        ./autogen.sh > /dev/null 2>&1;
+        ./configure > /dev/null 2>&1;
+        make clean > /dev/null 2>&1;
+        make > /dev/null 2>&1;
+        sudo make install > /dev/null 2>&1;
+        sudo echo > /dev/null 2>&1;
+
+        # Install sigrok-cli from source
+        echo -e "\e[32m - installing sigrok-cli\e[0m";
+        /usr/bin/logger 'installing sigrok-cli' -t 'Customizing Debian';
+        cd $SOURCE_DIR/sigrok/;
+        TOOL_INSTALL="sigrok-cli";
+        git clone git://sigrok.org/sigrok-cli > /dev/null 2>&1;
+        cd sigrok-cli > /dev/null 2>&1;
+        ./autogen.sh > /dev/null 2>&1;
+        ./configure > /dev/null 2>&1;
+        make clean > /dev/null 2>&1;
+        make > /dev/null 2>&1;
+        sudo make install > /dev/null 2>&1;
+        check_install;
+
+        # check libraries for sigrok are installed
+        TOOL_INSTALL="libsigrok.so";
+        TOOL_ELF="sigrok-cli";
+        check_ldd_install;
+        TOOL_INSTALL="libsigrokdecode.so"
+        check_ldd_install;
+        TOOL_INSTALL="libglib";
+        check_ldd_install;
+
+        # sigrok-firmware-fx2lafw
+        TOOL_INSTALL="sigrok-firmware-fx2lafw";
+        echo -e "\e[32m - installing sigrok-firmware-fx2lafw\e[0m";
+        /usr/bin/logger 'installing sigrok-firmware-fx2lafw' -t 'Customizing Debian';
+        cd $SOURCE_DIR/sigrok/;
+        git clone git://sigrok.org/sigrok-firmware-fx2lafw > /dev/null 2>&1;
+        cd sigrok-firmware-fx2lafw > /dev/null 2>&1;
+        ./autogen.sh > /dev/null 2>&1;
+        ./configure > /dev/null 2>&1;
+        make clean > /dev/null 2>&1;
+        make > /dev/null 2>&1;
+        sudo make install > /dev/null 2>&1;
+        check_status_install;
+
+        # Install pulseview from source
+        echo -e "\e[32m - installing pulseview\e[0m";
+        /usr/bin/logger 'installing pulseview' -t 'Customizing Debian';
+        cd $SOURCE_DIR/sigrok/;
+        TOOL_INSTALL="pulseview"
+        git clone git://sigrok.org/pulseview > /dev/null 2>&1;
+        cd pulseview > /dev/null 2>&1;
+        cmake .  > /dev/null 2>&1;
+        #make clean > /dev/null 2>&1;
+        make > /dev/null 2>&1;
+        sudo make install > /dev/null 2>&1;
+        sudo ldconfig;
+        check_install;
+
+        # Load udev rules
+        TOOL_SOURCE="Load UDEV Rules";
+        TOOL_SOURCE="Linux";
+        sudo udevadm control --reload > /dev/null 2>&1;
     fi
 
-    # Activate Python VENV
-    source ~/$VENV_NAME/bin/activate > /dev/null 2>&1;
-    # Python pip modules needed for libsigrok
-    TOOL_SOURCE="PIP Repository";
-    pip install setuptools numpy > /dev/null 2>&1;
-    check_status_install;
-
-    TOOL_SOURCE="Source";
-    mkdir -p $SOURCE_DIR/sigrok;
-    cd $SOURCE_DIR/sigrok/;
-    # Install libsigrokdecode from source
-    # Note: Depending on trixie backports
-
-    TOOL_INSTALL="libsigrokdecode";
-    echo -e "\e[32m - installing libsigrokdecode\e[0m";
-    /usr/bin/logger 'installing libsigrokdecode' -t 'Customizing Debian';
-    git clone git://sigrok.org/libsigrokdecode > /dev/null 2>&1;
-    cd libsigrokdecode > /dev/null 2>&1;
-    ./autogen.sh > /dev/null 2>&1;
-    ./configure > /dev/null 2>&1;
-    make clean > /dev/null 2>&1;
-    make > /dev/null 2>&1;
-    sudo make install > /dev/null 2>&1;
-    /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
-    sudo echo > /dev/null 2>&1;
-
-    # Install fork of libsigrok with support for SiPEED SLogic 8 and 16
-    TOOL_INSTALL="libsigrok"
-    echo -e "\e[32m - installing libsigrok\e[0m";
-    /usr/bin/logger 'installing libsigrok' -t 'Customizing Debian';
-    cd $SOURCE_DIR/sigrok/;
-    TOOL_INSTALL="libsigrok";
-    git clone https://github.com/martinboller/libsigrok > /dev/null 2>&1;
-    #git clone -b slogic-dev https://github.com/sipeed/libsigrok > /dev/null 2>&1;
-    #git clone git://sigrok.org/libsigrok > /dev/null 2>&1;
-    cd libsigrok > /dev/null 2>&1;
-    ./autogen.sh > /dev/null 2>&1;
-    ./configure > /dev/null 2>&1;
-    make clean > /dev/null 2>&1;
-    make > /dev/null 2>&1;
-    sudo make install > /dev/null 2>&1;
-    sudo echo > /dev/null 2>&1;
-
-    # Install sigrok-cli from source
-    echo -e "\e[32m - installing sigrok-cli\e[0m";
-    /usr/bin/logger 'installing sigrok-cli' -t 'Customizing Debian';
-    cd $SOURCE_DIR/sigrok/;
-    TOOL_INSTALL="sigrok-cli";
-    git clone git://sigrok.org/sigrok-cli > /dev/null 2>&1;
-    cd sigrok-cli > /dev/null 2>&1;
-    ./autogen.sh > /dev/null 2>&1;
-    ./configure > /dev/null 2>&1;
-    make clean > /dev/null 2>&1;
-    make > /dev/null 2>&1;
-    sudo make install > /dev/null 2>&1;
-    check_install;
-
-    # check libraries for sigrok are installed
-    TOOL_INSTALL="libsigrok.so";
-    TOOL_ELF="sigrok-cli";
-    check_ldd_install;
-    TOOL_INSTALL="libsigrokdecode.so"
-    check_ldd_install;
-    TOOL_INSTALL="libglib";
-    check_ldd_install;
-
-    # sigrok-firmware-fx2lafw
-    TOOL_INSTALL="sigrok-firmware-fx2lafw";
-    echo -e "\e[32m - installing sigrok-firmware-fx2lafw\e[0m";
-    /usr/bin/logger 'installing sigrok-firmware-fx2lafw' -t 'Customizing Debian';
-    cd $SOURCE_DIR/sigrok/;
-    git clone git://sigrok.org/sigrok-firmware-fx2lafw > /dev/null 2>&1;
-    cd sigrok-firmware-fx2lafw > /dev/null 2>&1;
-    ./autogen.sh > /dev/null 2>&1;
-    ./configure > /dev/null 2>&1;
-    make clean > /dev/null 2>&1;
-    make > /dev/null 2>&1;
-    sudo make install > /dev/null 2>&1;
-    check_status_install;
-
-    # Install pulseview from source
-    echo -e "\e[32m - installing pulseview\e[0m";
-    /usr/bin/logger 'installing pulseview' -t 'Customizing Debian';
-    cd $SOURCE_DIR/sigrok/;
-    TOOL_INSTALL="pulseview"
-    git clone git://sigrok.org/pulseview > /dev/null 2>&1;
-    cd pulseview > /dev/null 2>&1;
-    cmake .  > /dev/null 2>&1;
-    #make clean > /dev/null 2>&1;
-    make > /dev/null 2>&1;
-    sudo make install > /dev/null 2>&1;
-    sudo ldconfig;
-    check_install;
-
-    # Load udev rules
-    TOOL_SOURCE="Load UDEV Rules";
-    TOOL_SOURCE="Linux";
-    sudo udevadm control --reload > /dev/null 2>&1;
-    
     # Back home to where install script is running from
     cd $SCRIPT_DIR
 
@@ -803,126 +822,145 @@ install_hwhacktools() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install esptool > /dev/null 2>&1;
     check_status_install;
 
-    # flashrom
-    TOOL_INSTALL="flashrom Prerequisites";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gcc meson ninja-build pkg-config python3-sphinx libcmocka-dev libpci-dev libusb-1.0-0-dev \
-        libftdi1-dev libjaylink-dev > /dev/null 2>&1;
-    check_status_install;
+    TOOL_ELF="flashrom";
+    check_already_installed;
+    if [ $TOOL_INSTALLED == False ]; then
+        # flashrom
+        TOOL_INSTALL="flashrom Prerequisites";
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gcc meson ninja-build pkg-config python3-sphinx libcmocka-dev libpci-dev libusb-1.0-0-dev \
+            libftdi1-dev libjaylink-dev > /dev/null 2>&1;
+        check_status_install;
 
-    TOOL_INSTALL="flashrom";
-    TOOL_SOURCE="Source";
-    cd $SOURCE_DIR;
-    git clone https://github.com/whid-injector/flashrom-whidboard > /dev/null 2>&1;
-    cd $SOURCE_DIR/flashrom-whidboard/ > /dev/null 2>&1;
-    sudo mkdir -p /usr/local/sbin > /dev/null 2>&1;
-    meson setup builddir > /dev/null 2>&1;
-    meson compile -C builddir > /dev/null 2>&1;
-    meson test -C builddir > /dev/null 2>&1;
-    sudo meson install -C builddir > /dev/null 2>&1;
-    ## Flashrom install in /usr/local/sbin which is not in PATH by default
-    sudo cp $SCRIPT_DIR/files/flashrom.sh /etc/profile.d/ > /dev/null 2>&1;
-    export PATH=$PATH:/usr/local/sbin;
-    sync
-    check_install;
-    /usr/bin/logger 'Installed flashrom' -t 'Customizing Debian';
+        TOOL_INSTALL="flashrom";
+        TOOL_SOURCE="Source";
+        cd $SOURCE_DIR;
+        git clone https://github.com/whid-injector/flashrom-whidboard > /dev/null 2>&1;
+        cd $SOURCE_DIR/flashrom-whidboard/ > /dev/null 2>&1;
+        sudo mkdir -p /usr/local/sbin > /dev/null 2>&1;
+        meson setup builddir > /dev/null 2>&1;
+        meson compile -C builddir > /dev/null 2>&1;
+        meson test -C builddir > /dev/null 2>&1;
+        sudo meson install -C builddir > /dev/null 2>&1;
+        ## Flashrom install in /usr/local/sbin which is not in PATH by default
+        sudo cp $SCRIPT_DIR/files/flashrom.sh /etc/profile.d/ > /dev/null 2>&1;
+        export PATH=$PATH:/usr/local/sbin;
+        sync
+        check_install;
+        /usr/bin/logger 'Installed flashrom' -t 'Customizing Debian';
+    fi
 
-    # openOCD
-    cd $SOURCE_DIR;
-    TOOL_INSTALL="openocd Prerequisites";
-    TOOL_SOURCE="Debian Repository";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install libtool pkg-config texinfo libusb-dev libusb-1.0-0-dev libftdi-dev autoconf automake make \
-        git libftdi* libhidapi-hidraw0 > /dev/null 2>&1;
-    check_status_install;
-    sudo ldconfig > /dev/null 2>&1;
+    TOOL_ELF="openocd";
+    check_already_installed;
+        
+    if [ $TOOL_INSTALLED == False ]; then
+        # openOCD
+        cd $SOURCE_DIR;
+        TOOL_INSTALL="openocd Prerequisites";
+        TOOL_SOURCE="Debian Repository";
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install libtool pkg-config texinfo libusb-dev libusb-1.0-0-dev libftdi-dev autoconf automake make \
+            git libftdi* libhidapi-hidraw0 > /dev/null 2>&1;
+        check_status_install;
+        sudo ldconfig > /dev/null 2>&1;
 
-    TOOL_INSTALL="openocd";
-    TOOL_SOURCE="Source";
-    git clone --recursive https://github.com/whid-injector/openocd-linux > /dev/null 2>&1;
-    cd ./openocd-linux/ > /dev/null 2>&1;
-    sudo mkdir -p /usr/bin > /dev/null 2>&1;
-    chmod -R 755 OpenOCD_SourceCode_CH347/ > /dev/null 2>&1;
-    cd ./OpenOCD_SourceCode_CH347 > /dev/null 2>&1;
-    ./bootstrap > /dev/null 2>&1;
-    autoreconf --force --install > /dev/null 2>&1;
-    ./configure --disable-doxygen-html --disable-doxygen-pdf --disable-gccwarnings --disable-wextra --enable-ch347 > /dev/null 2>&1;
-    make > /dev/null 2>&1;
-    sudo make install > /dev/null 2>&1;
-    mkdir ~/.openocd > /dev/null 2>&1;
-    cp $SCRIPT_DIR/files/*.cfg ~/.openocd/ > /dev/null 2>&1;
-    sync
-    check_install;
-    /usr/bin/logger 'Installed openOCD' -t 'Customizing Debian';
+        TOOL_INSTALL="openocd";
+        TOOL_SOURCE="Source";
+        git clone --recursive https://github.com/whid-injector/openocd-linux > /dev/null 2>&1;
+        cd ./openocd-linux/ > /dev/null 2>&1;
+        sudo mkdir -p /usr/bin > /dev/null 2>&1;
+        chmod -R 755 OpenOCD_SourceCode_CH347/ > /dev/null 2>&1;
+        cd ./OpenOCD_SourceCode_CH347 > /dev/null 2>&1;
+        ./bootstrap > /dev/null 2>&1;
+        autoreconf --force --install > /dev/null 2>&1;
+        ./configure --disable-doxygen-html --disable-doxygen-pdf --disable-gccwarnings --disable-wextra --enable-ch347 > /dev/null 2>&1;
+        make > /dev/null 2>&1;
+        sudo make install > /dev/null 2>&1;
+        mkdir ~/.openocd > /dev/null 2>&1;
+        cp $SCRIPT_DIR/files/*.cfg ~/.openocd/ > /dev/null 2>&1;
+        sync
+        check_install;
+        /usr/bin/logger 'Installed openOCD' -t 'Customizing Debian';
+    fi
 
-    # SNANDER
-    cd $SOURCE_DIR;
-    TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="snander Prerequisites";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install mingw-w64 gcc-mingw-w64-x86-64 libusb-1.0-0-dev > /dev/null 2>&1;
-    check_status_install;
-    sudo ldconfig > /dev/null 2>&1;
+    TOOL_ELF="snander";
+    check_already_installed;
+    if [ $TOOL_INSTALLED == False ]; then
+        # SNANDER
+        cd $SOURCE_DIR;
+        TOOL_SOURCE="Debian Repository";
+        TOOL_INSTALL="snander Prerequisites";
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install mingw-w64 gcc-mingw-w64-x86-64 libusb-1.0-0-dev > /dev/null 2>&1;
+        check_status_install;
+        sudo ldconfig > /dev/null 2>&1;
 
-    TOOL_INSTALL="snander";
-    TOOL_SOURCE="Source";
-    sudo mkdir -p /usr/bin > /dev/null 2>&1;
-    git clone https://github.com/martinboller/SNANDer > /dev/null 2>&1;
-    cd SNANDer > /dev/null 2>&1;
-    ./build-for-linux.sh > /dev/null 2>&1;
-    sync;
-    sudo cp ./build/snander /usr/bin/ > /dev/null 2>&1;
-    check_install;
-    /usr/bin/logger 'Installed snander' -t 'Customizing Debian';
+        TOOL_INSTALL="snander";
+        TOOL_SOURCE="Source";
+        sudo mkdir -p /usr/bin > /dev/null 2>&1;
+        git clone https://github.com/martinboller/SNANDer > /dev/null 2>&1;
+        cd SNANDer > /dev/null 2>&1;
+        ./build-for-linux.sh > /dev/null 2>&1;
+        sync;
+        sudo cp ./build/snander /usr/bin/ > /dev/null 2>&1;
+        check_install;
+        /usr/bin/logger 'Installed snander' -t 'Customizing Debian';
+    fi
 
-    # ufprog
-    cd $SOURCE_DIR;
-    TOOL_INSTALL="ufprog Prerequisites";
-    TOOL_SOURCE="Debian Repository";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install libjson-c-dev libhidapi-dev libusb-dev libusb-1.0-0-dev > /dev/null 2>&1;
-    check_status_install;
+    TOOL_ELF="ufsnorprog";
+    check_already_installed;
+    if [ $TOOL_INSTALLED == False ]; then
+        # ufprog
+        cd $SOURCE_DIR;
+        TOOL_INSTALL="ufprog Prerequisites";
+        TOOL_SOURCE="Debian Repository";
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install libjson-c-dev libhidapi-dev libusb-dev libusb-1.0-0-dev > /dev/null 2>&1;
+        check_status_install;
 
-    TOOL_INSTALL="ufsnorprog";
-    TOOL_SOURCE="Source";
-    git clone https://github.com/whid-injector/ufprog > /dev/null 2>&1;
-    cd ufprog > /dev/null 2>&1;
-    cmake -DCMAKE_BUILD_TYPE=None -DBUILD_PORTABLE=OFF -DCMAKE_INSTALL_PREFIX=/usr -B build > /dev/null 2>&1;
-    cd build > /dev/null 2>&1;
-    make > /dev/null 2>&1;
-    sudo make install > /dev/null 2>&1;
-    sudo cp -r /usr/share/ufprog/ /usr/lib/ > /dev/null 2>&1;
-    check_install;
-    /usr/bin/logger 'Installed ufprog' -t 'Customizing Debian';
+        TOOL_INSTALL="ufsnorprog";
+        TOOL_SOURCE="Source";
+        git clone https://github.com/whid-injector/ufprog > /dev/null 2>&1;
+        cd ufprog > /dev/null 2>&1;
+        cmake -DCMAKE_BUILD_TYPE=None -DBUILD_PORTABLE=OFF -DCMAKE_INSTALL_PREFIX=/usr -B build > /dev/null 2>&1;
+        cd build > /dev/null 2>&1;
+        make > /dev/null 2>&1;
+        sudo make install > /dev/null 2>&1;
+        sudo cp -r /usr/share/ufprog/ /usr/lib/ > /dev/null 2>&1;
+        check_install;
+        /usr/bin/logger 'Installed ufprog' -t 'Customizing Debian';
+    fi
 
     # BUSSide
     TOOL_INSTALL="BUSSide"
     TOOL_SOURCE="Source";
-    cd $SOURCE_DIR;
-    git clone https://github.com/martinboller/BUSSide.git > /dev/null 2>&1;
-    check_status_install;
-
-    # Python stuff for BUSSide
-    cd ./BUSSide/Client > /dev/null 2>&1;
-    TOOL_SOURCE="Python VENV";
-    VENV_NAME=".venv"
-    export VENV_PATH=$(grep "$VENV_NAME/bin" ~/.profile)
-    if [ -n "$VENV_PATH" ]; then
-        echo -e "\e[1;36m .... VENV already configured\e[0m";
+    if [ -d $RE_DIR/$TOOL_INSTALL ]; then
+        cd $SOURCE_DIR;
+        check_status_install;
     else
-        echo -e "\e[1;36m .... installing Python Virtual Environment\e[0m";
-        config_venv;
-    fi
+        cd $SOURCE_DIR;
+        git clone https://github.com/martinboller/BUSSide.git > /dev/null 2>&1;
+        check_status_install;
 
-    # activate Virtual Env
-    TOOL_INSTALL="BUSSide PIP Requirements"
-    source ~/$VENV_NAME/bin/activate;
-    pip install pyserial click esptool > /dev/null 2>&1;
-    check_status_install;
+        # Python stuff for BUSSide
+        cd ./BUSSide/Client > /dev/null 2>&1;
+        TOOL_INSTALL="BUSSide Python Virtual Environment"
+        TOOL_SOURCE="Python VENV";
+        VENV_NAME=".venv"
+        config_venv;
+        # activate Virtual Env
+        TOOL_INSTALL="BUSSide PIP Requirements"
+        pip install pyserial click esptool > /dev/null 2>&1;
+        check_status_install;
+    fi
 
     # Serial U-BOOT tool (Python)
     TOOL_INSTALL="sertack"
     TOOL_SOURCE="Source";
-    cd $SOURCE_DIR;
-    git clone https://github.com/martinboller/sertack.git > /dev/null 2>&1;
-    check_status_install;
-    
+    if [ -d $RE_DIR/$TOOL_INSTALL ]; then
+        cd $SOURCE_DIR;
+    else
+        cd $SOURCE_DIR;
+        git clone https://github.com/martinboller/sertack.git > /dev/null 2>&1;
+        check_status_install;
+    fi
+
     TOOL_INSTALL="python3-serial"
     TOOL_SOURCE="Debian Repository";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install python3-serial > /dev/null 2>&1;
@@ -952,74 +990,101 @@ install_reversetools() {
     # Reverse Engineering tools
     mkdir -p $RE_DIR;
     cd $RE_DIR;
-    # Binwalk 3.x
-    TOOL_INSTALL="cargo";
-    #git clone https://github.com/ReFirmLabs/binwalk.git
-    # binwalk require cargo and some other packages which may not be installed depending on config
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install cargo build-essential libfontconfig1-dev liblzma-dev > /dev/null 2>&1;
-    check_status_install;
 
-    TEST_URL="crates.io"; # Cargo repository
-    check_connectivity_http;
-    TOOL_INSTALL="binwalk";
-    TOOL_SOURCE="Cargo Repository (crates.io)";
-    cargo install binwalk > /dev/null 2>&1;
-    sudo cp -r /usr/share/ufprog/ /usr/lib/ > /dev/null 2>&1;
-    PATH="$HOME/.cargo/bin:$PATH"
-    echo -e "\e[1;36m .... Checking cargo path\e[0m";
-    export CARGO_PATH=$(grep '.cargo/bin' ~/.profile)
+    TOOL_ELF="cargo";
+    check_already_installed;
+    if [ $TOOL_INSTALLED == False ]; then
+        # Binwalk 3.x
+        TOOL_INSTALL="cargo";
+        #git clone https://github.com/ReFirmLabs/binwalk.git
+        # binwalk require cargo and some other packages which may not be installed depending on config
+        PATH="$HOME/.cargo/bin:$PATH";
+        echo -e "\e[1;36m .... Checking cargo path\e[0m";
+        export CARGO_PATH=$(grep '.cargo/bin' ~/.profile)
 
-    if [ -n "$CARGO_PATH" ]; then
-        echo -e "\e[1;36m .... Cargo path already configured\e[0m";
-    else
-        echo -e "\e[1;36m .... Adding cargo path to $HOME/.profile\e[0m";
-        cat << ___EOF___ >> ~/.profile
-
+        if [ -n "$CARGO_PATH" ]; then
+            echo -e "\e[1;36m .... Cargo path already configured\e[0m";
+        else
+            echo -e "\e[1;36m .... Adding cargo path to $HOME/.profile\e[0m";
+            cat << ___EOF___ >> ~/.profile
 # set PATH so it includes user's private .cargo/bin if it exists
 if [ -d "\$HOME/.cargo/bin" ] ; then
     PATH="\$HOME/.cargo/bin:\$PATH"
 fi
 ___EOF___
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install cargo build-essential libfontconfig1-dev liblzma-dev > /dev/null 2>&1;
+        check_status_install;
+        fi
     fi
-    sync;
-    check_install;
 
+    TOOL_ELF="binwalk";
+    check_already_installed;
+    if [ $TOOL_INSTALLED == False ]; then
+        TEST_URL="crates.io"; # Cargo repository
+        check_connectivity_http;
+        TOOL_INSTALL="binwalk";
+        TOOL_SOURCE="Cargo Repository (crates.io)";
+        cargo install binwalk > /dev/null 2>&1;
+        check_install;
+    fi
+    
+    TOOL_INSTALL="firmwalker";
     TOOL_SOURCE="Source";
     # firmwalker bash script
-    TOOL_INSTALL="firmwalker";
-    cd $RE_DIR;
-    git clone https://github.com/hotelzululima/firmwalker.git > /dev/null 2>&1;
-    check_status_install;
+    if [ -d $RE_DIR/binwally ]; then
+        cd $RE_DIR;
+        check_status_install;
+    else    
+        cd $RE_DIR;
+        git clone https://github.com/hotelzululima/firmwalker.git > /dev/null 2>&1;
+        check_status_install;
+    fi
 
-    # binwally for python3
     TOOL_INSTALL="binwally";
     TOOL_SOURCE="Source"
-    cd $RE_DIR;
-    git clone https://github.com/martinboller/binwally.git > /dev/null 2>&1;
-    check_status_install;
-
-    # Python stuff for binwally
-    VENV_NAME=".venv"
-    export VENV_PATH=$(grep "$VENV_NAME/bin" ~/.profile)
-    if [ -n "$VENV_PATH" ]; then
-        echo -e "\e[1;36m .... VENV already configured\e[0m";
+    if [ -d $RE_DIR/binwally ]; then
+        cd $RE_DIR;
+        check_status_install;
     else
-        echo -e "\e[1;36m .... installing Python Virtual Environment\e[0m";
+        # binwally for python3
+        cd $RE_DIR;
+        git clone https://github.com/martinboller/binwally.git > /dev/null 2>&1;
+        check_status_install;
+
+        # Python stuff for binwally
+        TOOL_INSTALL="binwally Python Virtual Environment";
+        TOOL_SOURCE="Python VENV";
+        VENV_NAME=".venv";
         config_venv;
+        
+        TOOL_INSTALL="binwally PIP Requirements";
+        TOOL_SOURCE="PIP Repository";
+        pip install -r $RE_DIR/binwally/requirements.txt > /dev/null 2>&1;
+        check_status_install;
     fi
-    # activate Virtual Env
-    source ~/$VENV_NAME/bin/activate
-    TOOL_INSTALL="binwally PIP Requirements";
-    TOOL_SOURCE="PIP Repository";
-    pip install -r $RE_DIR/binwally/requirements.txt > /dev/null 2>&1;
-    check_status_install;
-    
+
     TOOL_INSTALL="Didier Stevens Suite";
     TOOL_SOURCE="Source"
-    cd $RE_DIR;
-    git clone https://github.com/DidierStevens/DidierStevensSuite.git > /dev/null 2>&1;
-    check_status_install;
-    
+    if [ -d $RE_DIR/DidierStevensSuite ]; then
+        cd $RE_DIR;
+        check_status_install;
+    else
+        cd $RE_DIR;
+        git clone https://github.com/DidierStevens/DidierStevensSuite.git > /dev/null 2>&1;
+        check_status_install;
+        
+        # Python stuff for DidierStevensSuite
+        TOOL_INSTALL="Didier Stevens Suite Python Virtual Environment";
+        TOOL_SOURCE="Python VENV";
+        VENV_NAME=".venv";
+        config_venv;
+        
+        TOOL_INSTALL="Didier Stevens Suite PIP Requirements";
+        TOOL_SOURCE="PIP Repository";
+        pip install -r $RE_DIR/DidierStevensSuite/requirements.txt > /dev/null 2>&1;
+        check_status_install;
+    fi   
+
     cd $SCRIPT_DIR;
 
     echo -e "\e[32m - install_reversetools() finished\n\e[0m";
@@ -1305,10 +1370,10 @@ configure_nix() {
     TEST_URL="debian.org";
     check_connectivity_ping;
 
-    # curl and wget must always be there
-    TOOL_INSTALL="cURL and wget prerequisites for script";
+    # curl, git and wget must always be there
+    TOOL_INSTALL="cURL, git, and wget prerequisites for script";
     TOOL_SOURCE="Debian Repository";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install curl wget > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install curl wget git > /dev/null 2>&1;
     check_status_install;
 
     configure_grub;
@@ -1352,9 +1417,9 @@ configure_apt_repositories() {
     else
         echo -e "\e[36m .... adding contrib, non-free, and non-free-firmware repositories to sources.list\e[0m";
         sudo sed -ie "s/main/main contrib non-free non-free-firmware/" /etc/apt/sources.list
-        sudo DEBIAN_FRONTEND=noninteractive apt-get update > /dev/null 2>&1; 
+        sudo DEBIAN_FRONTEND=noninteractive apt-get update > /dev/null 2>&1;
         check_status_install
-        echo "#$TOOL_INSTALL" | sudo tee -a /etc/apt/sources.list; 
+        echo "#$TOOL_INSTALL" | sudo tee -a /etc/apt/sources.list > /dev/null 2>&1;
     fi
 
     echo -e "\e[32m - configure_apt_repositories() finished\n\e[0m";
@@ -1536,6 +1601,23 @@ install_docker() {
 
     echo -e "\e[32m - install_docker() finished\n\e[0m";
     /usr/bin/logger 'install_docker() finished' -t 'Customizing Debian';
+}
+
+install_ytdlp() {
+    echo -e "\e[32m - install_ytdlp()\n\e[0m";
+    /usr/bin/logger 'install_ytdlp()' -t 'Customizing Debian';
+
+    TOOL_SOURCE="PIP Virtual Environment";
+    TOOL_INSTALL="yt-dlp";
+    VENV_NAME=".venv";
+    config_venv;
+    TOOL_INSTALL="yt-dlp";
+    TOOL_SOURCE="PIP Repository";
+    pip install yt-dlp > /dev/null 2>&1;
+    check_status_install;
+
+    echo -e "\e[32m - install_ytdlp() finished\n\e[0m";
+    /usr/bin/logger 'install_ytdlp() finished' -t 'Customizing Debian';
 }
 
 show_errors() {

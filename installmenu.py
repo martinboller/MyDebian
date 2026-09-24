@@ -14,6 +14,9 @@ CONFIG_GROUPS = [
         ("Configure Menu Key as Compose Key", "MENU_IS_COMPOSE"),
         ("Configure Keyboard Shortcuts", "KB_SHORTCUTS"),
         ("Install Dash to Panel Gnome Extension", "GNOME_DASH_TO_PANEL"),
+        ("IntelliHide the Panel", "GNOME_INTELLIHIDE"),
+        ("Set Panel Length to Dynamic", "GNOME_PANEL_LENGTH_DYNAMIC"),
+        ("Hide Overview on Startup", "GNOME_HIDE_OVERVIEW"),
         ("Install Caffeine GNOME Extension", "GNOME_CAFFEINE"),        
     ]),
     ("Virtualization", [

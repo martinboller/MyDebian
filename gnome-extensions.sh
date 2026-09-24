@@ -13,11 +13,21 @@ sleep 2;
 # Configure dynamic length of Dash-to-panel extension
 DASH2PANEL_INSTALLED=$(gnome-extensions list | grep -i dash-to-panel) > /dev/null 2>&1;
     if [ "$DASH2PANEL_INSTALLED" ]; then
-        gsettings set org.gnome.shell.extensions.dash-to-panel intellihide true
-        #change -1 to 100 below for a full width panel
+        if [ $GNOME_INTELLIHIDE == "Yes" ]; then
+            gsettings set org.gnome.shell.extensions.dash-to-panel intellihide true
+            #change -1 to 100 below for a full width panel
+        fi
         sleep 2;
-        gsettings set org.gnome.shell.extensions.dash-to-panel panel-lengths '{"RHT-0x00000000":-1}'
-        /usr/bin/logger "Dynamic length for $DASH2PANEL_INSTALLED configured" -t 'Customizing Debian';
+        #Set length of panel to be dynamic
+        if [ $GNOME_PANEL_LENGTH_DYNAMIC == "Yes" ]; then
+            gsettings set org.gnome.shell.extensions.dash-to-panel panel-lengths '{"RHT-0x00000000":-1}'
+            /usr/bin/logger "Dynamic length for $DASH2PANEL_INSTALLED configured" -t 'Customizing Debian';
+        fi
+        #Disable overview at startup
+        if [ $GNOME_HIDE_OVERVIEW == "Yes" ]; then
+            gsettings set org.gnome.shell.extensions.dash-to-panel hide-overview-on-startup true
+            /usr/bin/logger "GNOME Overview on startup disabled" -t 'Customizing Debian';
+        fi
     fi
 
 # Remove autostart so it does not run at every logon for this user
