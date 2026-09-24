@@ -53,6 +53,14 @@ CONFIG_GROUPS = [
     ]),
 ]
 
+# Mapping of features to their required dependency packages
+DEPENDENCIES = {
+    "HWHACKTOOLS_INSTALL": ["BACKPORTS_INSTALL", "DEVTOOLS_INSTALL", "PYTHON_INSTALL"],
+    "PULSEVIEW_INSTALL": ["BACKPORTS_INSTALL", "DEVTOOLS_INSTALL", "PYTHON_INSTALL"],
+    "HASHCAT_INSTALL": ["DEVTOOLS_INSTALL", "PYTHON_INSTALL"]
+    "REVERSETOOLS_INSTALL": ["DEVTOOLS_INSTALL", "PYTHON_INSTALL"],
+}
+
 def load_env(filepath=".env"):
     """Reads the environment file line by line."""
     try:
@@ -99,11 +107,50 @@ def toggle_in_lines(lines, var_name, new_val):
     """Updates a variable's value while retaining original formatting."""
     update_var_in_lines(lines, var_name, new_val)
 
+def enforce_dependencies(lines, last_action_var=None, last_action_val=None):
+    """
+    Enforces feature package dependencies bi-directionally:
+    1. If a tool depending on prerequisites is enabled, automatically enables its required packages.
+    2. If a required package is explicitly disabled ('No'), automatically disables dependent tools.
+    """
+    changed = True
+    while changed:
+        changed = False
+        env_data = extract_values(lines)
+
+        # 1. Direct disable propagation: if a prerequisite was toggled to 'No', disable dependent features
+        if last_action_var and last_action_val == "No":
+            for dep_var, req_vars in DEPENDENCIES.items():
+                if last_action_var in req_vars and env_data.get(dep_var, "No") == "Yes":
+                    update_var_in_lines(lines, dep_var, "No")
+                    changed = True
+            if changed:
+                env_data = extract_values(lines)
+
+        # 2. Forward requirements check: Enable prerequisite packages if dependent tool is 'Yes'
+        for dep_var, req_vars in DEPENDENCIES.items():
+            if env_data.get(dep_var, "No") == "Yes":
+                for req in req_vars:
+                    if env_data.get(req, "No") != "Yes":
+                        update_var_in_lines(lines, req, "Yes")
+                        changed = True
+
+        if changed:
+            env_data = extract_values(lines)
+
+        # 3. Guard check: Ensure dependent features aren't 'Yes' if any prerequisite is 'No'
+        for dep_var, req_vars in DEPENDENCIES.items():
+            if env_data.get(dep_var, "No") == "Yes":
+                if any(env_data.get(req, "No") != "Yes" for req in req_vars):
+                    update_var_in_lines(lines, dep_var, "No")
+                    changed = True
+
 def set_all_values(lines, new_val):
     """Bulk sets all defined variables in CONFIG_GROUPS to target value."""
     for _, items in CONFIG_GROUPS:
         for _, var_name in items:
             toggle_in_lines(lines, var_name, new_val)
+    enforce_dependencies(lines)
 
 def toggle_all_values(lines):
     """
@@ -119,7 +166,7 @@ def toggle_all_values(lines):
 def apply_preset(lines, target_group_titles, explicit_vars=None):
     """
     Sets target groups and explicit variables to 'Yes' while disabling ('No')
-    all other variables.
+    all other variables. Automatically resolves required package dependencies.
     """
     if explicit_vars is None:
         explicit_vars = set()
@@ -137,6 +184,8 @@ def apply_preset(lines, target_group_titles, explicit_vars=None):
         new_val = "Yes" if var_name in enabled_vars else "No"
         toggle_in_lines(lines, var_name, new_val)
 
+    enforce_dependencies(lines)
+
 def toggle_vars(lines, var_names):
     """
     Toggles a specific set of variables: if all are 'Yes', sets them to 'No'.
@@ -149,9 +198,14 @@ def toggle_vars(lines, var_names):
     for var in var_names:
         toggle_in_lines(lines, var, new_val)
 
+    enforce_dependencies(lines)
+
 def main():
     filepath = ".env"
     lines = load_env(filepath)
+
+    # Resolve dependencies on startup based on existing file state
+    enforce_dependencies(lines)
 
     while True:
         clear()
@@ -220,7 +274,7 @@ def main():
             networking_extra_vars = {"NETTOOLS_INSTALL", "SYSTOOLS_INSTALL", "PYTHON_INSTALL"}
             apply_preset(lines, networking_groups, explicit_vars=networking_extra_vars)
         elif choice == "g":
-            toggle_vars(lines, ["MENU_IS_COMPOSE", "MM_BUTTONS_CONFIGURE", "KB_SHORTCUTS", "GNOME_DASH_TO_PANEL", "GNOME_CAFFEINE"])
+            toggle_vars(lines, ["MENU_IS_COMPOSE", "MM_BUTTONS_CONFIGURE", "KB_SHORTCUTS", "GNOME_DASH_TO_PANEL", "GNOME_CAFFEINE", "GNOME_INTELLIHIDE", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW"])
         elif choice == 't':
             val = input(f"\nEnter GRUB Timeout in seconds (0-10, current: {grub_timeout}): ").strip()
             if val.isdigit() and 0 <= int(val) <= 10:
@@ -231,7 +285,8 @@ def main():
             var_to_toggle = option_map[int(choice)]
             current_val = env_data.get(var_to_toggle, "No")
             new_val = "No" if current_val == "Yes" else "Yes"
-            toggle_in_lines(lines, var_to_toggle, new_val)            
+            toggle_in_lines(lines, var_to_toggle, new_val)
+            enforce_dependencies(lines, last_action_var=var_to_toggle, last_action_val=new_val)
         else:
             input("\nInvalid choice. Press Enter to try again...")
 
