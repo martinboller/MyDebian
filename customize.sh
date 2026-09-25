@@ -92,7 +92,7 @@ config_venv() {
     /usr/bin/logger 'config_venv()' -t 'Customizing Debian';
 
     TOOL_INSTALL="Python VENV $VENV_NAME for $TOOL_INSTALL";
-    TOOL_SOURCE="Python Virtual Environment";
+    TOOL_SOURCE="Python VENV";
 
     if [ -d "\$HOME/$VENV_NAME/bin" ] ; then
         echo -e "\e[32m$PKG_COUNT.\t\e[34m$TOOL_INSTALL\e[32m already installed from $TOOL_SOURCE\e[0m"   
@@ -657,7 +657,6 @@ install_pulseview() {
         TEST_URL="github.com";
         check_connectivity_http;
 
-
         # Installing from source    
         # Installing prerequisites
         echo -e "\e[32m - installing pulseview Prerequisites\e[0m";
@@ -1080,12 +1079,11 @@ ___EOF___
         check_status_install;
         
         # Python stuff for DidierStevensSuite
-        TOOL_INSTALL="Didier Stevens Suite Python Virtual Environment";
+        TOOL_INSTALL="Didier Stevens Suite";
         TOOL_SOURCE="Python VENV";
         VENV_NAME=".venv";
         config_venv;
         
-        TOOL_INSTALL="Didier Stevens Suite PIP Requirements";
         TOOL_SOURCE="PIP Repository";
         pip install -r $RE_DIR/DidierStevensSuite/requirements.txt > /dev/null 2>&1;
         check_status_install;
