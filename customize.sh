@@ -87,9 +87,9 @@ configure_env() {
     /usr/bin/logger 'configure_env() finished' -t 'Customizing Debian';
 }
 
-config_venv() {
-    echo -e "\e[32m - config_venv()\e[0m";
-    /usr/bin/logger 'config_venv()' -t 'Customizing Debian';
+configure_venv() {
+    echo -e "\e[32m - configure_venv()\e[0m";
+    /usr/bin/logger 'configure_venv()' -t 'Customizing Debian';
 
     TOOL_INSTALL="Python VENV $VENV_NAME for $TOOL_INSTALL";
     TOOL_SOURCE="Python VENV";
@@ -122,8 +122,8 @@ ___EOF___
     source ~/$VENV_NAME/bin/activate
 
 
-    echo -e "\e[32m - config_venv() finished\n\e[0m";
-    /usr/bin/logger 'config_venv() finished' -t 'Customizing Debian';
+    echo -e "\e[32m - configure_venv() finished\n\e[0m";
+    /usr/bin/logger 'configure_venv() finished' -t 'Customizing Debian';
 }
 
 configure_grub() {
@@ -624,7 +624,7 @@ install_jupyterlab() {
     TOOL_SOURCE="Python VENV";
     # venv for jupyterlab
     VENV_NAME=".jupyter";
-    config_venv;
+    configure_venv;
     TOOL_SOURCE="PIP Repository";
     TOOL_INSTALL="jupyterlab";
     pip install jupyterlab > /dev/null 2>&1;
@@ -691,7 +691,7 @@ install_pulseview() {
         TOOL_INSTALL="Sigrok Python Virtual Environment";
         TOOL_SOURCE="Python VENV";
         VENV_NAME=".venv";    
-        config_venv;
+        configure_venv;
         # Python pip modules needed for libsigrok
         TOOL_INSTALL="Sigrok Python Prerequisites";
         TOOL_SOURCE="PIP Repository";
@@ -948,7 +948,7 @@ install_hwhacktools() {
         TOOL_INSTALL="BUSSide Python Virtual Environment"
         TOOL_SOURCE="Python VENV";
         VENV_NAME=".venv"
-        config_venv;
+        configure_venv;
         # activate Virtual Env
         TOOL_INSTALL="BUSSide PIP Requirements"
         pip install pyserial click esptool > /dev/null 2>&1;
@@ -1060,7 +1060,7 @@ ___EOF___
         TOOL_INSTALL="binwally Python Virtual Environment";
         TOOL_SOURCE="Python VENV";
         VENV_NAME=".venv";
-        config_venv;
+        configure_venv;
         
         TOOL_INSTALL="binwally PIP Requirements";
         TOOL_SOURCE="PIP Repository";
@@ -1082,7 +1082,7 @@ ___EOF___
         TOOL_INSTALL="Didier Stevens Suite";
         TOOL_SOURCE="Python VENV";
         VENV_NAME=".venv";
-        config_venv;
+        configure_venv;
         
         TOOL_SOURCE="PIP Repository";
         pip install -r $RE_DIR/DidierStevensSuite/requirements.txt > /dev/null 2>&1;
@@ -1614,7 +1614,7 @@ install_ytdlp() {
     TOOL_SOURCE="PIP Virtual Environment";
     TOOL_INSTALL="yt-dlp";
     VENV_NAME=".venv";
-    config_venv;
+    configure_venv;
     TOOL_INSTALL="yt-dlp";
     TOOL_SOURCE="PIP Repository";
     pip install yt-dlp > /dev/null 2>&1;
