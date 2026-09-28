@@ -11,6 +11,33 @@ Application categories are:
 
 But have a look by starting installmenu.py on the command line.
 
+## Categories
+### Base System & Nix Infrastructure
+- **Core Retrieval & Versioning Utilities**: curl, wget, git (configured during configure_nix)
+- Package Management 
+### Infrastructure
+- trixie-backports repository configurations and APT index updates (install_backports).
+### System Utilities (SYSTOOLS_INSTALL)
+- **Archive & Extraction Utilities**: unzip, zip, p7zip-full, tar (required prior to GNOME extension extraction).
+- **System - Diagnostics & Desktop Management**: rsync, tree, htop, dconf-cli, gsettings-desktop-schemas.
+- **Development Tools (install_devtools)**: Build Tools & Compilers: build-essential, gcc, g++, make, cmake.
+- **Language Runtimes & Packaging**: python3, python3-pip, python3-venv.
+### Network Diagnostics & Security (install_networktools)
+- Packet Analysis & Diagnostics: iputils-ping, net-tools, dnsutils, traceroute, nmap, wireshark, tcpdump, ncat.
+### Microsoft Integration (PWSH_INSTALL / MICROSOFT_APT)
+- APT Sources: Microsoft GPG keyring and repository source definitions (packages.microsoft.com).
+- Automated Shell Envs: PowerShell (pwsh).
+### Desktop Environment & GNOME Extensions
+- **GNOME Extensions**
+  - Dash to Panel: dash-to-panel@jderose9.github.com (extracted via unzip from extension source).
+  - Caffeine: caffeine@patapon.info (extracted via unzip from extension source).
+- **Shell Customizations**
+  - Dynamic Panel Length Configuration (GNOME_PANEL_LENGTH_DYNAMIC).
+  - Startup Overview Hider (GNOME_HIDE_OVERVIEW).
+- **Keyboard Customizations**
+  - Multimedia Hotkeys & - Keyboard Binds (MM_BUTTONS_CONFIGURE, KB_SHORTCUTS).
+  - Compose Key Mapping (MENU_IS_COMPOSE).
+
 ### Design principles:
   - Controlled by .env file that can now be managed through installmenu.py
   - Installs and configures flatpak + the Debian contrib and non-free repositories
@@ -18,6 +45,7 @@ But have a look by starting installmenu.py on the command line.
   - Installs some Networking, Forensics, Development, and System utilities
   - Install Hardware Hacking Tools
   - Configures GNOME to my liking, adding 2 extensions
+
 
 ## Latest changes ##
 
