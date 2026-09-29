@@ -34,6 +34,7 @@ CONFIG_GROUPS = [
         ("Install Sigrok Client & Pulseview", "PULSEVIEW_INSTALL"),
         ("Install Hashcat", "HASHCAT_INSTALL"),
         ("Install Reverse Engineering Tools", "REVERSETOOLS_INSTALL"),
+        ("Install Volatility", "VOLATILITY_INSTALL"),
     ]),
     ("Development", [
         ("Install Development Tools from Debian Packages", "DEVTOOLS_INSTALL"),
@@ -67,6 +68,7 @@ DEPENDENCIES = {
     "FP_ELECTRONICSTOOLS_INSTALL":["MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
     "FP_3DTOOLS_INSTALL":["MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
     "PWSH_INSTALL":["MICROSOFT_APT", "MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
+    "VOLATILITY_INSTALL":["PYTHON_INSTALL", "MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
 }
 
 def load_env(filepath=".env"):
@@ -279,7 +281,7 @@ def main():
                 "Virtualization",
                 "Development",
             ]
-            re_extra_vars = {"REVERSETOOLS_INSTALL", "HASHCAT_INSTALL"}
+            re_extra_vars = {"VOLATILITY_INSTALL", "REVERSETOOLS_INSTALL", "HASHCAT_INSTALL"}
             apply_preset(lines, re_groups, explicit_vars=re_extra_vars, preset_name="Reverse Engineering")
         elif choice == 'p':
             productivity_groups = [

@@ -156,8 +156,8 @@ configure_grub() {
 check_connectivity_ping() {
     # Checking that we can reach $TEST_URL over icmp
     until ping -c 1 -W 2 $TEST_URL > /dev/null 2>&1; do
-        echo -e "\e[31m[-]\t Waiting for connectivity to $TEST_URL...\e[0m"
-        sleep 5
+        echo -e "\e[31m[-]\t Waiting for connectivity to $TEST_URL...\e[0m";
+        sleep 5;
     done
     echo -e "\e[32m[+]\t[√] ICMP access to $TEST_URL. Continuing installation...\e[0m";
 }
@@ -165,10 +165,10 @@ check_connectivity_ping() {
 check_connectivity_http() {
     # Checking that we can reach $TEST_URL over HTTP
     until curl --user-agent $USER_AGENT --silent --head --request GET https://$TEST_URL > /dev/null 2>&1; do
-        echo -e "\e[31m[-]\t Waiting for network access to $TEST_URL...\e[0m"
-        sleep 5
+        echo -e "\e[31m[-]\t Waiting for network access to $TEST_URL...\e[0m";
+        sleep 5;
     done
-        echo -e "\e[32m[+]\t[√] HTTPS access to $TEST_URL\e[0m"
+    echo -e "\e[32m[+]\t[√] HTTPS access to $TEST_URL\e[0m"
 }
 
 check_already_installed() {
@@ -311,7 +311,7 @@ install_utils_apt() {
 
     export DEBIAN_FRONTEND=noninteractive;
     TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="Installing software";
+    TOOL_INSTALL="Selected software features";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
         echo -e "\n";
 
@@ -557,8 +557,13 @@ install_forensicstools() {
 
     echo -e "\e[35m[*]\t └─ Installing additional forensics tools\e[0m";
     TOOL_INSTALL="Additional Forensics Tools"
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install testdisk sleuthkit geoip-bin geoip-database > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install testdisk geoip-bin geoip-database > /dev/null 2>&1;
     check_status_install;
+
+    TOOL_INSTALL="autopsy";
+    TOOL_SOURCE="Debian Repository";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo apt-get -y install autopsy sleuthkit > /dev/null 2>&1;
     
     cd $SCRIPT_DIR;
 
@@ -1165,6 +1170,36 @@ install_virtualization() {
     TOOL_INSTALL="virsh";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-x86 libvirt-daemon-system libvirt-clients bridge-utils > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="qemu emulator for 32-bit and 64-bit Arm CPUs";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-arm > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="qemu emulator for PowerPC machines";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-ppc > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="qemu emulator for Sparc32 Systems";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-sparc > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="qemu emulator for 32-bit and 64-bit RISC-V CPUs";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-riscv > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="qemu emulator for 64-bit IBM z/Architecture (s390x) mainframe systems";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-s390x > /dev/null 2>&1;
     check_status_install;
 
     # Configure user rights to kvm and libvirt
@@ -1781,6 +1816,43 @@ install_ytdlp() {
     /usr/bin/logger 'install_ytdlp() finished' -t 'Customizing Debian';
 }
 
+install_volatility() {
+    echo -e "\e[35m[*] install_volatility()\n\e[0m";
+    /usr/bin/logger 'install_volatility()' -t 'Customizing Debian';
+
+    if [ -d $RE_DIR/volatility3 ]; then
+        TOOL_INSTALL="volatility3";
+        TOOL_SOURCE="Source";
+        cd $RE_DIR;
+        check_status_install;
+    else
+        TOOL_INSTALL="volatility3";
+        TOOL_SOURCE="Source";
+        VENV_NAME=".volatility";
+        configure_venv;
+        
+        TOOL_INSTALL="volatility3";
+        TOOL_SOURCE="Source";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+        cd $RE_DIR;
+        git clone https://github.com/volatilityfoundation/volatility3.git > /dev/null 2>&1;
+        check_status_install;
+
+        cd volatility3;
+        pip install -e ".[full]" > /dev/null 2>&1;
+        check_status_install;
+
+        TOOL_INSTALL="vol --help";
+        TOOL_SOURCE="volatility3";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+        vol --help > /dev/null 2>&1;
+        check_status_install;
+    fi
+
+    echo -e "\e[35m[*] install_volatility() finished\n\e[0m";
+    /usr/bin/logger 'install_volatility() finished' -t 'Customizing Debian';
+}
+
 show_errors() {
     # Show any errors logged in features.log
     # PKG_COUNT will already have counted up for the next package, so detract 1
@@ -1843,8 +1915,8 @@ main() {
         # Ensuring that sudo group membership is active.
         # /usr/bin/newgrp $SUDOGROUP;
         # Get sudo password
-        echo -e "\e[35m[*]\tSudo password needed"
-        echo -e "\e[35m[*]\t$(sudo echo .)\e[0m"
+        echo -e "\e[35m[*] Sudo password needed"
+        echo -e "$(sudo echo)\e[0m"
 
         # Separate window for features.log
         open_featureslog;
@@ -1894,7 +1966,12 @@ main() {
             install_utils_apt;
         fi
 
-       # Install HWHack Tools
+        # Install Volatility Memory Forensics V3
+        if [ "$VOLATILITY_INSTALL" == "Yes" ]; then
+            install_volatility;
+        fi
+
+        # Install HWHack Tools
         if [ "$HWHACKTOOLS_INSTALL" == "Yes" ]; then
             install_hwhacktools;
         fi
