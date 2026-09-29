@@ -26,6 +26,12 @@ do_intro() {
 
 do_outro() {
     /usr/bin/logger 'do_outro()' -t 'Customizing Debian';
+    echo -e "\e[32m\n";
+    echo -e "\e[32m\t-----------------------------------------------------";
+    echo -e "\e[33m\t\t Installed Configuration: \e[35m$PRESET_SELECTED\e[0m";
+    echo -e "\e[32m\t-----------------------------------------------------";
+    echo -e "\e[32m\n";
+    echo -e "\e[32m\n";
     echo -e '\e[32m\t  ____          _                  _          _   _              '
     echo -e '\e[32m\t / ___|   _ ___| |_ ___  _ __ ___ (_)______ _| |_(_) ___  _ __   '
     echo -e '\e[32m\t| |  | | | / __| __/ _ \| ´_ ` _ \| |_  / _` | __| |/ _ \| ´_ \  '
@@ -34,7 +40,7 @@ do_outro() {
     echo -e '\e[32m\t             |  ___(_)_ __ (_)___| |__   ___  __| |              '
     echo -e '\e[32m\t             | |_  | | ´_ \| / __| ´_ \ / _ \/ _` |              ' 
     echo -e '\e[32m\t             |  _| | | | | | \__ \ | | |  __/ (_| |              '
-    echo -e '\e[32m\t             |_|   |_|_| |_|_|___/_| |_|\___|\__,_|              '
+    echo -e '\e[32m\t             |_|   |_|_| |_|_|___/_| |_|\___|\__,_|              \e[0m'
     echo -e
     /usr/bin/logger 'do_outro() finished' -t 'Customizing Debian';
 }
@@ -304,6 +310,10 @@ install_utils_apt() {
     /usr/bin/logger 'install_utils_apt()' -t 'Customizing Debian';
 
     export DEBIAN_FRONTEND=noninteractive;
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="Installing software";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
+        echo -e "\n";
 
     # Trixie backports
     if [ "$BACKPORTS_INSTALL" == "Yes" ]; then
@@ -1582,7 +1592,7 @@ configure_serial_access() {
     TOOL_INSTALL="Adding user to group $SERIALGROUP";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     if id -nG "$USER" | grep -q "$SERIALGROUP"; then
-        echo -e "\e[35m[*]\t$USER already belongs to group: $SERIALGROUP, nothing to do\e[0m"
+        echo -e "\e[35m[*]\t └─ $USER already belongs to group: $SERIALGROUP. Nothing to do\e[0m"
         check_status_install;
     else
         TOOL_SOURCE="usermod";
@@ -1595,7 +1605,7 @@ configure_serial_access() {
     TOOL_INSTALL="Adding user to group $USBGROUP";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     if id -nG "$USER" | grep -q "$USBGROUP"; then
-        echo -e "\e[35m[*]\t$USER already belongs to group: $USBGROUP, nothing to do\e[0m"
+        echo -e "\e[35m[*]\t └─ $USER already belongs to group: $USBGROUP. Nothing to do\e[0m"
         check_status_install;
     else
         TOOL_SOURCE="usermod";

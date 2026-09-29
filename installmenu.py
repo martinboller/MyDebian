@@ -78,22 +78,6 @@ def load_env(filepath=".env"):
         print(f"Error: Could not find '{filepath}'. Place the script in the same folder.")
         sys.exit(1)
 
-def update_env_version(lines):
-    """Updates the ENV_VERSION variable with the current timestamp."""
-    now_iso = datetime.now().astimezone().isoformat(timespec='seconds')
-    pattern = re.compile(r'^(\s*ENV_VERSION\s*=\s*)["\']?.*?["\']?(\s*(?:#.*)?)$')
-    for i, line in enumerate(lines):
-        if re.match(r'^\s*ENV_VERSION\s*=', line):
-            lines[i] = pattern.sub(rf"\g<1>'{now_iso}'\g<2>", line)
-            break
-
-def save_env(lines, filepath=".env"):
-    """Writes updated lines back to the environment file."""
-    update_env_version(lines)
-    with open(filepath, "w") as f:
-        f.writelines(lines)
-    print("\n[+] Configuration saved successfully.")
-
 def extract_values(lines):
     """Parses current key-value pairs from file contents."""
     data = {}
@@ -104,12 +88,42 @@ def extract_values(lines):
     return data
 
 def update_var_in_lines(lines, var_name, new_val):
-    """Updates any variable's value while retaining original formatting."""
+    """Updates any variable's value while retaining original formatting, or appends it if absent."""
     pattern = re.compile(rf'^(\s*{var_name}\s*=\s*["\']?).*?(["\']?\s*(?:#.*)?)$')
+    found = False
     for i, line in enumerate(lines):
         if re.match(rf'^\s*{var_name}\s*=', line):
             lines[i] = pattern.sub(rf'\g<1>{new_val}\g<2>', line)
+            found = True
             break
+    if not found:
+        if lines and not lines[-1].endswith('\n'):
+            lines[-1] += '\n'
+        lines.append(f'{var_name}="{new_val}"\n')
+
+def update_env_version(lines):
+    """Updates the ENV_VERSION variable with the current timestamp upon save."""
+    now_iso = datetime.now().astimezone().isoformat(timespec='seconds')
+    update_var_in_lines(lines, "ENV_VERSION", now_iso)
+
+def update_preset_status(lines, intended_preset="Custom"):
+    """
+    Sets PRESET_SELECTED to 'All' if every feature variable is set to 'Yes'.
+    Otherwise, sets it to intended_preset.
+    """
+    env_data = extract_values(lines)
+    all_vars = {var_name for _, items in CONFIG_GROUPS for _, var_name in items}
+    if all(env_data.get(v, "No") == "Yes" for v in all_vars):
+        update_var_in_lines(lines, "PRESET_SELECTED", "All")
+    else:
+        update_var_in_lines(lines, "PRESET_SELECTED", intended_preset)
+
+def save_env(lines, filepath=".env"):
+    """Writes updated lines back to the environment file."""
+    update_env_version(lines)
+    with open(filepath, "w") as f:
+        f.writelines(lines)
+    print("\n[+] Configuration saved successfully.")
 
 def toggle_in_lines(lines, var_name, new_val):
     """Updates a variable's value while retaining original formatting."""
@@ -126,7 +140,6 @@ def enforce_dependencies(lines, last_action_var=None, last_action_val=None):
         changed = False
         env_data = extract_values(lines)
 
-        # 1. Direct disable propagation: if a prerequisite was toggled to 'No', disable dependent features
         if last_action_var and last_action_val == "No":
             for dep_var, req_vars in DEPENDENCIES.items():
                 if last_action_var in req_vars and env_data.get(dep_var, "No") == "Yes":
@@ -135,7 +148,6 @@ def enforce_dependencies(lines, last_action_var=None, last_action_val=None):
             if changed:
                 env_data = extract_values(lines)
 
-        # 2. Forward requirements check: Enable prerequisite packages if dependent tool is 'Yes'
         for dep_var, req_vars in DEPENDENCIES.items():
             if env_data.get(dep_var, "No") == "Yes":
                 for req in req_vars:
@@ -146,7 +158,6 @@ def enforce_dependencies(lines, last_action_var=None, last_action_val=None):
         if changed:
             env_data = extract_values(lines)
 
-        # 3. Guard check: Ensure dependent features aren't 'Yes' if any prerequisite is 'No'
         for dep_var, req_vars in DEPENDENCIES.items():
             if env_data.get(dep_var, "No") == "Yes":
                 if any(env_data.get(req, "No") != "Yes" for req in req_vars):
@@ -159,6 +170,7 @@ def set_all_values(lines, new_val):
         for _, var_name in items:
             toggle_in_lines(lines, var_name, new_val)
     enforce_dependencies(lines)
+    update_preset_status(lines, intended_preset="Custom")
 
 def toggle_all_values(lines):
     """
@@ -171,7 +183,7 @@ def toggle_all_values(lines):
     new_val = "No" if all_enabled else "Yes"
     set_all_values(lines, new_val)
 
-def apply_preset(lines, target_group_titles, explicit_vars=None):
+def apply_preset(lines, target_group_titles, explicit_vars=None, preset_name="Custom"):
     """
     Sets target groups and explicit variables to 'Yes' while disabling ('No')
     all other variables. Automatically resolves required package dependencies.
@@ -193,6 +205,7 @@ def apply_preset(lines, target_group_titles, explicit_vars=None):
         toggle_in_lines(lines, var_name, new_val)
 
     enforce_dependencies(lines)
+    update_preset_status(lines, intended_preset=preset_name)
 
 def toggle_vars(lines, var_names):
     """
@@ -207,21 +220,22 @@ def toggle_vars(lines, var_names):
         toggle_in_lines(lines, var, new_val)
 
     enforce_dependencies(lines)
+    update_preset_status(lines, intended_preset="Custom")
 
 def main():
     filepath = ".env"
     lines = load_env(filepath)
 
-    # Resolve dependencies on startup based on existing file state
     enforce_dependencies(lines)
 
     while True:
         clear()
         env_data = extract_values(lines)
+        preset_selected = env_data.get("PRESET_SELECTED", "Custom")
         option_map = {}
         index = 1
 
-        print("#####     Environment Features Configuration     #####")
+        print(f"#####     Environment Features Configuration [{preset_selected}]     #####")
     
         for group_title, items in CONFIG_GROUPS:
             print(f"-- {group_title} --")
@@ -258,7 +272,7 @@ def main():
                 "Development",
             ]
             hacker_extra_vars = {"FP_ELECTRONICSTOOLS_INSTALL", "FP_3DTOOLS_INSTALL"}
-            apply_preset(lines, hacker_groups, explicit_vars=hacker_extra_vars)
+            apply_preset(lines, hacker_groups, explicit_vars=hacker_extra_vars, preset_name="Hacking")
         elif choice == 'r':
             re_groups = [
                 "GNOME Desktop",
@@ -266,13 +280,13 @@ def main():
                 "Development",
             ]
             re_extra_vars = {"REVERSETOOLS_INSTALL", "HASHCAT_INSTALL"}
-            apply_preset(lines, re_groups, explicit_vars=re_extra_vars)
+            apply_preset(lines, re_groups, explicit_vars=re_extra_vars, preset_name="Reverse Engineering")
         elif choice == 'p':
             productivity_groups = [
                 "GNOME Desktop",
                 "User Tools",
             ]
-            apply_preset(lines, productivity_groups)
+            apply_preset(lines, productivity_groups, preset_name="Productivity")
         elif choice == 'm':
             toggle_vars(lines, ["MICROSOFT_APT", "PWSH_INSTALL"])
         elif choice == 'n':
@@ -280,7 +294,7 @@ def main():
                 "GNOME Desktop",
             ]
             networking_extra_vars = {"NETTOOLS_INSTALL", "SYSTOOLS_INSTALL", "PYTHON_INSTALL"}
-            apply_preset(lines, networking_groups, explicit_vars=networking_extra_vars)
+            apply_preset(lines, networking_groups, explicit_vars=networking_extra_vars, preset_name="Networking")
         elif choice == "g":
             toggle_vars(lines, ["MENU_IS_COMPOSE", "MM_BUTTONS_CONFIGURE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_EXTENSION_CAFFEINE", "GNOME_INTELLIHIDE", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW"])
         elif choice == 't':
@@ -295,6 +309,7 @@ def main():
             new_val = "No" if current_val == "Yes" else "Yes"
             toggle_in_lines(lines, var_to_toggle, new_val)
             enforce_dependencies(lines, last_action_var=var_to_toggle, last_action_val=new_val)
+            update_preset_status(lines, intended_preset="Custom")
         else:
             input("\nInvalid choice. Press Enter to try again...")
 
