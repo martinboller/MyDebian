@@ -10,22 +10,26 @@ gnome-extensions list | xargs -n1 gnome-extensions enable;
 
 # Configure Dash-to-panel extension
 DASH2PANEL_INSTALLED=$(gnome-extensions list | grep -i dash-to-panel) > /dev/null 2>&1;
-    #wait for dash-to-panel to be active
-    until (gnome-extensions list --active | grep dash-to-panel); do
-        /usr/bin/logger "Gnome Extension dash-to panel not yet active" -t 'Customizing Debian';
-        sleep 1;
-    done
 
     if [[ $DASH2PANEL_INSTALLED ]]; then
+        
+        #wait for dash-to-panel to be active
+        until (gnome-extensions list --active | grep dash-to-panel); do
+            /usr/bin/logger "Gnome Extension dash-to panel not yet active" -t 'Customizing Debian';
+            sleep 1;
+        done
+
         if [ $GNOME_INTELLIHIDE == "Yes" ]; then
             gsettings set org.gnome.shell.extensions.dash-to-panel intellihide true
             #change -1 to 100 below for a full width panel
         fi
+        
         #Disable overview at startup
         if [ $GNOME_HIDE_OVERVIEW == "Yes" ]; then
             gsettings set org.gnome.shell.extensions.dash-to-panel hide-overview-on-startup true
             /usr/bin/logger "GNOME Overview on startup disabled" -t 'Customizing Debian';
         fi
+        
         #Set length of panel to be dynamic
         if [ $GNOME_PANEL_LENGTH_DYNAMIC == "Yes" ]; then
             gsettings set org.gnome.shell.extensions.dash-to-panel panel-lengths '{"RHT-0x00000000":-1}'

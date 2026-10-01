@@ -100,35 +100,46 @@ configure_venv() {
     TOOL_INSTALL="Python VENV $VENV_NAME for $TOOL_INSTALL";
     TOOL_SOURCE="Python";
 
-    if [ -d "$HOME/$VENV_NAME/bin" ] ; then
+    if [ -d "$VENV_NAME/bin" ] ; then
         echo -e "\e[32m[+]\t$PKG_COUNT.\t$TOOL_INSTALL already installed from $TOOL_SOURCE\e[0m"   
         check_status_install;
     else
-        python3 -m venv ~/$VENV_NAME #> /dev/null 2>&1;
+        python3 -m venv $VENV_NAME #> /dev/null 2>&1;
         check_status_install;
-
-        echo -e "\e[35m[*]\t └─ Checking VENV path\e[0m";
-        export VENV_PATH=$(grep "$VENV_NAME/bin" ~/.profile)
-        if [ -n "$VENV_PATH" ]; then
-            echo -e "\e[35m[*]\t └─ VENV path already configured\e[0m";
-        else
-            echo -e "\e[35m[*]\t └─ Adding VENV path to $HOME/.profile\e[0m";
-            cat << ___EOF___ >> ~/.profile
-
-# set PATH so it includes user's private virtual environment/bin if it exists
-if [ -d "\$HOME/$VENV_NAME/bin" ] ; then
-    PATH="\$HOME/$VENV_NAME/bin:\$PATH"
-fi
-___EOF___
-        fi
     fi
-    
+
     export PATH="$HOME/$VENV_NAME/bin:$PATH"
     # activate Virtual Env
-    source ~/$VENV_NAME/bin/activate
+    TOOL_INSTALL="Activated Python VENV $VENV_NAME";
+    TOOL_SOURCE="Python";
+    source $VENV_NAME/bin/activate
 
     #echo -e "\e[35m[+]\t └─ configure_venv() finished\e[0m";
     /usr/bin/logger 'configure_venv() finished' -t 'Customizing Debian';
+}
+
+configure_primary_venv_path() {
+    echo -e "\e[35m[*] configure_primary_venv_path()\e[0m";
+    /usr/bin/logger 'configure_primary_venv_path()' -t 'Customizing Debian';
+
+    # Create path to the core virtual environment (and no other to avoid confusion)
+    echo -e "\e[35m[*]\t └─ Checking VENV path for primary Python VENV\e[0m";
+    export VENV_PATH=$(grep ".venv/bin" ~/.profile)
+    if [ -n "$VENV_PATH" ]; then
+        echo -e "\e[35m[*]\t └─ VENV path already configured\e[0m";
+    else
+        echo -e "\e[35m[*]\t └─ Adding VENV path to $HOME/.profile\e[0m";
+        cat << ___EOF___ >> ~/.profile
+
+# set PATH so it includes user's primary private virtual environment/bin if it exists
+if [ -d "\$HOME/.venv/bin" ] ; then
+    PATH="\$HOME/.venv/bin:\$PATH"
+fi
+___EOF___
+    fi
+
+    echo -e "\e[35m[*] configure_primary_venv_path() finished\e[0m";
+    /usr/bin/logger 'configure_primary_venv_path() finished' -t 'Customizing Debian';
 }
 
 configure_grub() {
@@ -255,7 +266,7 @@ install_updates() {
 
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y --purge autoremove > /dev/null 2>&1
     sudo DEBIAN_FRONTEND=noninteractive apt-get autoclean > /dev/null 2>&1
-    sync;
+
     cd $SCRIPT_DIR;
 
     echo -e "\e[32m[+] install_updates() finished\n\e[0m";
@@ -312,8 +323,7 @@ install_utils_apt() {
     export DEBIAN_FRONTEND=noninteractive;
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="Selected software features";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
-        echo -e "\n";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\n\e[0m";
 
     # Trixie backports
     if [ "$BACKPORTS_INSTALL" == "Yes" ]; then
@@ -343,6 +353,7 @@ install_utils_apt() {
     # PYTHON_INSTALL
     if [ "$PYTHON_INSTALL" == "Yes" ]; then
         install_pythontools;
+        auto_activate_venv;
         install_jupyterlab;
         if [ "$USERTOOLS_INSTALL" == "Yes" ]; then
             install_ytdlp;
@@ -390,22 +401,22 @@ install_hashcat() {
         TOOL_INSTALL="hashcat";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
         cd $SOURCE_DIR;
-        git clone https://github.com/hashcat/hashcat.git > /dev/null 2>&1;
-        cd hashcat
+        #git clone https://github.com/hashcat/hashcat.git > /dev/null 2>&1;
+        wget https://github.com/hashcat/hashcat/archive/refs/tags/v$HASHCAT_RELEASE.tar.gz > /dev/null 2>&1;
+        tar -xzf v$HASHCAT_RELEASE.tar.gz > /dev/null 2>&1;
+        cd hashcat-$HASHCAT_RELEASE/
         make clean > /dev/null 2>&1;
         make > /dev/null 2>&1;
         sudo make install > /dev/null 2>&1;
-        sync;
         check_install;
         cd $SCRIPT_DIR;
-        TOOL_INSTALL="libhashcat.so";
-        TOOL_ELF="hashcat";
-        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
-        check_ldd_install;
     fi
 
+    TOOL_INSTALL="Hashcat $(hashcat --version)";
+    check_status_install;
+ 
     echo -e "\e[32m[+] install_hashcat() finished\n\e[0m";
-    /usr/bin/logger 'installing hashcat finished' -t 'Customizing Debian';
+    /usr/bin/logger "installing hashcat finished" -t 'Customizing Debian';
 }
 
 install_backports() {
@@ -427,7 +438,6 @@ Components: main
 Enabled: yes
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 __EOF__
-    sync;
     sudo apt update > /dev/null 2>&1;
     check_status_install;
     fi
@@ -452,6 +462,10 @@ install_pythontools() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install python3 python3-pip python3-setuptools python3-gnupg python3-venv \
         libpython3-dev > /dev/null 2>&1;
     check_status_install;
+    VENV_NAME=~/.venv;
+    configure_venv;
+    configure_primary_venv_path;
+    # back to script directory
     cd $SCRIPT_DIR;
 
     echo -e "\e[32m[+] install_pythontools() finished\n\e[0m";
@@ -600,10 +614,29 @@ install_usertools() {
 
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="User Tools";
-    echo -e "\e[35m[*]\t └─ Installing user utils and other tools\e[0m";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install curl transmission-gtk vlc ffmpeg libavcodec-extra default-jdk sshpass rclone \
-        rclone-browser figlet lolcat cowsay sl cmatrix dconf-editor webp > /dev/null 2>&1;
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install transmission-gtk sshpass rclone rclone-browser \
+        figlet lolcat cowsay sl cmatrix webp > /dev/null 2>&1;
     check_status_install;
+
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="Video and Codecs";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install vlc ffmpeg libavcodec-extra > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="Default JDK";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install default-jdk > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="Gnome Shell Extensions UI";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gnome-shell-extension-prefs dconf-editor > /dev/null 2>&1;
+    check_status_install;
+
     cd $SCRIPT_DIR;
     
     echo -e "\e[32m[+] install_usertools() finished\n\e[0m";
@@ -655,7 +688,7 @@ install_jupyterlab() {
 
     TOOL_INSTALL="jupyterlab";
     # venv for jupyterlab
-    VENV_NAME=".jupyter";
+    VENV_NAME=~/.venv;
     configure_venv;
 
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -732,7 +765,7 @@ install_pulseview() {
         check_status_install;
 
         TOOL_INSTALL="Sigrok";
-        VENV_NAME=".venv";    
+        VENV_NAME="$SOURCE_DIR/sigrok/venv";    
         configure_venv;
         # Python pip modules needed for libsigrok
         TOOL_INSTALL="Sigrok PIP Prerequisites";
@@ -895,11 +928,11 @@ install_hwhacktools() {
         meson compile -C builddir > /dev/null 2>&1;
         meson test -C builddir > /dev/null 2>&1;
         sudo meson install -C builddir > /dev/null 2>&1;
+        check_status_install;
         ## Flashrom install in /usr/local/sbin which is not in PATH by default
         sudo cp $SCRIPT_DIR/files/flashrom.sh /etc/profile.d/ > /dev/null 2>&1;
         export PATH=$PATH:/usr/local/sbin;
-        sync
-        check_install;
+
         /usr/bin/logger 'Installed flashrom' -t 'Customizing Debian';
     fi
 
@@ -932,7 +965,6 @@ install_hwhacktools() {
         sudo make install > /dev/null 2>&1;
         mkdir ~/.openocd > /dev/null 2>&1;
         cp $SCRIPT_DIR/files/*.cfg ~/.openocd/ > /dev/null 2>&1;
-        sync
         check_install;
         /usr/bin/logger 'Installed openOCD' -t 'Customizing Debian';
     fi
@@ -956,7 +988,6 @@ install_hwhacktools() {
         git clone https://github.com/martinboller/SNANDer > /dev/null 2>&1;
         cd SNANDer > /dev/null 2>&1;
         ./build-for-linux.sh > /dev/null 2>&1;
-        sync;
         sudo cp ./build/snander /usr/bin/ > /dev/null 2>&1;
         check_install;
         /usr/bin/logger 'Installed snander' -t 'Customizing Debian';
@@ -1002,9 +1033,9 @@ install_hwhacktools() {
         # Python stuff for BUSSide
         cd ./BUSSide/Client > /dev/null 2>&1;
         TOOL_INSTALL="BUSSide"
-        VENV_NAME=".venv"
+        VENV_NAME="$SOURCE_DIR/BUSSide/Client/venv"
         configure_venv;
-        # activate Virtual Env
+        #source ~/$VENV_NAME/bin/activate > /dev/null 2>&1;  
         TOOL_INSTALL="BUSSide PIP Requirements"
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         pip install pyserial click esptool > /dev/null 2>&1;
@@ -1014,21 +1045,24 @@ install_hwhacktools() {
     # Serial U-BOOT tool (Python)
     TOOL_INSTALL="sertack"
     TOOL_SOURCE="Source";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
     if [ -d $RE_DIR/$TOOL_INSTALL ]; then
         cd $SOURCE_DIR;
     else
         cd $SOURCE_DIR;
         git clone https://github.com/martinboller/sertack.git > /dev/null 2>&1;
         check_status_install;
-    fi
 
-    TOOL_INSTALL="python3-serial"
-    TOOL_SOURCE="Debian Repository";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install python3-serial > /dev/null 2>&1;
+        VENV_NAME="$SOURCE_DIR/$TOOL_INSTALL/venv"
+        configure_venv;
+        #source ~/$VENV_NAME/bin/activate > /dev/null 2>&1;
+        TOOL_INSTALL="sertack"
+        TOOL_SOURCE="sertack sertack PIP Requirements";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
+        pip install pyserial > /dev/null 2>&1;
+        check_status_install;
+    fi
     /usr/bin/logger 'Installed sertack' -t 'Customizing Debian';
-    check_status_install;
     
     # udev stuff to make devices work
     cd ~
@@ -1120,7 +1154,7 @@ ___EOF___
 
         # Python stuff for binwally
         TOOL_INSTALL="binwally";
-        VENV_NAME=".venv";
+        VENV_NAME="$RE_DIR/$TOOL_INSTALL/venv";
         configure_venv;
         
         TOOL_INSTALL="binwally PIP Requirements";
@@ -1130,7 +1164,7 @@ ___EOF___
         check_status_install;
     fi
 
-    TOOL_INSTALL="Didier Stevens Suite";
+    TOOL_INSTALL="DidierStevensSuite";
     TOOL_SOURCE="Source"
     if [ -d $RE_DIR/DidierStevensSuite ]; then
         cd $RE_DIR;
@@ -1142,7 +1176,7 @@ ___EOF___
         check_status_install;
         
         # Python stuff for DidierStevensSuite
-        VENV_NAME=".venv";
+        VENV_NAME="$RE_DIR/$TOOL_INSTALL/venv";
         configure_venv;
 
         TOOL_INSTALL="Didier Stevens Suite PIP Requirements";
@@ -1246,6 +1280,40 @@ install_flatpak() {
 
     echo -e "\e[32m[+] install_flatpak() finished\n\e[0m";
     /usr/bin/logger 'install_flatpak() finished' -t 'Customizing Debian';
+}
+
+auto_activate_venv() {
+    echo -e "\e[32m[+] auto_activate_venv()\n\e[0m";
+    /usr/bin/logger 'auto_activate_venv()' -t 'Customizing Debian';
+
+    # Shell config file for BASH
+    shell_config_file=~/.bashrc;
+    # Check if the script is already in the config file
+    if grep -q "auto_activate_venv" "$shell_config_file"; then
+        echo "\e[35m[*]\t └─ Auto-activation script already exists in $shell_config_file\e[0m"
+        return
+    else
+        echo "\e[35m[*]\t └─ Adding auto-activation script to $shell_config_file\e[0m"
+        cat >> "$shell_config_file" << '__EOF__'
+
+# Auto activate virtual environment if in a project directory with a venv folder
+function auto_activate_venv() {
+    if [ -f "venv/bin/activate" ]; then
+        source venv/bin/activate
+    fi
+}
+
+# Trigger auto_activate_venv function on directory change
+PROMPT_COMMAND="auto_activate_venv; $PROMPT_COMMAND"
+__EOF__
+    # echo "\e[35m[*]\tAuto-activation script added to $shell_config_file. Please restart your terminal or run 'source $shell_config_file' to apply changes."
+    fi
+
+    source $shell_config_file
+    check_status_install;
+
+    echo -e "\e[32m[+] auto_activate_venv() finished\n\e[0m";
+    /usr/bin/logger 'auto_activate_venv() finished' -t 'Customizing Debian';
 }
 
 install_utils_flatpak() {
@@ -1804,7 +1872,7 @@ install_ytdlp() {
     /usr/bin/logger 'install_ytdlp()' -t 'Customizing Debian';
 
     TOOL_INSTALL="yt-dlp";
-    VENV_NAME=".venv";
+    VENV_NAME=~/.venv;
     configure_venv;
     TOOL_INSTALL="yt-dlp";
     TOOL_SOURCE="PIP Repository";
@@ -1828,24 +1896,18 @@ install_volatility() {
     else
         TOOL_INSTALL="volatility3";
         TOOL_SOURCE="Source";
-        VENV_NAME=".volatility";
-        configure_venv;
-        
-        TOOL_INSTALL="volatility3";
-        TOOL_SOURCE="Source";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         cd $RE_DIR;
         git clone https://github.com/volatilityfoundation/volatility3.git > /dev/null 2>&1;
         check_status_install;
 
+        TOOL_INSTALL="volatility3";
+        TOOL_SOURCE="Source";
+        VENV_NAME=$RE_DIR/$TOOL_INSTALL/venv;
+        configure_venv;
+
         cd volatility3;
         pip install -e ".[full]" > /dev/null 2>&1;
-        check_status_install;
-
-        TOOL_INSTALL="vol --help";
-        TOOL_SOURCE="volatility3";
-        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-        vol --help > /dev/null 2>&1;
         check_status_install;
     fi
 
@@ -1889,8 +1951,6 @@ cleanup() {
     sudo apt -y autoremove --purge > /dev/null 2>&1;
     check_status_install;
     sudo apt autoclean > /dev/null 2>&1;
-
-    sync;
 
     echo -e "\e[32m[+] cleanup() finished\n\e[0m";
     /usr/bin/logger 'cleanup() finished' -t 'Customizing Debian';
