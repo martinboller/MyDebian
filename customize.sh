@@ -284,6 +284,7 @@ show_features_enabled() {
                 echo -e "\e[35m\t++ $key\e[0m"
             fi
     done < $SCRIPT_DIR/.env;
+    echo -e "\e[35m\n\t++ Based on the preset: \e[36m$PRESET_SELECTED\n\e[0m"
 }
 
 open_featureslog() {
@@ -355,9 +356,6 @@ install_utils_apt() {
         install_pythontools;
         auto_activate_venv;
         install_jupyterlab;
-        if [ "$USERTOOLS_INSTALL" == "Yes" ]; then
-            install_ytdlp;
-        fi
     fi
 
     # DEVTOOLS_INSTALL
@@ -408,6 +406,7 @@ install_hashcat() {
         make clean > /dev/null 2>&1;
         make > /dev/null 2>&1;
         sudo make install > /dev/null 2>&1;
+        rm v$HASHCAT_RELEASE.tar.gz;
         check_install;
         cd $SCRIPT_DIR;
     fi
@@ -1206,36 +1205,43 @@ install_virtualization() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-x86 libvirt-daemon-system libvirt-clients bridge-utils > /dev/null 2>&1;
     check_status_install;
 
-    TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="qemu emulator for 32-bit and 64-bit Arm CPUs";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-arm > /dev/null 2>&1;
-    check_status_install;
+    if [ "$QEMU_EMULATORS" == "Yes" ]; then
+        # ARM
+        TOOL_SOURCE="Debian Repository";
+        TOOL_INSTALL="qemu emulator for 32-bit and 64-bit Arm CPUs";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-arm > /dev/null 2>&1;
+        check_status_install;
 
-    TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="qemu emulator for PowerPC machines";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-ppc > /dev/null 2>&1;
-    check_status_install;
+        # PPC
+        TOOL_SOURCE="Debian Repository";
+        TOOL_INSTALL="qemu emulator for PowerPC machines";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-ppc > /dev/null 2>&1;
+        check_status_install;
 
-    TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="qemu emulator for Sparc32 Systems";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-sparc > /dev/null 2>&1;
-    check_status_install;
+        # SPARC32
+        TOOL_SOURCE="Debian Repository";
+        TOOL_INSTALL="qemu emulator for Sparc32 Systems";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-sparc > /dev/null 2>&1;
+        check_status_install;
 
-    TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="qemu emulator for 32-bit and 64-bit RISC-V CPUs";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-riscv > /dev/null 2>&1;
-    check_status_install;
+        # RISC-V
+        TOOL_SOURCE="Debian Repository";
+        TOOL_INSTALL="qemu emulator for 32-bit and 64-bit RISC-V CPUs";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-riscv > /dev/null 2>&1;
+        check_status_install;
 
-    TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="qemu emulator for 64-bit IBM z/Architecture (s390x) mainframe systems";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-s390x > /dev/null 2>&1;
-    check_status_install;
-
+        # s390x
+        TOOL_SOURCE="Debian Repository";
+        TOOL_INSTALL="qemu emulator for 64-bit IBM z/Architecture (s390x) mainframe systems";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-s390x > /dev/null 2>&1;
+        check_status_install;
+    fi
+    
     # Configure user rights to kvm and libvirt
     sudo usermod -aG kvm $USER > /dev/null 2>&1;
     sudo usermod -aG libvirt $USER > /dev/null 2>&1;
@@ -1290,10 +1296,10 @@ auto_activate_venv() {
     shell_config_file=~/.bashrc;
     # Check if the script is already in the config file
     if grep -q "auto_activate_venv" "$shell_config_file"; then
-        echo "\e[35m[*]\t └─ Auto-activation script already exists in $shell_config_file\e[0m"
+        echo -e "\e[35m[*]\t └─ Auto-activation script already exists in $shell_config_file\e[0m"
         return
     else
-        echo "\e[35m[*]\t └─ Adding auto-activation script to $shell_config_file\e[0m"
+        echo -e "\e[35m[*]\t └─ Adding auto-activation script to $shell_config_file\e[0m"
         cat >> "$shell_config_file" << '__EOF__'
 
 # Auto activate virtual environment if in a project directory with a venv folder
@@ -1306,7 +1312,6 @@ function auto_activate_venv() {
 # Trigger auto_activate_venv function on directory change
 PROMPT_COMMAND="auto_activate_venv; $PROMPT_COMMAND"
 __EOF__
-    # echo "\e[35m[*]\tAuto-activation script added to $shell_config_file. Please restart your terminal or run 'source $shell_config_file' to apply changes."
     fi
 
     source $shell_config_file
@@ -1929,6 +1934,7 @@ show_errors() {
         echo -e "\e[32m[+]\tNo errors during install. $PKG_COUNT features installed\e[0m" | tee -a $SCRIPT_DIR/features.log;
         /usr/bin/logger "No errors during install. $PKG_COUNT features installed" -t 'Customizing Debian';
     fi
+    echo -e "\e[35m\n[*]Finished installation of the preset: $PRESET_SELECTED\n\e[0m" | tee -a $SCRIPT_DIR/features.log; 
 }
 
 cleanup() {
@@ -2024,6 +2030,16 @@ main() {
         # Debian APT packages
         if [ "$APT_UTILS" == "Always" ]; then
             install_utils_apt;
+        fi
+
+        # Install YT-DLP
+        if [ "$YTDLP_INSTALL" == "Yes" ]; then
+            install_ytdlp;
+        fi
+
+        # Install YT-DLP
+        if [ "$JUPYTER_INSTALL" == "Yes" ]; then
+            install_jupyterlab;
         fi
 
         # Install Volatility Memory Forensics V3
