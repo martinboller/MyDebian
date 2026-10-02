@@ -406,8 +406,9 @@ install_hashcat() {
         make clean > /dev/null 2>&1;
         make > /dev/null 2>&1;
         sudo make install > /dev/null 2>&1;
-        rm v$HASHCAT_RELEASE.tar.gz;
         check_install;
+        cd $SOURCE_DIR;
+        rm v$HASHCAT_RELEASE.tar.gz > /dev/null 2>&1;
         cd $SCRIPT_DIR;
     fi
 
