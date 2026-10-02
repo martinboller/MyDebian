@@ -57,23 +57,23 @@ CONFIG_GROUPS = [
     ]),
 ]
 
-# Mapping of features to their required dependency packages
+# # Mapping of features to their required dependency packages
 DEPENDENCIES = {
     "HWHACKTOOLS_INSTALL": ["BACKPORTS_INSTALL", "YTDLP_INSTALL", "DEVTOOLS_INSTALL", "PYTHON_INSTALL", "MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
     "PULSEVIEW_INSTALL": ["BACKPORTS_INSTALL", "DEVTOOLS_INSTALL", "PYTHON_INSTALL", "MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
-    "HASHCAT_INSTALL": ["DEVTOOLS_INSTALL", "PYTHON_INSTALL", "MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
+    "HASHCAT_INSTALL": ["DEVTOOLS_INSTALL", "PYTHON_INSTALL"],
     "REVERSETOOLS_INSTALL": ["DEVTOOLS_INSTALL", "PYTHON_INSTALL", "MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
     "USERTOOLS_INSTALL":["PYTHON_INSTALL", "YTDLP_INSTALL", "MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
-    "DEVTOOLS_INSTALL":["PYTHON_INSTALL", "YTDLP_INSTALL", "MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
+    "DEVTOOLS_INSTALL":["PYTHON_INSTALL", "MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
     "GO_INSTALL":["MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
     "FP_DEVTOOLS_INSTALL":["PYTHON_INSTALL", "MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
     "FP_USERTOOLS_INSTALL":["MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
     "FP_ELECTRONICSTOOLS_INSTALL":["MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
     "FP_3DTOOLS_INSTALL":["MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
-    "PWSH_INSTALL":["MICROSOFT_APT", "MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
-    "VOLATILITY_INSTALL":["PYTHON_INSTALL", "MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
-    "JUPYTER_INSTALL":["PYTHON_INSTALL", "MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
-    "YTDLP_INSTALL":["PYTHON_INSTALL", "MM_BUTTONS_CONFIGURE", "MENU_IS_COMPOSE", "KB_SHORTCUTS", "GNOME_EXTENSION_DASH_TO_PANEL", "GNOME_PANEL_LENGTH_DYNAMIC", "GNOME_HIDE_OVERVIEW", "GNOME_EXTENSION_CAFFEINE"],
+    "PWSH_INSTALL":["MICROSOFT_APT"],
+    "VOLATILITY_INSTALL":["PYTHON_INSTALL"],
+    "JUPYTER_INSTALL":["PYTHON_INSTALL"],
+    "YTDLP_INSTALL":["PYTHON_INSTALL"],
     "QEMU_EMULATORS":["VIRT_INSTALL"],
 }
 
@@ -139,38 +139,37 @@ def toggle_in_lines(lines, var_name, new_val):
 
 def enforce_dependencies(lines, last_action_var=None, last_action_val=None):
     """
-    Enforces feature package dependencies bi-directionally:
-    1. If a tool depending on prerequisites is enabled, automatically enables its required packages.
-    2. If a required package is explicitly disabled ('No'), automatically disables dependent tools.
+    Enforces feature package dependencies:
+    1. If a required dependency is explicitly turned OFF ('No'), automatically turn OFF any tool that depends on it.
+    2. If a tool is enabled ('Yes'), transitively enable all of its required dependencies.
     """
+    env_data = extract_values(lines)
+
+    # 1. Handle explicit disabling: If last_action_var was set to 'No', disable dependent features.
+    if last_action_var and last_action_val == "No":
+        changed = True
+        while changed:
+            changed = False
+            for dep_var, req_vars in DEPENDENCIES.items():
+                if env_data.get(dep_var, "No") == "Yes" and last_action_var in req_vars:
+                    toggle_in_lines(lines, dep_var, "No")
+                    env_data[dep_var] = "No"
+                    # Recursively check if disabling this disables higher-level tools
+                    last_action_var = dep_var 
+                    changed = True
+
+    # 2. Handle enabling: Transitively enable required dependencies
     changed = True
     while changed:
         changed = False
         env_data = extract_values(lines)
-
-        if last_action_var and last_action_val == "No":
-            for dep_var, req_vars in DEPENDENCIES.items():
-                if last_action_var in req_vars and env_data.get(dep_var, "No") == "Yes":
-                    update_var_in_lines(lines, dep_var, "No")
-                    changed = True
-            if changed:
-                env_data = extract_values(lines)
-
         for dep_var, req_vars in DEPENDENCIES.items():
             if env_data.get(dep_var, "No") == "Yes":
                 for req in req_vars:
                     if env_data.get(req, "No") != "Yes":
-                        update_var_in_lines(lines, req, "Yes")
+                        toggle_in_lines(lines, req, "Yes")
+                        env_data[req] = "Yes"
                         changed = True
-
-        if changed:
-            env_data = extract_values(lines)
-
-        for dep_var, req_vars in DEPENDENCIES.items():
-            if env_data.get(dep_var, "No") == "Yes":
-                if any(env_data.get(req, "No") != "Yes" for req in req_vars):
-                    update_var_in_lines(lines, dep_var, "No")
-                    changed = True
 
 def set_all_values(lines, new_val):
     """Bulk sets all defined variables in CONFIG_GROUPS to target value."""

@@ -355,7 +355,6 @@ install_utils_apt() {
     if [ "$PYTHON_INSTALL" == "Yes" ]; then
         install_pythontools;
         auto_activate_venv;
-        install_jupyterlab;
     fi
 
     # DEVTOOLS_INSTALL
@@ -377,6 +376,10 @@ install_hashcat() {
     check_already_installed;
 
     if [ $TOOL_INSTALLED == False ]; then
+        # Check that github is reachable
+        TEST_URL="github.com";
+        check_connectivity_http;
+
         TOOL_SOURCE="Debian Repository";
         TOOL_INSTALL="hashcat prerequisites";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
@@ -384,16 +387,17 @@ install_hashcat() {
             liblzma-dev > /dev/null 2>&1;
         check_status_install;
         
-        # install .pyenv for hashcat
+        # install VENV for hashcat
         TOOL_INSTALL="hashcat Virtual Environment";
-        TOOL_SOURCE="PYENV";
-        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
-        curl --user-agent $USER_AGENT --silent https://pyenv.run | bash > /dev/null 2>&1;
-        check_status_install;
+        TOOL_SOURCE="Python VENV";
+        # echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
+        VENV_NAME=~/.hashcat_venv;
+        configure_venv;
 
-        # Check that github is reachable
-        TEST_URL="github.com";
-        check_connectivity_http;
+        TOOL_INSTALL="hashcat PIP Requirements";
+        TOOL_SOURCE="PIP Repository";
+        pip install pyescrypt > /dev/null 2>&1;
+        check_status_install;
 
         TOOL_SOURCE="Source";
         TOOL_INSTALL="hashcat";
@@ -2038,7 +2042,7 @@ main() {
             install_ytdlp;
         fi
 
-        # Install YT-DLP
+        # Install Jupyterlab
         if [ "$JUPYTER_INSTALL" == "Yes" ]; then
             install_jupyterlab;
         fi
