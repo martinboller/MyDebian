@@ -21,7 +21,6 @@ DASH2PANEL_INSTALLED=$(gnome-extensions list | grep -i dash-to-panel) > /dev/nul
 
         if [ $GNOME_INTELLIHIDE == "Yes" ]; then
             gsettings set org.gnome.shell.extensions.dash-to-panel intellihide true
-            #change -1 to 100 below for a full width panel
         fi
         
         #Disable overview at startup
@@ -32,10 +31,36 @@ DASH2PANEL_INSTALLED=$(gnome-extensions list | grep -i dash-to-panel) > /dev/nul
         
         #Set length of panel to be dynamic
         if [ $GNOME_PANEL_LENGTH_DYNAMIC == "Yes" ]; then
+            #change -1 to 100 below for a full width panel
             gsettings set org.gnome.shell.extensions.dash-to-panel panel-lengths '{"RHT-0x00000000":-1}'
             /usr/bin/logger "Dynamic length for $DASH2PANEL_INSTALLED configured" -t 'Customizing Debian';
         fi
     fi
+
+# GNOME Favorite apps
+if [[ $PRESET_SELECTED ]]; then
+    /usr/bin/logger "Configuring Favorite Applications for $PRESET_SELECTED" -t 'Customizing Debian';
+    if [[ $PRESET_SELECTED == "Reverse Engineering" ]]; then
+        # Favorites for Reverse Engineering Preset
+        gsettings set org.gnome.shell favorite-apps "['firefox-esr.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Calculator.desktop', 'org.gnome.Terminal.desktop', 'jupyter-lab.desktop', 'com.vscodium.codium.desktop', 'org.ghidra_sre.Ghidra.desktop', 'com.github.afrantzis.Bless.desktop', 'org.gnome.Software.desktop']";
+    elif [[ $PRESET_SELECTED == "Hacking" ]]; then
+        # Favorites for Hacking Preset
+        gsettings set org.gnome.shell favorite-apps "['firefox-esr.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop', 'org.ghidra_sre.Ghidra.desktop', 'org.sigrok.PulseView.desktop', 'com.vscodium.codium.desktop', 'org.wireshark.Wireshark.desktop', 'org.gnome.Software.desktop']";
+    elif  [[ $PRESET_SELECTED == "Networking" ]]; then
+        # Favorites for Networking Preset
+        gsettings set org.gnome.shell favorite-apps "['firefox-esr.desktop', 'org.gnome.Nautilus.desktop', 'flent.desktop', 'org.wireshark.Wireshark.desktop', 'org.gnome.Terminal.desktop', 'org.ghidra_sre.Ghidra.desktop', 'com.github.afrantzis.Bless.desktop', 'org.gnome.Software.desktop']";
+    elif [[ $PRESET_SELECTED == "Productivity" ]]; then
+        # Favorites for Productivity Preset
+        gsettings set org.gnome.shell favorite-apps "['firefox-esr.desktop', 'org.gnome.Nautilus.desktop', 'libreoffice-calc.desktop', 'libreoffice-draw.desktop', 'libreoffice-impress.desktop', 'libreoffice-writer.desktop', 'jupyter-lab.desktop', 'org.gnome.Evolution.desktop', 'org.gnome.Software.desktop']";
+    elif [[ $PRESET_SELECTED == "All" ]]; then
+        # Favorites for All Preset 
+        gsettings set org.gnome.shell favorite-apps "['firefox-esr.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop', 'org.ghidra_sre.Ghidra.desktop', 'org.sigrok.PulseView.desktop', 'com.vscodium.codium.desktop', 'jupyter-lab.desktop', 'org.wireshark.Wireshark.desktop', 'org.gnome.Software.desktop']";
+    elif [[ $PRESET_SELECTED == "All" ]]; then
+        # Favorites for Custom configuration
+        /usr/bin/logger "No changes to Favorite Applications for $PRESET_SELECTED" -t 'Customizing Debian';    
+    fi
+    /usr/bin/logger "Favorite Applications for $PRESET_SELECTED configured" -t 'Customizing Debian';
+fi
 
 # Remove autostart so it does not run at every logon for this user
 /usr/bin/logger "Removing autostart entry so it does not run at every logon for user: $USER" -t 'Customizing Debian';

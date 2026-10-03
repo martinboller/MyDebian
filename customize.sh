@@ -503,6 +503,8 @@ install_networktools() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install iputils-arping iputils-tracepath arpwatch arpalert tcpdump nmap ncat ngrep ethtool aircrack-ng \
         whois dnsutils flent net-tools tshark termshark > /dev/null 2>&1;
     check_status_install;
+    
+    create_flent_desktop_file;
 
     TOOL_INSTALL="Network Engineering Tools";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";    
@@ -701,15 +703,8 @@ install_jupyterlab() {
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     pip install jupyterlab > /dev/null 2>&1;
     check_status_install;
-    
-    TOOL_INSTALL="jupyterLab Desktop file";
-    TOOL_SOURCE="Script";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    #Adding desktop shortcut for jupyter lab
-    cp $SCRIPT_DIR/files/jupyter-lab.desktop ~/.local/share/applications/;
-    chmod 700 ~/.local/share/applications/jupyter-lab.desktop;
-    chown $USER:$USER ~/.local/share/applications/jupyter-lab.desktop;
-    check_status_install;
+
+    create_jupyter_desktop_file;
 
     echo -e "\e[32m[+] install_jupyterlab() finished\n\e[0m";
     /usr/bin/logger 'install_jupyterlab() finished' -t 'Customizing Debian';
@@ -1115,6 +1110,13 @@ if [ -d "\$HOME/.cargo/bin" ] ; then
 fi
 ___EOF___
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install cargo build-essential libfontconfig1-dev liblzma-dev > /dev/null 2>&1;
+        check_status_install;
+        # update rust and cargo to latest stable
+        TOOL_INSTALL="Latest stable rust";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+        sync;
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install rustup > /dev/null 2>&1; 
+        rustup default stable > /dev/null 2>&1;
         check_status_install;
         fi
     fi
@@ -1923,6 +1925,67 @@ install_volatility() {
 
     echo -e "\e[35m[*] install_volatility() finished\n\e[0m";
     /usr/bin/logger 'install_volatility() finished' -t 'Customizing Debian';
+}
+
+create_jupyter_desktop_file() {
+    echo -e "\e[35m[*] create_jupyter_desktop_file()\e[0m";
+    /usr/bin/logger 'create_jupyter_desktop_file()' -t 'Customizing Debian';
+
+    mkdir $HOME/.local/share/applications > /dev/null 2>&1;
+    # icon
+    mkdir $HOME/.local/share/icons > /dev/null 2>&1;
+    cp $SCRIPT_DIR/files/jupyter-lab.png $HOME/.local/share/icons;
+
+    cat << ___EOF___ >> ~/.local/share/applications/jupyter-lab.desktop
+[Desktop Entry]
+Type=Application
+Name[en_GB]=Jupyter Lab
+Name=Jupyter Lab
+Comment[en_GB]=Start Jupyter Lab
+Comment=Start and interact with Jupyter Lab from your browser
+Keywords=Jupyter;Notebook;Lab
+Exec=jupyter lab
+# Translators: Do NOT translate or transliterate this text (this is an icon file name)!
+Icon=$HOME/.local/share/icons/jupyter-lab.png
+#org.gnome.Software
+Terminal=false
+Type=Application
+StartupNotify=true
+Categories=Jupyter;Lab;
+___EOF___
+
+    # Create unique desktop file and icon for jupyter
+    sudo chmod 700 $HOME/.local/share/applications/jupyter-lab.desktop;
+    sudo chown $USER $HOME/.local/share/applications/jupyter-lab.desktop;
+    sudo chown $USER $HOME/.local/share/icons/jupyter-lab.png;
+
+    echo -e "\e[35m[*] create_jupyter_desktop_file() finished\n\e[0m";
+    /usr/bin/logger 'create_jupyter_desktop_file() finished' -t 'Customizing Debian';
+}
+
+create_flent_desktop_file() {
+    echo -e "\e[35m[*] create_flent_desktop_file()\e[0m";
+    /usr/bin/logger 'create_flent_desktop_file()' -t 'Customizing Debian';
+
+    cat << ___EOF___ >> ~/.local/share/applications/flent.desktop
+[Desktop Entry]
+Type=Application
+Name=Flent
+Comment=The FLExible Network Tester
+Exec=flent --gui %F
+Icon=preferences-system-network
+#applications-internet
+Categories=Qt;Network;
+Terminal=false
+Keywords=network;bufferbloat;performance;testing;rrul;
+MimeType=application/vnd.flent.data+json;application/vnd.flent.data.gzip;application/vnd.flent.data.bzip2;application/x-compressed-json;
+___EOF___
+
+    # Create unique desktop file for flent
+    sudo chmod 700 $HOME/.local/share/applications/flent.desktop;
+
+    echo -e "\e[35m[*] create_flent_desktop_file() finished\e[0m";
+    /usr/bin/logger 'create_flent_desktop_file() finished' -t 'Customizing Debian';
 }
 
 show_errors() {
