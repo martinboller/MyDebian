@@ -1,0 +1,19 @@
+[Desktop Entry]
+Type=Application
+StartupWMClass=Vol3Term
+Name[en_GB]=Volatility Memory Forensics
+Name=Volatility Memory Forensics
+Comment[en_GB]=Start Volatility in Terminal
+Comment=Start Volatility in Terminal
+Exec=gnome-terminal --class="Vol3Term" --name="Vol3Term" --working-directory="git/RE/volatility3/" -- bash -c "source venv/bin/activate && exec bash"
+Icon=volatility3.png
+Terminal=false
+StartupNotify=true
+Name[en]=Volatility Memory Forensics
+Name[en_GB.UTF-8]=Volatility Memory Forensics
+Comment[en]=Start Volatility in Terminal
+Comment[en_GB.UTF-8]=Start Volatility in Terminal
+PrefersNonDefaultGPU=false
+NoDisplay=false
+Categories=X-Forensics;X-ReverseEnginering;
+Hidden=false

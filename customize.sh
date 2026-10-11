@@ -370,6 +370,78 @@ install_proprietary_filesystems() {
     /usr/bin/logger 'install_proprietary_filesystems() finished' -t 'Customizing Debian';
 }
 
+install_openjava() {
+    echo -e "\e[32m[+] install_openjava()\n\e[0m";
+    /usr/bin/logger 'install_openjava()' -t 'Customizing Debian';
+
+    TOOL_INSTALL="OpenJDK and OpenJRE";
+    echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install pkg-config openjdk-25-jdk openjdk-25-jre > /dev/null 2>&1;
+    check_status_install;
+
+    echo -e "\e[32m[+] install_openjava() finished\n\e[0m";
+    /usr/bin/logger 'install_openjava() finished' -t 'Customizing Debian';
+}
+
+install_autopsy() {
+    echo -e "\e[32m[+] install_autopsy()\n\e[0m";
+    /usr/bin/logger 'install_autopsy()' -t 'Customizing Debian';
+
+    cd $SCRIPT_DIR;
+    TOOL_INSTALL="The Sleuth Kit (tsk)";
+    TOOL_SOURCE="Debian Repositories";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install sleuthkit > /dev/null 2>&1;
+    check_status_install;
+
+    # Autopsy require OpenJDK 17 and that is too old for Debian 13
+    # Keeping as a placeholder for when/if it will work with newer versions-
+    # TOOL_ELF="java";
+    # check_already_installed;
+    # if [ $TOOL_INSTALLED == False ]; then
+    #     install_openjava;
+    # fi
+
+    # # Download The Sleuth Kit script to install from source
+    # TOOL_INSTALL="The Sleuth Kit (tsk) install script";
+    # TOOL_SOURCE="Source";
+    # echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
+    # curl -sSL https://raw.githubusercontent.com/sleuthkit/autopsy/refs/heads/develop/linux_macos_install_scripts/install_tsk_from_src.sh | tee -a $SCRIPT_DIR/install_tsk_from_src.sh
+    # check_status_install;
+
+    # TOOL_INSTALL="Install Sleuth Kit";
+    # TOOL_SOURCE="Source";
+    # echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
+    # chmod 755 $SCRIPT_DIR/install_tsk_from_src.sh;
+    # sudo $SCRIPT_DIR/install_tsk_from_src.sh -p $SCRIPT_DIR/sleuthkit -b sleuthkit-$SLEUTHKIT_VERSION | tee -a $SCRIPT_DIR/tsk.log > /dev/null 2>&1;
+    # check_status_install;    
+
+    # cd $SCRIPT_DIR;
+    # TOOL_INSTALL="autopsy git";
+    # TOOL_SOURCE="Source";
+    # wget "$AUTOPSY_URL" > /dev/null 2>&1;
+    # check_status_install;
+
+    # TOOL_INSTALL="autopsy zip";
+    # unzip autopsy-$AUTOPSY_VERSION.zip > /dev/null 2>&1;
+    # check_status_install;
+
+    # TOOL_INSTALL="Autopsy install script";
+    # curl -sSL https://raw.githubusercontent.com/sleuthkit/autopsy/refs/heads/develop/linux_macos_install_scripts/install_application.sh  | tee -a $SCRIPT_DIR/install_application.sh
+    # check_status_install;
+
+    # TOOL_INSTALL="autopsy";
+    # TOOL_SOURCE="script";
+    # chmod 755 $SCRIPT_DIR/install_application.sh;
+    # JAVA_VERSION="1.$(java --version | head -n1 | awk '{print $2}' | awk -F'.' '{print $1}')" > /dev/null 2>&1;
+    # JAVA_PATH=$(sudo update-java-alternatives -l | grep java-$JAVA_VERSION | awk '{print $3}') > /dev/null 2>&1;
+    # TSK_JAVA_LIB_PATH=$JAVA_PATH;
+    # sudo $SCRIPT_DIR/install_application.sh -z $SCRIPT_DIR/autopsy-$AUTOPSY_VERSION -i /usr/local/share/java/autopsy -j $JAVA_PATH -n Autopsy  | tee -a $SCRIPT_DIR/tsk.log > /dev/null 2>&1;
+    # check_status_install;
+
+    echo -e "\e[32m[+] install_autopsy() finished\n\e[0m";
+    /usr/bin/logger 'install_autopsy() finished' -t 'Customizing Debian';
+}
+
 install_hashcat() {
     /usr/bin/logger 'installing hashcat' -t 'Customizing Debian';
     echo -e "\e[35m[*] install_hashcat()\e[0m";
@@ -507,12 +579,13 @@ install_networktools() {
         whois dnsutils flent net-tools tshark termshark bpftrace > /dev/null 2>&1;
     check_status_install;
     
-    create_flent_desktop_file;
+    APP_NAME="flent"
+    create_desktop_file;
 
     TOOL_INSTALL="Network Engineering Tools";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";    
     echo 'iperf3  iperf3/start_daemon     boolean false' | sudo debconf-set-selections
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install tcpflow-nox ipcalc-ng arp-scan fping lldpd netsniff-ng iperf3 mtr-tiny socat frr python3-scapy dnsenum \
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install iftop ipcalc-ng arp-scan fping lldpd netsniff-ng iperf3 mtr-tiny socat frr python3-scapy dnsenum \
         dnsmap onesixtyone sslscan > /dev/null 2>&1;
     check_status_install;
 
@@ -544,7 +617,6 @@ install_networktools() {
     echo -e "\e[32m[+] install_networktools() finished\n\e[0m";
     /usr/bin/logger 'installing Network tools from Debian repository finished' -t 'Customizing Debian';
 }
-
 install_forensicstools() {
     /usr/bin/logger 'installing Forensics tools from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[35m[*] install_forensicstools()\e[0m";
@@ -582,11 +654,6 @@ install_forensicstools() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install testdisk geoip-bin geoip-database > /dev/null 2>&1;
     check_status_install;
 
-    TOOL_INSTALL="autopsy";
-    TOOL_SOURCE="Debian Repository";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    sudo apt-get -y install autopsy sleuthkit > /dev/null 2>&1;
-    
     cd $SCRIPT_DIR;
 
     echo -e "\e[32m[+] install_forensicstools() finished\n\e[0m";
@@ -734,7 +801,7 @@ install_user_av_tools() {
         check_status_install;
     fi
 
-    TOOL_INSTALL="Celluloid Video Player";
+    TOOL_INSTALL="Celluloid and MPV Video Players";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install celluloid mpv > /dev/null 2>&1;
     check_status_install;
@@ -804,7 +871,8 @@ install_jupyterlab() {
     pip install jupyterlab > /dev/null 2>&1;
     check_status_install;
 
-    create_jupyter_desktop_file;
+    APP_NAME="jupyter-lab";
+    create_desktop_file;
 
     echo -e "\e[32m[+] install_jupyterlab() finished\n\e[0m";
     /usr/bin/logger 'install_jupyterlab() finished' -t 'Customizing Debian';
@@ -843,7 +911,7 @@ install_sigrok_tools() {
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install pkg-config libglib2.0-dev libglib2.0-dev libzip5 libtirpc-dev libserialport0 libvisa0 libvisa-dev \
             libusb-1.0-0 libusb-1.0-0-dev libhidapi-hidraw0 libhidapi-libusb0 libftdi1-dev python3-pyvisa-py libieee1284-3-dev \
             libgio-2.0-dev libghc-nettle-dev check doxygen graphviz swig libglibmm-2.68-dev python-setuptools-doc python-gi-dev \
-            python3-numpy python3-numpy-dev python3-doxypypy ruby openjdk-25-jdk > /dev/null 2>&1;
+            python3-numpy python3-numpy-dev python3-doxypypy ruby > /dev/null 2>&1;
         check_status_install;
 
         TOOL_INSTALL="Sigrok Prerequisite Packages (iii)";
@@ -862,6 +930,9 @@ install_sigrok_tools() {
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install rpcbind libtirpc3 libavahi-client-dev check > /dev/null 2>&1;
         check_status_install;
+        
+        # Java is another requirement
+        install_openjava;
 
         TOOL_INSTALL="Sigrok";
         VENV_NAME="$SOURCE_DIR/sigrok/venv";    
@@ -1048,7 +1119,8 @@ install_sigrok_tools() {
         sudo ldconfig;
 
         # Create modified desktop file for user
-        create_pulseview_desktop_file;
+        APP_NAME="org.sigrok.Pulseview";
+        create_desktop_file;
 
         # Load udev rules
         TOOL_INSTALL="Load UDEV Rules";
@@ -1277,7 +1349,10 @@ install_hwhacktools() {
         pip install rd6006 > /dev/null 2>&1;
         check_status_install;
     fi
-    create_findus_desktop_file;
+
+    APP_NAME="findus";
+    create_desktop_file;
+
     /usr/bin/logger 'Installed findus' -t 'Customizing Debian';    
 
     # udev stuff to make devices work
@@ -1391,7 +1466,8 @@ ___EOF___
         pip install -r $RE_DIR/binwally/requirements.txt > /dev/null 2>&1;
         check_status_install;
 
-        create_binwally_desktop_file;
+        APP_NAME="binwally";
+        create_desktop_file;
     fi
 
     TOOL_INSTALL="DidierStevensSuite";
@@ -1576,18 +1652,23 @@ install_utils_flatpak() {
         echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL Hex Editor\e[0m";
         flatpak --assumeyes install net.werwolv.ImHex > /dev/null 2>&1;
         check_fp_install;
+        APP_NAME="net.werwolv.ImHex";
+        create_desktop_file;
 
         TOOL_INSTALL="bless";
         echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL Hex Editor\e[0m";
         flatpak --assumeyes install com.github.afrantzis.Bless > /dev/null 2>&1;
         check_fp_install;
+        APP_NAME="com.github.afrantzis.Bless";
+        create_desktop_file;
 
         TOOL_INSTALL="ghidra";
         echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
         flatpak --assumeyes install org.ghidra_sre.Ghidra > /dev/null 2>&1;
         check_fp_install;
         
-        create_ghidra_desktop_file;
+        APP_NAME="org.ghidra_sre.Ghidra";
+        create_desktop_file;
 
         TOOL_INSTALL="arduino.IDE2";
         echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
@@ -2121,7 +2202,8 @@ install_volatility() {
         pip install -e ".[full]" > /dev/null 2>&1;
         check_status_install;
 
-        create_volatility3_desktop_file;
+        APP_NAME="volatility3";
+        create_desktop_file;
     fi
 
     echo -e "\e[35m[*] install_volatility() finished\n\e[0m";
@@ -2201,6 +2283,48 @@ ___EOF___
 
     echo -e "\e[35m[*] create_findus_desktop_file() finished\n\e[0m";
     /usr/bin/logger 'create_findus_desktop_file() finished' -t 'Customizing Debian';
+}
+
+create_desktop_file() {
+    echo -e "\e[35m[*] create_desktop_file()\e[0m";
+    /usr/bin/logger 'create_desktop_file()' -t 'Customizing Debian';
+
+    # applications for .desktop files
+    if [ ! -d ~/.local/share/applications ]; then
+        mkdir $HOME/.local/share/applications/ > /dev/null 2>&1;
+    fi
+
+    # icons
+    if [ ! -d ~/.local/share/icons ]; then
+        mkdir $HOME/.local/share/icons/ > /dev/null 2>&1;
+    fi
+
+    TOOL_INSTALL="$APP_NAME desktop file";
+    TOOL_SOURCE="Script";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    cp $SCRIPT_DIR/files/desktop/$APP_NAME.desktop $HOME/.local/share/applications/; 
+    check_status_install;
+
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    if [ -f $SCRIPT_DIR/files/icons/$APP_NAME.png ]; then             
+        TOOL_INSTALL="$APP_NAME icon file";
+        TOOL_SOURCE="Script";
+        cp $SCRIPT_DIR/files/icons/$APP_NAME.png $HOME/.local/share/icons/;
+        check_status_install;
+    fi
+ 
+    sync;
+    # Allow user to run files
+    if [ -f ~/.local/share/applications/$APP_NAME.desktop ]; then
+        sudo chmod 700 $HOME/.local/share/applications/$APP_NAME.desktop;
+    fi
+    # icons
+    if [ -f ~/.local/share/icons/$APP_NAME.png ]; then
+        sudo chmod 600 $HOME/.local/share/icons/$APP_NAME.png;
+    fi
+
+    echo -e "\e[35m[*] create_desktop_file() finished\n\e[0m";
+    /usr/bin/logger 'create_desktop_file() finished' -t 'Customizing Debian';
 }
 
 create_binwally_desktop_file() {
@@ -2346,7 +2470,7 @@ create_volatility3_desktop_file() {
     /usr/bin/logger 'create_volatility3_desktop_file()' -t 'Customizing Debian';
 
     mkdir $HOME/.local/share/icons > /dev/null 2>&1;
-    cp $SCRIPT_DIR/files/volatility.png $HOME/.local/share/icons;
+    cp $SCRIPT_DIR/files/volatility3.png $HOME/.local/share/icons;
     TOOL_INSTALL="volatility3 desktop file";
     TOOL_SOURCE="Script";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -2359,7 +2483,7 @@ Name=Volatility Memory Forensics
 Comment[en_GB]=Start Volatility in Terminal
 Comment=Start Volatility in Terminal
 Exec=gnome-terminal --class="Vol3Term" --name="Vol3Term" --working-directory="$RE_DIR/volatility3/" -- bash -c "source venv/bin/activate && exec bash"
-Icon=/home/martin/.local/share/icons/volatility.png
+Icon=/home/martin/.local/share/icons/volatility3.png
 Terminal=false
 StartupNotify=true
 Name[en]=Volatility Memory Forensics
@@ -2375,7 +2499,7 @@ ___EOF___
 
     # CHMOD
     sudo chmod 700 $HOME/.local/share/applications/volatility3.desktop;
-    sudo chmod 700 $HOME/.local/share/icons/volatility.png;
+    sudo chmod 700 $HOME/.local/share/icons/volatility3.png;
 
     echo -e "\e[35m[*] create_volatility3_desktop_file() finished\e[0m";
     /usr/bin/logger 'create_volatility3_desktop_file() finished' -t 'Customizing Debian';
@@ -2583,6 +2707,10 @@ main() {
         # FORTOOLS_INSTALL
         if [ "$FORTOOLS_INSTALL" == "Yes" ]; then
             install_forensicstools;
+        fi
+
+        if [ "$AUTOPSY_INSTALL" == "Yes" ]; then
+            install_autopsy;
         fi
 
         # SYSTOOLS_INSTALL

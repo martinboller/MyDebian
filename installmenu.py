@@ -34,6 +34,7 @@ CONFIG_GROUPS = [
         ("Install Hashcat", "HASHCAT_INSTALL"),
         ("Install Reverse Engineering Tools", "REVERSETOOLS_INSTALL"),
         ("Install Volatility", "VOLATILITY_INSTALL"),
+        ("Install Autopsy with Sleuthkit", "AUTOPSY_INSTALL"),
     ]),
     ("Development", [
         ("Install Development Tools from Debian Packages", "DEVTOOLS_INSTALL"),
@@ -76,6 +77,7 @@ DEPENDENCIES = {
     "GNOME_INTELLIHIDE":["GNOME_EXTENSION_DASH_TO_PANEL"],
     "GNOME_PANEL_LENGTH_DYNAMIC":["GNOME_EXTENSION_DASH_TO_PANEL"],
     "GNOME_HIDE_OVERVIEW":["GNOME_EXTENSION_DASH_TO_PANEL"],
+    "AUTOPSY_INSTALL":["DEVTOOLS_INSTALL", "PYTHON_INSTALL"],
 }
 
 def load_env(filepath=".env"):

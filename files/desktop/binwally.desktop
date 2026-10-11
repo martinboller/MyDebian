@@ -1,0 +1,19 @@
+[Desktop Entry]
+Type=Application
+Name=Binwally
+Comment=Start binwally in Terminal
+Exec=gnome-terminal --class="BinwallyTerm" --name="BinwallyTerm" --working-directory="git/RE/binwally/" -- bash -c "source venv/bin/activate && exec bash"
+Terminal=false
+Icon=binwally.png
+StartupNotify=true
+StartupWMClass=BinwallyTerm
+Categories=X-ReverseEngineering;X-Hacking;
+Name[en]=Binwally
+Name[en_GB]=Binwally
+Name[en_GB.UTF-8]=Binwally
+Comment[en]=Start binwally in Terminal
+Comment[en_GB]=Start binwally in Terminal
+Comment[en_GB.UTF-8]=Start binwally in Terminal
+PrefersNonDefaultGPU=false
+Hidden=false
+NoDisplay=false

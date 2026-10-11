@@ -1,0 +1,20 @@
+[Desktop Entry]
+Version=1.0
+Name=ImHex
+Comment=ImHex Hex Editor
+GenericName=Hex Editor
+Exec=/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=imhex --file-forwarding net.werwolv.ImHex @@u %U @@
+Icon=net.werwolv.ImHex
+Type=Application
+StartupNotify=true
+Categories=Development;IDE;X-ReverseEngineering;X-Hacking;X-Forensics;
+StartupWMClass=imhex
+Keywords=static-analysis;reverse-engineering;disassembler;disassembly;hacking;forensics;hex-editor;cybersecurity;security;binary-analysis;
+MimeType=application/vnd.imhex.proj;
+Actions=NewFile;
+X-Flatpak-RenamedFrom=imhex.desktop;
+X-Flatpak=net.werwolv.ImHex
+
+[Desktop Action NewFile]
+Exec=/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=imhex net.werwolv.ImHex --new
+Name=Create New File

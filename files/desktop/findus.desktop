@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name[en_GB]=Fault Injection Library
+Name=Fault Injection Library
+Comment[en_GB]=Start Fault Injection Library
+Comment=Start Fault Injection Library
+Icon=findus.png
+Keywords=Fault-injection;Glitching;Hacking;Hardware
+Exec=gnome-terminal --class="FindusTerm" --name="FindusTerm" --working-directory="git/HWHack/findus/" -- bash -c "source venv/bin/activate && exec bash"
+Terminal=false
+StartupNotify=true
+StartupWMClass=FindusTerm
+Categories=X-Hacking;X-FaultInjection;

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Ghidra
+Comment=Ghidra Software Reverse Engineering Suite
+Type=Application
+Categories=Application;Development;X-ReverseEngineering;X-Hacking;
+Exec=/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=/app/bin/ghidra org.ghidra_sre.Ghidra
+Terminal=false
+Icon=org.ghidra_sre.Ghidra
+Keywords=reverse-engineering;disassembler;disassembly;assembler;assembly;asm;decompile;decompilation;software-analysis;security;
+X-Flatpak=org.ghidra_sre.Ghidra
