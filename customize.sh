@@ -2323,6 +2323,9 @@ create_desktop_file() {
         sudo chmod 600 $HOME/.local/share/icons/$APP_NAME.png;
     fi
 
+    # update database for desktop files
+    update-desktop-database ~/.local/share/applications/
+
     echo -e "\e[35m[*] create_desktop_file() finished\n\e[0m";
     /usr/bin/logger 'create_desktop_file() finished' -t 'Customizing Debian';
 }
