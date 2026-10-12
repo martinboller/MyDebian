@@ -375,7 +375,11 @@ install_openjava() {
     /usr/bin/logger 'install_openjava()' -t 'Customizing Debian';
 
     TOOL_INSTALL="OpenJDK and OpenJRE";
-    echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
+    TOOL_SOURCE="Debian Repository";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    #sudo DEBIAN_FRONTEND=noninteractive apt-get -y install default-jdk default-jdk > /dev/null 2>&1;
+    #check_status_install;
+
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install pkg-config openjdk-25-jdk openjdk-25-jre > /dev/null 2>&1;
     check_status_install;
 
@@ -459,8 +463,8 @@ install_hashcat() {
         TOOL_SOURCE="Debian Repository";
         TOOL_INSTALL="hashcat prerequisites";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
-        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install libpocl-dev libbz2-dev libssl-dev libncurses5-dev libffi-dev libreadline-dev libsqlite3-dev \
-            liblzma-dev > /dev/null 2>&1;
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install libpocl-dev libbz2-dev libssl-dev libncurses5-dev libffi-dev \
+            libreadline-dev libsqlite3-dev liblzma-dev > /dev/null 2>&1;
         check_status_install;
         
         # install VENV for hashcat
@@ -539,8 +543,8 @@ install_pythontools() {
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="python-dotenv";
     echo -e "\e[35m[*]\t └─ Installing Python tools\e[0m";   
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install python3 python3-pip python3-setuptools python3-gnupg python3-venv \
-        libpython3-dev > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install python3 python3-pip python3-setuptools python3-gnupg \
+        python3-venv libpython3-dev > /dev/null 2>&1;
     check_status_install;
     VENV_NAME=~/.venv;
     configure_venv;
@@ -573,20 +577,31 @@ install_networktools() {
         sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
     fi
 
-    TOOL_INSTALL="Network Tools";
+    TOOL_INSTALL="Network Scan Tools";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";    
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install iputils-arping iputils-tracepath arpwatch arpalert tcpdump nmap ncat ngrep ethtool aircrack-ng \
-        whois dnsutils flent net-tools tshark termshark bpftrace > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install nmap ncat ngrep aircrack-ng socat netsniff-ng \
+        tshark termshark tcpdump bpftrace > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_INSTALL="Networking Tools";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";    
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install iputils-arping iputils-tracepath arpwatch arpalert ethtool \
+        whois dnsutils flent net-tools > /dev/null 2>&1;
     check_status_install;
     
+
+    TOOL_INSTALL="FLExible Network Tester (FLENT)";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";    
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install flent > /dev/null 2>&1;
+    check_status_install;
     APP_NAME="flent"
     create_desktop_file;
 
     TOOL_INSTALL="Network Engineering Tools";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";    
     echo 'iperf3  iperf3/start_daemon     boolean false' | sudo debconf-set-selections
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install iftop ipcalc-ng arp-scan fping lldpd netsniff-ng iperf3 mtr-tiny socat frr python3-scapy dnsenum \
-        dnsmap onesixtyone sslscan > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install iftop ipcalc-ng arp-scan fping lldpd iperf3 mtr-tiny \
+        frr python3-scapy dnsenum dnsmap onesixtyone sslscan > /dev/null 2>&1;
     check_status_install;
 
     TOOL_INSTALL="Avahi (mDNS) Tools";
@@ -617,6 +632,7 @@ install_networktools() {
     echo -e "\e[32m[+] install_networktools() finished\n\e[0m";
     /usr/bin/logger 'installing Network tools from Debian repository finished' -t 'Customizing Debian';
 }
+
 install_forensicstools() {
     /usr/bin/logger 'installing Forensics tools from Debian repository ' -t 'Customizing Debian';
     echo -e "\e[35m[*] install_forensicstools()\e[0m";
@@ -671,7 +687,7 @@ install_systemtools() {
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="System Tools";
     echo -e "\e[35m[*]\t └─ Installing system tools\e[0m";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gparted wget nano p7zip p7zip-full unzip dconf-editor htop screen > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gparted nano p7zip p7zip-full unzip dconf-editor htop screen > /dev/null 2>&1;
     check_status_install;
     cd $SCRIPT_DIR;
 
@@ -697,7 +713,7 @@ install_usertools() {
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="Gnome Shell Extensions UI";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gnome-shell-extension-prefs dconf-editor > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gnome-shell-extension-prefs > /dev/null 2>&1;
     check_status_install;
 
     cd $SCRIPT_DIR;
@@ -790,15 +806,16 @@ install_user_av_tools() {
         
         # On Sandy Bridge (i915/i965 legacy), only check H264; on modern platforms check both
         if [[ "$GRAPHICS_DRIVER" == "i915" || "$GRAPHICS_DRIVER" == "i965" ]]; then
-            sudo vainfo 2>&1 | awk '$1 == "VAProfileH264Main" && $NF == "VAEntrypointVLD" { h264=1 } END { exit !h264 }'
+            VA_STATUS=$(sudo vainfo 2>&1 | awk '$1 == "VAProfileH264Main" && $NF == "VAEntrypointVLD" { h264=1 } END { exit !h264 }')
+            check_status_install;
         else
-            sudo vainfo 2>&1 | awk '
+            VA_STATUS=$(sudo vainfo 2>&1 | awk '
             $1 == "VAProfileH264Main" && $NF == "VAEntrypointVLD" { h264=1 }
             $1 == "VAProfileHEVCMain" && $NF == "VAEntrypointVLD" { hevc=1 }
             END { exit !(h264 && hevc) }
-            '
+            ')
+            check_status_install;
         fi
-        check_status_install;
     fi
 
     TOOL_INSTALL="Celluloid and MPV Video Players";
@@ -836,12 +853,6 @@ install_devtools() {
     TOOL_INSTALL="cmake and QT Development Tools"
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends ca-certificates pkg-config libreadline-dev gcc-arm-none-eabi \
         libnewlib-dev qtbase5-dev libbz2-dev liblz4-dev libbluetooth-dev libssl-dev cmake > /dev/null 2>&1;
-    check_status_install;
-
-    TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="Default JDK";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install default-jdk > /dev/null 2>&1;
     check_status_install;
 
     # Back to script directory
@@ -930,9 +941,6 @@ install_sigrok_tools() {
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install rpcbind libtirpc3 libavahi-client-dev check > /dev/null 2>&1;
         check_status_install;
-        
-        # Java is another requirement
-        install_openjava;
 
         TOOL_INSTALL="Sigrok";
         VENV_NAME="$SOURCE_DIR/sigrok/venv";    
