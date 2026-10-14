@@ -1596,6 +1596,44 @@ ___EOF___
     /usr/bin/logger 'install_reversetools() finished' -t 'Customizing Debian';
 }
 
+install_rea() {
+    echo -e "\e[35m[*] install_rea() - Reverse Engineer Everything\e[0m";
+    /usr/bin/logger 'install_rea() - Reverse Engineer Everything' -t 'Customizing Debian';
+    
+    # Placeholder
+    # Requires NODE and a coding agent (such as opencode or claude)
+
+    TOOL_INSTALL="Reverse Engineer Anything";
+    TOOL_SOURCE="Source"
+    if [ -d $RE_DIR/REA ]; then
+        echo -e "\e[35m[*]\t └─ $TOOL_INSTALL already installed\e[0m";
+        TOOL_INSTALL="$TOOL_INSTALL already installed";
+        check_status_install;
+    else
+        cd $RE_DIR;
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+        git clone https://github.com/morluto/rea.git > /dev/null 2>&1;
+        check_status_install;
+
+        TOOL_INSTALL="REA Agent Setup";
+        # TBD
+
+    fi
+
+    echo -e "\e[35m[*] install_rea() - Reverse Engineer Everything finished\e[0m";
+    /usr/bin/logger 'install_rea() - Reverse Engineer Everything finished' -t 'Customizing Debian';
+}
+
+install_node() {
+    echo -e "\e[35m[*] install_node()\e[0m";
+    /usr/bin/logger 'install_node()' -t 'Customizing Debian';
+    
+    
+
+    echo -e "\e[35m[*] install_node()\e[0m";
+    /usr/bin/logger 'install_node()' -t 'Customizing Debian';
+}
+
 install_virtualization() {
     echo -e "\e[35m[*] install_virtualization()\e[0m";
     /usr/bin/logger 'install_virtualization()' -t 'Customizing Debian';
@@ -1787,6 +1825,11 @@ install_utils_flatpak() {
     # FP_USERTOOLS_INSTALL
     if [ "$FP_USERTOOLS_INSTALL" == "Yes" ]; then
         /usr/bin/logger 'installing Flatpak Usertools' -t 'Customizing Debian';
+
+        TOOL_INSTALL="Déjà Dup Backups";
+        echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
+        flatpak --assumeyes install org.gnome.DejaDup > /dev/null 2>&1;
+        check_fp_install;	
 
         TOOL_INSTALL="bitwarden.desktop";
         echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
