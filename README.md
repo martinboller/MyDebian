@@ -57,7 +57,7 @@ Beyond core hacking and reverse engineering tools, the setup manages:
 
 **1. Clone the repo**
 ```bash
-$ git clone [https://github.com/martinboller/myDebian.git](https://github.com/martinboller/myDebian.git)
+$ git clone https://github.com/martinboller/myDebian.git
 $ cd myDebian/
 ```
 
