@@ -5,6 +5,7 @@ Application categories are:
 - Virtualization
 - Forensics and Networking
 - Hacking & Reverse Engineering
+- Hardware Hacking
 - Development
 - User Tools (Productivity)
 - Microsoft Integration
@@ -24,6 +25,11 @@ But have a look by starting installmenu.py on the command line.
 - **Language Runtimes & Packaging**: python3, python3-pip, python3-venv.
 ### Network Diagnostics & Security (install_networktools)
 - Packet Analysis & Diagnostics: iputils-ping, net-tools, dnsutils, traceroute, nmap, wireshark, tcpdump, ncat.
+### Hardware Hacking & Embedded Tools
+- **Signal Analysis & Logic Probing**: PulseView (compiled/installed from source via backports).
+- **Flash & EEPROM Programming**: flashrom, ufsprog.
+- **Microcontroller & Debug Interfaces**: openocd, stlink-tools, esptool.
+- **Embedded & Serial Utilities**: snander, serial port permissions configuration.
 ### Microsoft Integration (PWSH_INSTALL / MICROSOFT_APT)
 - APT Sources: Microsoft GPG keyring and repository source definitions (packages.microsoft.com).
 - Automated Shell Envs: PowerShell (pwsh).
@@ -46,55 +52,46 @@ But have a look by starting installmenu.py on the command line.
   - Install Hardware Hacking Tools
   - Configures GNOME to my liking, adding 2 extensions
 
+---
 
-## Latest changes ##
+## 🔌 Hardware Hacking & Embedded Toolchain
 
-### 2026-09-19
-- Install Menu Python simplified
-- Checks connectivity with ping (icmp) first, then https with cURL.
-- More logging in features.log
-- STM32CubeMX installation
-- JupyterLab
-- And more
+The environment features tools tailored for hardware reverse engineering, embedded systems debugging, microcontroller flashing, and logic analysis. 
 
-### 2026-09-13
-- Installing pulseview from source
-- Installing tools for Hardware Hacking (snander, flashrom, ufsprog, openocd, and stlink-tools and esp32tool)
-- Installing tools for Reverse Engineering (Ghidra, binwalk, binwally, flashfinder)
-- additional checking of installation success or failure
-- Python menu tool to configure .env file easily (turn features on/off)
-- enumerating installed features on first screen
-
-### 2026-08-06
-- Wireshark installs silently.
-- Added requirements for Pulseview, which require Trixie backports.
-- Builds and installs latest version of hashcat directly from github.
-- Also added cmatrix, sl, figlet, lolcat, and cowsay just for the fun of it.
-- All of the above set to "Yes" in .env file, don't forget to adjust to your references!
-
-### 2026-01-04
- - Installing NTFS support
-
-### 2024-01-03 - Go and Serial Ports ###
- - Installing golang
- - Configure access to serial port
- - sudo password message.
-
-### 2024-01-02 - Dash to panel ###
- - Installing the Dash-to-Panel Gnome Extension
- - Adding minimize and maximize buttons to windows
- - Can install Powershell (default No in .env for libre reasons)
- - Added granularity in selection of categories of packages installed
- - **Note**: Microsoft Packages Repo for Debian does not contain Powershell, see MICROSOFT_APT_WORKAROUND in .env and shell script
+### Included Tooling & Capabilities
+* **Logic Analysis**: **PulseView** (built from source leveraging Debian backports) for visual protocol decoding (SPI, I2C, UART) via logic analyzers.
+* **Flash & Firmware Manipulation, On-Chip Debugging & Programming**: 
+  * `flashrom` for reading, writing, erasing, and verifying flash chips (SPI/BIOS/EEPROM).
+  * `ufsprog` for UFS storage interface operations (ufsnandprog, ufsnandtest, ufsnorprog, ufsnortest). 
+  * `openocd` (Open On-Chip Debugger) supporting JTAG/SWD debugging.
+  * `stlink-tools` for flashing and interacting with STM32 microcontrollers.
+  * `esptool` for flashing Espressif ESP32-series chips (such as ESP32-S3 devices).
+  * `snander` Serial Nor/nAND/Eeprom programmeR 
+  * `sertack` A Python utility for embedded device security auditing, firmware extraction, and hardware debugging.
+* **Serial Port Access**: Automated user group configuration granting non-root access to serial ports.
  
-### 2024-01-01 - Initial version ###
-- Adds the currently logged on user to the sudo group (if necessary)
-- Installing Flatpak, Gnome Software Flatpak plugin, and adds flathub repository.
-- Installs flatpaks: VS-Codium; BitWarden; Calibre; UngoogledChromium; UngoogledChromium-Codecs; Mattermost; Discord; FluentReader; Signal.
-- Several Debian APT-packages in the following categories: Network Tools, Forensics Tools, Systems Tools, and User Tools.
-- Adds the contrib, non-free, and firmware-non-free debian repositories.
-- Keyboard shortcuts for gnome-terminal (Super + t) and gnome-disks (Super + d)
+### Supported Boards & Hardware Interfaces
+The environment and underlying tool configurations provide support for a variety of target boards and debug probes:
+* **WHIDBoard**: The ultimate tool-suite for Hardware Hackers. It is designed to act as the perfect Swiss-Army-Knife for hacking any (I)IoT & Embedded devices. Thanks to its core controller (a.k.a. BRUSCHETTAPRO) it can support the interaction with multiple protocols (i.e. UART, SPI, I2C, JTAG & SWD) as well as different Logic Levels (i.e. 1.8V, 2.5V, 3.3V and the VREF of the target itself).
+* **Bruschetta Board**: Multi-Protocol Swiss-Army-Knife.
+* **BUSSide**: An automated tool for hardware hacking. Using a modernized fork of the original BUSSide project developed by Silvio Cesare
+* **SEGGER J-Link**: High-speed JTAG/SWD debugging and flash programming.
+* **ST-LINK (V2/V3)**: Native flashing and debugging support for STM32 microcontrollers via `stlink-tools` and OpenOCD.
+* **Microcontrollers & SoC Modules**: Espressif ESP32 families (including ESP32-S3), STM32 series, and generic SPI flash memories.
 
+## 🔍 Reverse Engineering & Binary Analysis
+
+To complement the physical hardware toolchain core utilities for software-level reverse engineering, firmware unpacking, and binary comparisons are installed too.
+
+### Reversing
+* **Disassembly & Decompilation**: 
+  *  **Ghidra** software reverse engineering suite for analyzing compiled binaries across multiple architectures.
+* **Firmware Extraction & Analysis**: 
+  * `binwalk` for searching binary images for embedded files and executable code.
+  * `flashfinder` for locating specific patterns or components within flash dumps.
+  * **Fuzzy Hashing**: `binwally` for directory and file fuzzy hashing, structural binary comparison, and identifying similarities across firmware revisions or compiled binaries.
+
+---
 
 ### Usage
 **Clone the repo**
@@ -109,7 +106,7 @@ $ vi .env
 
 **Make sure You're in the sudo group**
 The script should do it for you, but..
-$ su root -c /sbin/adduser $USER sudo
+$su root -c /sbin/adduser$USER sudo
 (reboot if you weren't already in that group)
 
 **Then run the shell script**
