@@ -10,4 +10,4 @@ Exec=gnome-terminal --class="FindusTerm" --name="FindusTerm" --working-directory
 Terminal=false
 StartupNotify=true
 StartupWMClass=FindusTerm
-Categories=X-Hacking;X-FaultInjection;
+Categories=X-HardwareHacking;X-FaultInjection;

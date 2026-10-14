@@ -7,7 +7,7 @@ Exec=/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=imhex --file-f
 Icon=net.werwolv.ImHex
 Type=Application
 StartupNotify=true
-Categories=Development;IDE;X-ReverseEngineering;X-Hacking;X-Forensics;
+Categories=Development;IDE;X-ReverseEngineering;X-HardwareHacking;X-DigitalForensics;
 StartupWMClass=imhex
 Keywords=static-analysis;reverse-engineering;disassembler;disassembly;hacking;forensics;hex-editor;cybersecurity;security;binary-analysis;
 MimeType=application/vnd.imhex.proj;

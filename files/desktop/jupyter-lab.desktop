@@ -12,4 +12,4 @@ Terminal=false
 Type=Application
 StartupWMClass=firefox-esr
 StartupNotify=true
-Categories=X-ReverseEngineering;X-Hacking;
+Categories=X-ReverseEngineering;X-HardwareHacking;

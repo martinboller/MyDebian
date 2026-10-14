@@ -63,7 +63,7 @@ configure_env() {
     export CPU_GEN=$(cat /proc/cpuinfo | sed -En 's/^.*name\s+:.*-(1[0-9]|[0-9])[0-9]+.*$/\1/p;T;q');
     export CPU_MANUFACTURER=$(cat /proc/cpuinfo | grep vendor_id | head -n1 | awk -F ' ' '{print $3}')
     export GRAPHICS_DRIVER=$(lspci -k | grep -EA3 'VGA|3D|Display' | grep 'Kernel driver' | awk '{print $5}')
-    
+
     echo -e "\e[35m-------------------------------------------------------------------\e[0m"
     echo -e "\e[35m\tenv file version $ENV_VERSION\e[0m"
     echo -e
@@ -851,15 +851,105 @@ install_devtools() {
     # cmake and QT development tools
     echo -e "\e[35m[*]\t └─ Installing cmake and QT development tools\e[0m";
     TOOL_INSTALL="cmake and QT Development Tools"
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends ca-certificates pkg-config libreadline-dev gcc-arm-none-eabi \
-        libnewlib-dev qtbase5-dev libbz2-dev liblz4-dev libbluetooth-dev libssl-dev cmake > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends ca-certificates pkg-config libreadline-dev \
+        libnewlib-dev qtbase5-dev libssl-dev cmake > /dev/null 2>&1;
     check_status_install;
+
+    # Bluetooth libraries
+    TOOL_INSTALL="Bluetooth libraries"
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends libbluetooth-dev > /dev/null 2>&1;
+    check_status_install;
+
+    # bz and z2 libraries
+    TOOL_INSTALL="bz and z2 libraries"
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends libbz2-dev liblz4-dev > /dev/null 2>&1;
+    check_status_install;
+
+    # libssl-dev
+    TOOL_INSTALL="ssl-dev libraries"
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends libssl-dev > /dev/null 2>&1;
+    check_status_install;
+
+    # libssl-dev
+    TOOL_INSTALL="gcc-arm-none-eabi"
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends gcc-arm-none-eabi > /dev/null 2>&1;
+    check_status_install;
+
+    # Kernel Headers
+    ## As this runs after an update get the kernel version now
+    export KERNEL_RELEASE=$(uname --kernel-release);
+    TOOL_INSTALL="linux-headers-$KERNEL_RELEASE"
+    echo -e "\e[35m[*]\t └─ Installing Kernel Headers for $KERNEL_RELEASE\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install linux-headers-$KERNEL_RELEASE > /dev/null 2>&1;
+    check_status_install;
+
+    install_linux_headers;
 
     # Back to script directory
     cd $SCRIPT_DIR;
     
     /usr/bin/logger 'installing Development tools from Debian repository finished' -t 'Customizing Debian';
     echo -e "\e[32m[+] Installing development tools finished\n\e[0m";
+}
+
+configure_secureboot() {
+    SECUREBOOT_ENABLED=$(mokutil --sb-state)
+    if [ "$SECUREBOOT_ENABLED" == "SecureBoot enabled" ]; then
+        TOOL_SOURCE="mokutil";
+        TOOL_INSTALL="Installing mok.pub with password \"mokmok\" to use after reboot";
+        echo -e "\e[35m[*]\t └─ $TOOL_INSTALL\e[0m";
+        printf "mokmok\nmokmok\n" | sudo mokutil --import /var/lib/dkms/mok.pub > /dev/null 2>&1;
+        check_status_install;
+    fi
+}
+
+install_linux_headers() {
+    # As this runs after an update get the kernel version now
+    export KERNEL_RELEASE=$(uname --kernel-release);
+    TOOL_INSTALL="linux-headers-$KERNEL_RELEASE"
+    echo -e "\e[35m[*]\t └─ Installing Kernel Headers for $KERNEL_RELEASE\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install linux-headers-$KERNEL_RELEASE > /dev/null 2>&1;
+    check_status_install;
+}
+
+install_nvidia() {
+    /usr/bin/logger 'install_nvidia()' -t 'Customizing Debian';
+    echo -e "\e[32m[+] install_nvidia()\n\e[0m";
+
+    TOOL_INSTALL="nvidia-detect"
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install nvidia-detect > /dev/null 2>&1;
+    check_status_install;
+
+    # Extract the recommended package name into a variable
+    NVIDIA_PKG=$(nvidia-detect | awk '/It is recommended to install the/ {print $7}')
+
+    # Check if a package was successfully found
+    if [ -n "$NVIDIA_PKG" ]; then
+        # Linux headers required for NVIDIA installation
+        install_linux_headers;
+        TOOL_INSTALL="nvidia driver package: $NVIDIA_PKG";
+        TOOL_SOURCE="Debian Repository (Non-Free)";
+        echo -e "\e[35m[*]\t └─ Installing $NVIDIA_PKG\e[0m";
+        sudo apt-get -y install "$NVIDIA_PKG" > /dev/null 2>&1;
+        check_status_install;
+
+        TOOL_INSTALL="nvidia cuda toolkit";
+        sudo apt-get -y install nvidia-cuda-toolkit > /dev/null 2>&1;
+        check_status_install;
+
+        # Checks if secureboot is enabled. If yes import key to UEFI
+        configure_secureboot;
+    else
+        echo -e "\e[35m[*]\t └─  Could not determine recommended NVIDIA driver. Not installing"
+    fi
+
+    /usr/bin/logger 'install_nvidia() finished' -t 'Customizing Debian';
+    echo -e "\e[32m[+] install_nvidia() finished\n\e[0m";
 }
 
 install_jupyterlab() {
@@ -2163,6 +2253,12 @@ install_docker() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install docker.io docker-compose > /dev/null 2>&1;
     check_status_install;
 
+    TOOL_SOURCE="usermod";
+    TOOL_INSTALL="docker access for user: $USER";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo usermod -a -G docker $USER > /dev/null 2>&1;
+    check_status_install;
+
     echo -e "\e[32m[+] install_docker() finished\n\e[0m";
     /usr/bin/logger 'install_docker() finished' -t 'Customizing Debian';
 }
@@ -2338,184 +2434,6 @@ create_desktop_file() {
     /usr/bin/logger 'create_desktop_file() finished' -t 'Customizing Debian';
 }
 
-create_binwally_desktop_file() {
-    echo -e "\e[35m[*] create_binwally_desktop_file()\e[0m";
-    /usr/bin/logger 'create_binwally_desktop_file()' -t 'Customizing Debian';
-
-    mkdir $HOME/.local/share/applications/ > /dev/null 2>&1;
-    # icon
-    mkdir $HOME/.local/share/icons/ > /dev/null 2>&1;
-    cp $SCRIPT_DIR/files/binwally.png $HOME/.local/share/icons;
-
-    TOOL_INSTALL="binwally desktop file";
-    TOOL_SOURCE="Script";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    cat << ___EOF___ > $HOME/.local/share/applications/binwally.desktop
-[Desktop Entry]
-Type=Application
-Name=Binwally
-Comment=Start binwally in Terminal
-Exec=gnome-terminal --class="BinwallyTerm" --name="BinwallyTerm" --working-directory="$RE_DIR/binwally/" -- bash -c "source venv/bin/activate && exec bash"
-Icon=$HOME/.local/share/icons/binwally.png
-Terminal=false
-StartupNotify=true
-StartupWMClass=BinwallyTerm
-Categories=X-ReverseEngineering;X-Hacking;
-Name[en]=Binwally
-Name[en_GB]=Binwally
-Name[en_GB.UTF-8]=Binwally
-Comment[en]=Start binwally in Terminal
-Comment[en_GB]=Start binwally in Terminal
-Comment[en_GB.UTF-8]=Start binwally in Terminal
-PrefersNonDefaultGPU=false
-Hidden=false
-NoDisplay=false
-___EOF___
-    check_status_install;
-    sync;
-    # Create unique desktop file and icon for binwally
-    sudo chmod 700 $HOME/.local/share/applications/binwally.desktop;
-    sudo chmod 700 $HOME/.local/share/icons/binwally.png;
-
-    echo -e "\e[35m[*] create_binwally_desktop_file() finished\n\e[0m";
-    /usr/bin/logger 'create_binwally_desktop_file() finished' -t 'Customizing Debian';
-}
-
-create_ghidra_desktop_file() {
-    echo -e "\e[35m[*] create_ghidra_desktop_file()\e[0m";
-    /usr/bin/logger 'create_ghidra_desktop_file()' -t 'Customizing Debian';
-
-    mkdir $HOME/.local/share/applications > /dev/null 2>&1;
-    # icon
-    mkdir $HOME/.local/share/icons > /dev/null 2>&1;
-#    cp $SCRIPT_DIR/files/binwally.png $HOME/.local/share/icons;
-
-    TOOL_INSTALL="Ghidra desktop file";
-    TOOL_SOURCE="Script";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    cat << ___EOF___ > ~/.local/share/applications/org.ghidra_sre.Ghidra.desktop 
-[Desktop Entry]
-Name=Ghidra
-Comment=Ghidra Software Reverse Engineering Suite
-Type=Application
-Categories=Application;Development;X-ReverseEngineering;X-Hacking;
-Exec=/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=/app/bin/ghidra org.ghidra_sre.Ghidra
-Terminal=false
-Icon=org.ghidra_sre.Ghidra
-Keywords=reverse-engineering;disassembler;disassembly;assembler;assembly;asm;decompile;decompilation;software-analysis;security;
-X-Flatpak=org.ghidra_sre.Ghidra
-___EOF___
-    check_status_install;
-
-    sudo chmod 700 $HOME/.local/share/applications/org.ghidra_sre.Ghidra.desktop;
-
-    echo -e "\e[35m[*] create_ghidra_desktop_file() finished\n\e[0m";
-    /usr/bin/logger 'create_ghidra_desktop_file() finished' -t 'Customizing Debian';
-}
-
-create_pulseview_desktop_file() {
-    echo -e "\e[35m[*] create_pulseview_desktop_file()\e[0m";
-    /usr/bin/logger 'create_pulseview_desktop_file()' -t 'Customizing Debian';
-
-    mkdir $HOME/.local/share/applications > /dev/null 2>&1;
-    # icon
-    mkdir $HOME/.local/share/icons > /dev/null 2>&1;
-    cp $SCRIPT_DIR/files/binwally.png $HOME/.local/share/icons;
-
-    TOOL_INSTALL="binwally desktop file";
-    TOOL_SOURCE="Script";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    cat << ___EOF___ >> ~/.local/share/applications/org.sigrok.Pulseview.desktop 
-[Desktop Entry]
-# Creative Commons CC0 1.0 Universal (CC0-1.0, Public Domain Dedication).
-Name=PulseView
-GenericName=Logic analyzer, oscilloscope and MSO GUI
-Categories=Development;X-ReverseEngineering;X-Hacking;Electronics;
-Comment=Control your logic analyzer, oscilloscope, or MSO
-Exec=pulseview
-Icon=pulseview
-Type=Application
-MimeType=application/vnd.sigrok.session;
-___EOF___
-    check_status_install;
-    # Create unique desktop file and icon for binwally
-    sudo chmod 700 $HOME/.local/share/applications/binwally.desktop;
-    sudo chmod 700 $HOME/.local/share/icons/binwally.png;
-
-    echo -e "\e[35m[*] create_pulseview_desktop_file() finished\n\e[0m";
-    /usr/bin/logger 'create_pulseview_desktop_file() finished' -t 'Customizing Debian';
-}
-
-create_flent_desktop_file() {
-    echo -e "\e[35m[*] create_flent_desktop_file()\e[0m";
-    /usr/bin/logger 'create_flent_desktop_file()' -t 'Customizing Debian';
-
-    TOOL_INSTALL="Flent desktop file";
-    TOOL_SOURCE="Script";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    cat << ___EOF___ >> ~/.local/share/applications/flent.desktop
-[Desktop Entry]
-Type=Application
-Name=Flent
-Comment=The FLExible Network Tester
-Exec=flent --gui %F
-Icon=preferences-system-network
-#applications-internet
-StartupWMClass=flent
-Categories=X-Hacking;
-Terminal=false
-Keywords=network;bufferbloat;performance;testing;rrul;
-MimeType=application/vnd.flent.data+json;application/vnd.flent.data.gzip;application/vnd.flent.data.bzip2;application/x-compressed-json;
-___EOF___
-    check_status_install;
-
-    # Create unique desktop file for flent
-    sudo chmod 700 $HOME/.local/share/applications/flent.desktop;
-
-    echo -e "\e[35m[*] create_flent_desktop_file() finished\e[0m";
-    /usr/bin/logger 'create_flent_desktop_file() finished' -t 'Customizing Debian';
-}
-
-create_volatility3_desktop_file() {
-    echo -e "\e[35m[*] create_volatility3_desktop_file()\e[0m";
-    /usr/bin/logger 'create_volatility3_desktop_file()' -t 'Customizing Debian';
-
-    mkdir $HOME/.local/share/icons > /dev/null 2>&1;
-    cp $SCRIPT_DIR/files/volatility3.png $HOME/.local/share/icons;
-    TOOL_INSTALL="volatility3 desktop file";
-    TOOL_SOURCE="Script";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    cat << ___EOF___ >> ~/.local/share/applications/volatility3.desktop
-[Desktop Entry]
-Type=Application
-StartupWMClass=Vol3Term
-Name[en_GB]=Volatility Memory Forensics
-Name=Volatility Memory Forensics
-Comment[en_GB]=Start Volatility in Terminal
-Comment=Start Volatility in Terminal
-Exec=gnome-terminal --class="Vol3Term" --name="Vol3Term" --working-directory="$RE_DIR/volatility3/" -- bash -c "source venv/bin/activate && exec bash"
-Icon=/home/martin/.local/share/icons/volatility3.png
-Terminal=false
-StartupNotify=true
-Name[en]=Volatility Memory Forensics
-Name[en_GB.UTF-8]=Volatility Memory Forensics
-Comment[en]=Start Volatility in Terminal
-Comment[en_GB.UTF-8]=Start Volatility in Terminal
-PrefersNonDefaultGPU=false
-NoDisplay=false
-Categories=X-Forensics;X-ReverseEnginering;
-Hidden=false
-___EOF___
-    check_status_install;
-
-    # CHMOD
-    sudo chmod 700 $HOME/.local/share/applications/volatility3.desktop;
-    sudo chmod 700 $HOME/.local/share/icons/volatility3.png;
-
-    echo -e "\e[35m[*] create_volatility3_desktop_file() finished\e[0m";
-    /usr/bin/logger 'create_volatility3_desktop_file() finished' -t 'Customizing Debian';
-}
-
 create_gnome_categories() {
     echo -e "\e[35m[*] create_gnome_categories()\e[0m";
     /usr/bin/logger 'create_gnome_categories()' -t 'Customizing Debian';
@@ -2525,10 +2443,10 @@ create_gnome_categories() {
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
 
     local TARGET_CATEGORIES=(
-        "hacking"
+        "hardware-hacking"
         "reverse-engineering"
         "fault-injection"
-        "forensics"
+        "digital forensics"
     )
 
     echo -e "\e[35m[*]\t └─ Fetching existing GNOME app folders...\e[0m"
@@ -2814,6 +2732,11 @@ main() {
         if [ "$PWSH_INSTALL" == "Yes" ]; then
             configure_microsoft_apt_repository;
             install_ms_powershell;
+        fi
+
+        # NVIDIA Driver (non-free)
+        if [ "$NVIDIA_INSTALL" == "Yes" ]; then
+            install_nvidia;
         fi
 
         # final cleanup

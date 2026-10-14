@@ -6,7 +6,7 @@ Exec=/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=bless --file-f
 Comment=Edit binary files
 Terminal=false
 Type=Application
-Categories=GTK;Development;X-ReverseEngineering;X-Hacking;X-Forensics;
+Categories=GTK;Development;X-ReverseEngineering;X-HardwareHacking;X-DigitalForensics;
 Icon=com.github.afrantzis.Bless
 GenericName[en_US]=Hex Editor
 X-Flatpak-RenamedFrom=bless.desktop;
