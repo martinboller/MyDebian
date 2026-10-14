@@ -55,12 +55,19 @@ Beyond core hacking and reverse engineering tools, the setup manages:
 
 ### Usage
 
-**1. Clone the repo**
+**1a. Clone the repo**
 ```bash
-$ git clone https://github.com/martinboller/myDebian.git
-$ cd myDebian/
+git clone https://github.com/martinboller/myDebian.git
+cd myDebian/
 ```
+or
 
+**1b. Download and unzip the repo**
+```bash
+wget https://github.com/martinboller/MyDebian/archive/refs/heads/master.zip
+unzip master.zip
+cd myDebian-master/
+```
 
 **2. Configure installation preferences**
 ```bash
@@ -77,4 +84,4 @@ Reboot if you weren't already in sudoers.
 ```bash
 ./customize.sh
 ```
-
+Follow along in the two terminal windows, then reboot when prompted to.
