@@ -33,6 +33,7 @@ CONFIG_GROUPS = [
         ("Install Sigrok Client & Pulseview", "PULSEVIEW_INSTALL"),
         ("Install Hashcat", "HASHCAT_INSTALL"),
         ("Install Reverse Engineering Tools", "REVERSETOOLS_INSTALL"),
+        ("Install Ghidra", "GHIDRA_INSTALL"),
         ("Install Volatility", "VOLATILITY_INSTALL"),
         ("Install Autopsy with Sleuthkit", "AUTOPSY_INSTALL"),
     ]),
@@ -82,6 +83,7 @@ DEPENDENCIES = {
     "GNOME_PANEL_LENGTH_DYNAMIC":["GNOME_EXTENSION_DASH_TO_PANEL"],
     "GNOME_HIDE_OVERVIEW":["GNOME_EXTENSION_DASH_TO_PANEL"],
     "AUTOPSY_INSTALL":["DEVTOOLS_INSTALL"],
+    "GHIDRA_INSTALL":["DEVTOOLS_INSTALL", "REVERSETOOLS_INSTALL"],
 }
 
 def load_env(filepath=".env"):
@@ -262,7 +264,7 @@ def main():
                 index += 1
 
         print("\n  [A] Toggle All\t\t[G] Toggle GNOME features")
-        print("  [H] Hacking Preset\t\t[P] Productivity Preset ")
+        print("  [H] Hardware hacking Preset\t[P] Productivity Preset ")
         print("  [M] Toggle MS Integration\t[N] Networking Preset")
         print(f"  [T] Set GRUB Timeout [{grub_timeout}s]\t[R] Reverse Engineering Preset")
         print("  [Q] Quit Without Saving\t[S] Save Changes")
@@ -285,7 +287,7 @@ def main():
                 "Hacking & Reverse Engineering",
                 "Development",
             ]
-            hacker_extra_vars = {"FP_ELECTRONICSTOOLS_INSTALL", "FP_3DTOOLS_INSTALL"}
+            hacker_extra_vars = {"FP_ELECTRONICSTOOLS_INSTALL", "FP_3DTOOLS_INSTALL", "GHIDRA_INSTALL"}
             apply_preset(lines, hacker_groups, explicit_vars=hacker_extra_vars, preset_name="Hacking")
         elif choice == 'r':
             re_groups = [

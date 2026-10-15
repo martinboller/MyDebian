@@ -231,9 +231,9 @@ check_status_install() {
 }
 
 check_fp_install() {
-    FP_INSTALL=$(flatpak list | grep -i $TOOL_INSTALL | awk '{print $1}');
+    FP_INSTALL=$(flatpak list | grep -i "$TOOL_INSTALL" | awk '{print $1}');
     if [ -n "$FP_INSTALL" ]; then
-        echo -e "\e[32m$PKG_COUNT.\t[+] $TOOL_INSTALL successfully installed from flatpak repository\e[0m" | tee -a $SCRIPT_DIR/features.log;
+        echo -e "\e[32m$PKG_COUNT.\t[+] "$TOOL_INSTALL" successfully installed from flatpak repository\e[0m" | tee -a $SCRIPT_DIR/features.log;
         /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
     else
         echo -e "\e[31m$PKG_COUNT.\t[-] ERROR: $TOOL_INSTALL not installed correctly\e[0m" | tee -a $SCRIPT_DIR/features.log;
@@ -245,7 +245,7 @@ check_fp_install() {
 
 check_ldd_install() {
     # check libraries for TOOL_ELF are installed
-    LDD_TOOL=$(which $TOOL_ELF | xargs ldd | grep $TOOL_INSTALL) > /dev/null 2>&1;
+    LDD_TOOL=$(which "$TOOL_ELF" | xargs ldd | grep "$TOOL_INSTALL") > /dev/null 2>&1;
     if [ -n "$LDD_TOOL" ]; then
         echo -e "\e[32m$PKG_COUNT.\t[+] $TOOL_INSTALL successfully installed from $TOOL_SOURCE\e[0m" | tee -a $SCRIPT_DIR/features.log;
         /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
@@ -275,7 +275,7 @@ install_updates() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y --purge autoremove > /dev/null 2>&1
     sudo DEBIAN_FRONTEND=noninteractive apt-get autoclean > /dev/null 2>&1
 
-    cd $SCRIPT_DIR;
+    cd "$SCRIPT_DIR" || exit 1;
 
     echo -e "\e[32m[+] install_updates() finished\n\e[0m";
     /usr/bin/logger 'install_updates() finished' -t 'Customizing Debian';
@@ -326,6 +326,138 @@ install_additional_features() {
     /usr/bin/logger 'install_additional_features() finished' -t 'Customizing Debian';
 }
 
+install_ghidra() {
+    echo -e "\e[32m[+] install_ghidra()\e[0m";
+    /usr/bin/logger 'install_ghidra()' -t 'Customizing Debian';
+
+    TOOL_ELF="javac";
+    check_already_installed
+    if [ $TOOL_INSTALLED == False ]; then
+        install_open_jdk_jre;
+    fi
+
+    cd "$RE_DIR" || exit 1;
+
+    TOOL_INSTALL="Ghidra Download";
+    TOOL_SOURCE="Source";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    local TAR_FILE="Ghidra_${GHIDRA_VERSION}_build.tar.gz"
+    local URL="https://github.com/NationalSecurityAgency/ghidra/archive/refs/tags/Ghidra_${GHIDRA_VERSION}_build.tar.gz"
+    
+    wget "$URL" -O "$TAR_FILE" > /dev/null 2>&1;
+    check_status_install;
+        
+    TOOL_INSTALL="Ghidra Extract";
+    TOOL_SOURCE="Source";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    tar zxf "$TAR_FILE" > /dev/null 2>&1;
+    check_status_install;
+        
+    cd "ghidra-Ghidra_${GHIDRA_VERSION}_build" || exit 1;
+    
+    TOOL_INSTALL="Ghidra Gradle Dependencies";
+    TOOL_SOURCE="Source";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL (this may take a while)\e[0m";
+    ./gradlew -I gradle/support/fetchDependencies.gradle > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_INSTALL="Ghidra Build";
+    TOOL_SOURCE="Source";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL (this may take a while)\e[0m";
+    ./gradlew buildGhidra > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_INSTALL="Ghidra Install";
+    TOOL_SOURCE="Source";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL (/opt/ghidra)\e[0m";
+    # Locate the built distribution zip generated in build/dist/
+    local DIST_ZIP
+    DIST_ZIP=$(find build/dist -name "ghidra_*.zip" | head -n 1)
+    
+    if [ -n "$DIST_ZIP" ]; then
+        sudo mkdir -p /opt/ghidra
+        sudo unzip -q "$DIST_ZIP" -d /opt/ghidra
+        
+        # Flatten structure if nested inside a versioned folder inside /opt/ghidra
+        local EXTRACTED_DIR
+        EXTRACTED_DIR=$(find /opt/ghidra -maxdepth 1 -type d -name "ghidra_*" | head -n 1)
+        if [ -n "$EXTRACTED_DIR" ] && [ "$EXTRACTED_DIR" != "/opt/ghidra" ]; then
+            sudo mv "$EXTRACTED_DIR"/* /opt/ghidra/ 2>/dev/null || true
+            sudo rm -rf "$EXTRACTED_DIR"
+        fi
+        
+        # Make it executable
+        sudo chmod +x /opt/ghidra/ghidraRun
+        
+        # Create a global command-line shortcut
+        sudo ln -sf /opt/ghidra/ghidraRun /usr/local/bin/ghidra
+        
+        # Create a Desktop Entry for the application menu
+        sudo bash -c 'cat > /usr/share/applications/ghidra.desktop' << '__EOF__'
+[Desktop Entry]
+Name=Ghidra
+Comment=Software Reverse Engineering Framework
+Exec=ghidra
+Icon=/opt/ghidra/docs/GhidraClass/Intermediate/Images/GhidraLogo64.png
+Terminal=false
+Type=Application
+Categories=Development;Security;X-ReverseEngineering;X-HardwareHacking
+__EOF__
+        echo -e "\e[32m[+] Ghidra successfully installed to /opt/ghidra and integrated into the system.\e[0m";
+        # Set GHIDRA_INSTALL_DIR
+        export GHIDRA_INSTALL_DIR="/opt/ghidra"
+        cat << '___EOF___' >> ~/.bashrc
+
+# Install dir for Ghidra
+GHIDRA_INSTALL_DIR="/opt/ghidra"
+___EOF___
+
+        # Directory for Ghidra development
+        mkdir -p $RE_DIR/ghidra/;
+
+        TOOL_INSTALL="Ghidra Virtual Environment";
+        TOOL_SOURCE="Python VENV";
+        # echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
+        VENV_NAME=$RE_DIR/ghidra/venv;
+        configure_venv;
+
+        TOOL_INSTALL="Ghidra PIP Prerequisites";
+        TOOL_SOURCE="PIP Repository";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
+        pip install pyghidra > /dev/null 2>&1;
+        check_status_install;
+
+        cp $SCRIPT_DIR/files/test_pyghidra.py $RE_DIR/ghidra/;
+        #python3 $RE_DIR/ghidra/test_pyghidra.py;
+        # Deactive to not end up with other PIP stuff in there
+        deactivate > /dev/null 2>&1;
+
+        # Create a Desktop Entry for ghidra dev env
+        bash -c 'cat > $HOME/.local/share/applications/ghidra-dev.desktop' << '__EOF__'
+[Desktop Entry]
+Name=Ghidra Python Development
+Comment=Development Environment for Ghidra
+Exec=gnome-terminal --class="GhidraDev" --name="GhidraDev" --working-directory="git/RE/ghidra/" -- bash -c "source venv/bin/activate && exec bash"
+Icon=/opt/ghidra/docs/GhidraClass/Intermediate/Images/GhidraLogo64.png
+Terminal=false
+Type=Application
+Categories=Development;Security;X-ReverseEngineering;X-HardwareHacking
+__EOF__
+    else
+        echo -e "\e[31m[-] Error: Ghidra build distribution zip not found in build/dist/\e[0m";
+    fi
+ 
+    # Cleanup source files and archives
+    cd "$RE_DIR" || exit 1;
+    rm -f "$TAR_FILE";
+    rm -rf "ghidra-Ghidra_${GHIDRA_VERSION}_build";
+
+    cd "$SCRIPT_DIR" || exit 1;
+    
+    echo -e "\e[32m[+] install_ghidra() finished\n\e[0m";
+    /usr/bin/logger 'install_ghidra() finished' -t 'Customizing Debian';
+}
+
 show_features_enabled() {
     echo -e "\e[35m  ### Installing the following Features ###"
     while IFS='=' read -r key value; do
@@ -364,15 +496,15 @@ install_proprietary_filesystems() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install exfat-fuse exfatprogs > /dev/null 2>&1;
     check_status_install;
 
-    cd $SCRIPT_DIR;
+    cd "$SCRIPT_DIR" || exit 1;
     
     echo -e "\e[32m[+] install_proprietary_filesystems() finished\n\e[0m";
     /usr/bin/logger 'install_proprietary_filesystems() finished' -t 'Customizing Debian';
 }
 
-install_openjava() {
-    echo -e "\e[32m[+] install_openjava()\n\e[0m";
-    /usr/bin/logger 'install_openjava()' -t 'Customizing Debian';
+install_open_jdk_jre() {
+    echo -e "\e[32m[+] install_open_jdk_jre()\n\e[0m";
+    /usr/bin/logger 'install_open_jdk_jre()' -t 'Customizing Debian';
 
     TOOL_INSTALL="OpenJDK and OpenJRE";
     TOOL_SOURCE="Debian Repository";
@@ -383,15 +515,23 @@ install_openjava() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install pkg-config openjdk-25-jdk openjdk-25-jre > /dev/null 2>&1;
     check_status_install;
 
-    echo -e "\e[32m[+] install_openjava() finished\n\e[0m";
-    /usr/bin/logger 'install_openjava() finished' -t 'Customizing Debian';
+    JAVA_HOME=$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")
+    cat << ___EOF___ >> ~/.bashrc
+
+# Set JAVA_HOME
+JAVA_HOME=\$(dirname "\$(dirname "\$(readlink -f "\$(command -v javac)")")")
+___EOF___
+    sync;
+    
+    echo -e "\e[32m[+] install_open_jdk_jre() finished\n\e[0m";
+    /usr/bin/logger 'install_open_jdk_jre() finished' -t 'Customizing Debian';
 }
 
 install_autopsy() {
     echo -e "\e[32m[+] install_autopsy()\n\e[0m";
     /usr/bin/logger 'install_autopsy()' -t 'Customizing Debian';
 
-    cd $SCRIPT_DIR;
+    cd "$SCRIPT_DIR" || exit 1;
     TOOL_INSTALL="The Sleuth Kit (tsk)";
     TOOL_SOURCE="Debian Repositories";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install sleuthkit > /dev/null 2>&1;
@@ -402,7 +542,7 @@ install_autopsy() {
     # TOOL_ELF="java";
     # check_already_installed;
     # if [ $TOOL_INSTALLED == False ]; then
-    #     install_openjava;
+    #     install_open_jdk_jre;
     # fi
 
     # # Download The Sleuth Kit script to install from source
@@ -419,7 +559,7 @@ install_autopsy() {
     # sudo $SCRIPT_DIR/install_tsk_from_src.sh -p $SCRIPT_DIR/sleuthkit -b sleuthkit-$SLEUTHKIT_VERSION | tee -a $SCRIPT_DIR/tsk.log > /dev/null 2>&1;
     # check_status_install;    
 
-    # cd $SCRIPT_DIR;
+    # cd "$SCRIPT_DIR" || exit 1;
     # TOOL_INSTALL="autopsy git";
     # TOOL_SOURCE="Source";
     # wget "$AUTOPSY_URL" > /dev/null 2>&1;
@@ -482,7 +622,7 @@ install_hashcat() {
         TOOL_SOURCE="Source";
         TOOL_INSTALL="hashcat";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
-        cd $SOURCE_DIR;
+        cd "$SOURCE_DIR" || exit 1;
         #git clone https://github.com/hashcat/hashcat.git > /dev/null 2>&1;
         wget https://github.com/hashcat/hashcat/archive/refs/tags/v$HASHCAT_RELEASE.tar.gz > /dev/null 2>&1;
         tar -xzf v$HASHCAT_RELEASE.tar.gz > /dev/null 2>&1;
@@ -491,9 +631,9 @@ install_hashcat() {
         make > /dev/null 2>&1;
         sudo make install > /dev/null 2>&1;
         check_install;
-        cd $SOURCE_DIR;
+        cd "$SOURCE_DIR" || exit 1;
         rm v$HASHCAT_RELEASE.tar.gz > /dev/null 2>&1;
-        cd $SCRIPT_DIR;
+        cd "$SCRIPT_DIR" || exit 1;
     fi
 
     TOOL_INSTALL="Hashcat $(hashcat --version)";
@@ -526,7 +666,7 @@ __EOF__
     check_status_install;
     fi
 
-    cd $SCRIPT_DIR;
+    cd "$SCRIPT_DIR" || exit 1;
 
     echo -e "\e[32m[+] install_backports() finished\n\e[0m";
     /usr/bin/logger 'installing Debian backports repository finished' -t 'Customizing Debian';
@@ -550,7 +690,7 @@ install_pythontools() {
     configure_venv;
     configure_primary_venv_path;
     # back to script directory
-    cd $SCRIPT_DIR;
+    cd "$SCRIPT_DIR" || exit 1;
 
     echo -e "\e[32m[+] install_pythontools() finished\n\e[0m";
     /usr/bin/logger 'installing Python tools from Debian repository finished' -t 'Customizing Debian';
@@ -627,7 +767,7 @@ install_networktools() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install tcpflow-nox > /dev/null 2>&1;
     check_status_install;
 
-    cd $SCRIPT_DIR;
+    cd "$SCRIPT_DIR" || exit 1;
 
     echo -e "\e[32m[+] install_networktools() finished\n\e[0m";
     /usr/bin/logger 'installing Network tools from Debian repository finished' -t 'Customizing Debian';
@@ -670,7 +810,7 @@ install_forensicstools() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install testdisk geoip-bin geoip-database > /dev/null 2>&1;
     check_status_install;
 
-    cd $SCRIPT_DIR;
+    cd "$SCRIPT_DIR" || exit 1;
 
     echo -e "\e[32m[+] install_forensicstools() finished\n\e[0m";
     /usr/bin/logger 'installing Forensics tools from Debian repository finished' -t 'Customizing Debian';
@@ -689,7 +829,7 @@ install_systemtools() {
     echo -e "\e[35m[*]\t └─ Installing system tools\e[0m";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gparted nano p7zip p7zip-full unzip dconf-editor htop screen > /dev/null 2>&1;
     check_status_install;
-    cd $SCRIPT_DIR;
+    cd "$SCRIPT_DIR" || exit 1;
 
     echo -e "\e[32m[+] install_systemtools() finished\n\e[0m";
     /usr/bin/logger 'installing System tools from Debian repository finished' -t 'Customizing Debian';
@@ -716,7 +856,7 @@ install_usertools() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gnome-shell-extension-prefs > /dev/null 2>&1;
     check_status_install;
 
-    cd $SCRIPT_DIR;
+    cd "$SCRIPT_DIR" || exit 1;
     
     echo -e "\e[32m[+] install_usertools() finished\n\e[0m";
     /usr/bin/logger 'installing User tools from Debian repository finished' -t 'Customizing Debian';
@@ -890,7 +1030,7 @@ install_devtools() {
     install_linux_headers;
 
     # Back to script directory
-    cd $SCRIPT_DIR;
+    cd "$SCRIPT_DIR" || exit 1;
     
     /usr/bin/logger 'installing Development tools from Debian repository finished' -t 'Customizing Debian';
     echo -e "\e[32m[+] Installing development tools finished\n\e[0m";
@@ -911,6 +1051,7 @@ install_linux_headers() {
     # As this runs after an update get the kernel version now
     export KERNEL_RELEASE=$(uname --kernel-release);
     TOOL_INSTALL="linux-headers-$KERNEL_RELEASE"
+    TOOL_SOURCE="Debian Repository";
     echo -e "\e[35m[*]\t └─ Installing Kernel Headers for $KERNEL_RELEASE\e[0m";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install linux-headers-$KERNEL_RELEASE > /dev/null 2>&1;
     check_status_install;
@@ -1043,7 +1184,7 @@ install_sigrok_tools() {
         check_status_install;
 
         mkdir -p $SOURCE_DIR/sigrok;
-        cd $SOURCE_DIR/sigrok/;
+        cd "$SOURCE_DIR/sigrok/" || exit 1;
         # Install libsigrokdecode from source
         # Note: Depending on trixie backports
         /usr/bin/logger 'installing libsigrokdecode' -t 'Customizing Debian';
@@ -1084,7 +1225,7 @@ install_sigrok_tools() {
         TOOL_INSTALL="libsigrok"
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         /usr/bin/logger 'installing libsigrok' -t 'Customizing Debian';
-        cd $SOURCE_DIR/sigrok/;
+        cd "$SOURCE_DIR/sigrok/" || exit 1;
 
         TOOL_INSTALL="libsigrok"
         git clone https://github.com/martinboller/libsigrok > /dev/null 2>&1;
@@ -1117,7 +1258,7 @@ install_sigrok_tools() {
 
         # Install sigrok-cli from source
         /usr/bin/logger 'installing sigrok-cli' -t 'Customizing Debian';
-        cd $SOURCE_DIR/sigrok/;
+        cd "$SOURCE_DIR/sigrok/" || exit 1;
         TOOL_SOURCE="Source";
         TOOL_INSTALL="sigrok-cli git";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -1164,7 +1305,7 @@ install_sigrok_tools() {
         TOOL_INSTALL="sigrok-firmware-fx2lafw git";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         /usr/bin/logger 'installing sigrok-firmware-fx2lafw' -t 'Customizing Debian';
-        cd $SOURCE_DIR/sigrok/;
+        cd "$SOURCE_DIR/sigrok/" || exit 1;
         git clone git://sigrok.org/sigrok-firmware-fx2lafw > /dev/null 2>&1;
         check_status_install;
 
@@ -1192,7 +1333,7 @@ install_sigrok_tools() {
 
         # Install pulseview from source
         /usr/bin/logger 'installing pulseview' -t 'Customizing Debian';
-        cd $SOURCE_DIR/sigrok/;
+        cd "$SOURCE_DIR/sigrok/" || exit 1;
         TOOL_INSTALL="pulseview git"
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         git clone git://sigrok.org/pulseview > /dev/null 2>&1;
@@ -1229,7 +1370,7 @@ install_sigrok_tools() {
     fi
 
     # Back home to where install script is running from
-    cd $SCRIPT_DIR
+    cd "$SCRIPT_DIR" || exit 1;
 
     echo -e "\e[32m[+] install_sigrok_tools() finished\n\e[0m";
     /usr/bin/logger 'install_sigrok_tools() finished' -t 'Customizing Debian';
@@ -1242,7 +1383,7 @@ install_hwhacktools() {
     ## Hardware Hacking Tools for Debian. Note: require development tools
     # Directory for source-code (declared in .env)
     mkdir -p $SOURCE_DIR;
-    cd $SOURCE_DIR;
+    cd "$SOURCE_DIR" || exit 1;
 
     # Check that debian.org is reachable
     TEST_URL="debian.org";
@@ -1279,9 +1420,9 @@ install_hwhacktools() {
         TOOL_INSTALL="flashrom";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         TOOL_SOURCE="Source";
-        cd $SOURCE_DIR;
+        cd "$SOURCE_DIR" || exit 1;
         git clone https://github.com/whid-injector/flashrom-whidboard > /dev/null 2>&1;
-        cd $SOURCE_DIR/flashrom-whidboard/ > /dev/null 2>&1;
+        cd "$SOURCE_DIR/flashrom-whidboard/" > /dev/null 2>&1;
         sudo mkdir -p /usr/local/sbin > /dev/null 2>&1;
         meson setup builddir > /dev/null 2>&1;
         meson compile -C builddir > /dev/null 2>&1;
@@ -1300,7 +1441,7 @@ install_hwhacktools() {
         
     if [ $TOOL_INSTALLED == False ]; then
         # openOCD
-        cd $SOURCE_DIR;
+        cd "$SOURCE_DIR" || exit 1;
         TOOL_INSTALL="openocd Prerequisites";
         TOOL_SOURCE="Debian Repository";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -1332,7 +1473,7 @@ install_hwhacktools() {
     check_already_installed;
     if [ $TOOL_INSTALLED == False ]; then
         # SNANDER
-        cd $SOURCE_DIR;
+        cd "$SOURCE_DIR" || exit 1;
         TOOL_SOURCE="Debian Repository";
         TOOL_INSTALL="snander Prerequisites";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -1356,7 +1497,7 @@ install_hwhacktools() {
     check_already_installed;
     if [ $TOOL_INSTALLED == False ]; then
         # ufprog
-        cd $SOURCE_DIR;
+        cd "$SOURCE_DIR" || exit 1;
         TOOL_INSTALL="ufprog Prerequisites";
         TOOL_SOURCE="Debian Repository";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -1381,10 +1522,10 @@ install_hwhacktools() {
     TOOL_INSTALL="BUSSide"
     TOOL_SOURCE="Source";
     if [ -d $RE_DIR/$TOOL_INSTALL ]; then
-        cd $SOURCE_DIR;
+        cd "$SOURCE_DIR" || exit 1;
         check_status_install;
     else
-        cd $SOURCE_DIR;
+        cd "$SOURCE_DIR" || exit 1;
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         git clone https://github.com/martinboller/BUSSide.git > /dev/null 2>&1;
         check_status_install;
@@ -1406,9 +1547,9 @@ install_hwhacktools() {
     TOOL_SOURCE="Source";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
     if [ -d $RE_DIR/$TOOL_INSTALL ]; then
-        cd $SOURCE_DIR;
+        cd "$SOURCE_DIR" || exit 1;
     else
-        cd $SOURCE_DIR;
+        cd "$SOURCE_DIR" || exit 1;
         git clone https://github.com/martinboller/sertack.git > /dev/null 2>&1;
         check_status_install;
 
@@ -1429,7 +1570,7 @@ install_hwhacktools() {
     # Findus (fault-injecttion-library) supports the ChipWhisperer Pro, the ChipWhisperer Husky and the Pico Glitcher.
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
     if [ -d $RE_DIR/$TOOL_INSTALL ]; then
-        cd $SOURCE_DIR;
+        cd "$SOURCE_DIR" || exit 1;
     else
         TOOL_SOURCE="source";
         git clone --depth 1 --recurse-submodules https://github.com/MKesenheimer/fault-injection-library.git findus > /dev/null 2>&1;
@@ -1439,7 +1580,7 @@ install_hwhacktools() {
         configure_venv;
 
         TOOL_INSTALL="findus"
-        cd $SOURCE_DIR/$TOOL_INSTALL;
+        cd "$SOURCE_DIR/$TOOL_INSTALL" || exit 1;
         pip install . > /dev/null 2>&1;
         check_status_install;
 
@@ -1463,7 +1604,7 @@ install_hwhacktools() {
     # reload udev rules
     sudo udevadm control --reload > /dev/null 2>&1;
     check_status_install;
-    cd $SCRIPT_DIR;
+    cd "$SCRIPT_DIR" || exit 1;
 
     echo -e "\e[32m[+] install_hwhacktools() finished\n\e[0m";
     /usr/bin/logger 'install_hwhacktools() finished' -t 'Customizing Debian';
@@ -1480,7 +1621,7 @@ install_reversetools() {
     TOOL_SOURCE="Debian Repository";
     # Reverse Engineering tools
     mkdir -p $RE_DIR;
-    cd $RE_DIR;
+    cd "$RE_DIR" || exit 1;
 
     TOOL_ELF="cargo";
     check_already_installed;
@@ -1532,10 +1673,10 @@ ___EOF___
     TOOL_SOURCE="Source";
     # firmwalker bash script
     if [ -d $RE_DIR/binwally ]; then
-        cd $RE_DIR;
+        cd "$RE_DIR" || exit 1;
         check_status_install;
     else    
-        cd $RE_DIR;
+        cd "$RE_DIR" || exit 1;
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         git clone https://github.com/hotelzululima/firmwalker.git > /dev/null 2>&1;
         check_status_install;
@@ -1544,11 +1685,11 @@ ___EOF___
     TOOL_INSTALL="binwally";
     TOOL_SOURCE="Source"
     if [ -d $RE_DIR/binwally ]; then
-        cd $RE_DIR;
+        cd "$RE_DIR" || exit 1;
         check_status_install;
     else
         # binwally for python3
-        cd $RE_DIR;
+        cd "$RE_DIR" || exit 1;
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         git clone https://github.com/martinboller/binwally.git > /dev/null 2>&1;
         check_status_install;
@@ -1571,10 +1712,10 @@ ___EOF___
     TOOL_INSTALL="DidierStevensSuite";
     TOOL_SOURCE="Source"
     if [ -d $RE_DIR/DidierStevensSuite ]; then
-        cd $RE_DIR;
+        cd "$RE_DIR" || exit 1;
         check_status_install;
     else
-        cd $RE_DIR;
+        cd "$RE_DIR" || exit 1;
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         git clone https://github.com/DidierStevens/DidierStevensSuite.git > /dev/null 2>&1;
         check_status_install;
@@ -1590,7 +1731,7 @@ ___EOF___
         check_status_install;
     fi   
 
-    cd $SCRIPT_DIR;
+    cd "$SCRIPT_DIR" || exit 1;
 
     echo -e "\e[32m[+] install_reversetools() finished\n\e[0m";
     /usr/bin/logger 'install_reversetools() finished' -t 'Customizing Debian';
@@ -1610,7 +1751,7 @@ install_rea() {
         TOOL_INSTALL="$TOOL_INSTALL already installed";
         check_status_install;
     else
-        cd $RE_DIR;
+        cd "$RE_DIR" || exit 1;
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         git clone https://github.com/morluto/rea.git > /dev/null 2>&1;
         check_status_install;
@@ -1798,13 +1939,14 @@ install_utils_flatpak() {
         APP_NAME="com.github.afrantzis.Bless";
         create_desktop_file;
 
-        TOOL_INSTALL="ghidra";
-        echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
-        flatpak --assumeyes install org.ghidra_sre.Ghidra > /dev/null 2>&1;
-        check_fp_install;
+        # For less building from source, ghidra can be installed from Flatpak repo       
+        #TOOL_INSTALL="ghidra";
+        #echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
+        #flatpak --assumeyes install org.ghidra_sre.Ghidra > /dev/null 2>&1;
+        #check_fp_install;
         
-        APP_NAME="org.ghidra_sre.Ghidra";
-        create_desktop_file;
+        #APP_NAME="org.ghidra_sre.Ghidra";
+        #create_desktop_file;
 
         TOOL_INSTALL="arduino.IDE2";
         echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
@@ -1826,7 +1968,7 @@ install_utils_flatpak() {
     if [ "$FP_USERTOOLS_INSTALL" == "Yes" ]; then
         /usr/bin/logger 'installing Flatpak Usertools' -t 'Customizing Debian';
 
-        TOOL_INSTALL="Déjà Dup Backups";
+        TOOL_INSTALL='Déjà Dup Backup';
         echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
         flatpak --assumeyes install org.gnome.DejaDup > /dev/null 2>&1;
         check_fp_install;	
@@ -2102,7 +2244,7 @@ configure_microsoft_apt_repository() {
     TOOL_INSTALL="Microsoft Linux Repo";
     TOOL_SOURCE="Microsoft Repo .deb package";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    cd $SCRIPT_DIR;
+    cd "$SCRIPT_DIR" || exit 1;
     echo -e "\e[35m[*]\t └─ adding packages-microsoft-prod.deb to sources.list\e[0m";
     # Download the Microsoft repository GPG keys
     echo -e "\e[35m[*]\t └─ Download the Microsoft repository GPG keys\e[0m";
@@ -2253,7 +2395,7 @@ install_golang() {
     TEST_URL="go.dev";
     check_connectivity_http;
 
-    cd $SCRIPT_DIR;
+    cd "$SCRIPT_DIR" || exit 1;
     TOOL_INSTALL="go"
     echo -e "\e[35m[*]\t └─ Downloading golang $GO_URL\e[0m";
     sudo mkdir -p /usr/local/ > /dev/null 2>&1;
@@ -2330,13 +2472,13 @@ install_volatility() {
     if [ -d $RE_DIR/volatility3 ]; then
         TOOL_INSTALL="volatility3";
         TOOL_SOURCE="Source";
-        cd $RE_DIR;
+        cd "$RE_DIR" || exit 1;
         check_status_install;
     else
         TOOL_INSTALL="volatility3";
         TOOL_SOURCE="Source";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-        cd $RE_DIR;
+        cd "$RE_DIR" || exit 1;
         git clone https://github.com/volatilityfoundation/volatility3.git > /dev/null 2>&1;
         check_status_install;
 
@@ -2355,81 +2497,6 @@ install_volatility() {
 
     echo -e "\e[35m[*] install_volatility() finished\n\e[0m";
     /usr/bin/logger 'install_volatility() finished' -t 'Customizing Debian';
-}
-
-create_jupyter_desktop_file() {
-    echo -e "\e[35m[*] create_jupyter_desktop_file()\e[0m";
-    /usr/bin/logger 'create_jupyter_desktop_file()' -t 'Customizing Debian';
-
-    mkdir $HOME/.local/share/applications > /dev/null 2>&1;
-    # icon
-    mkdir $HOME/.local/share/icons > /dev/null 2>&1;
-    cp $SCRIPT_DIR/files/jupyter-lab.png $HOME/.local/share/icons;
-
-    TOOL_INSTALL="Jupyter desktop file";
-    TOOL_SOURCE="Script";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    cat << ___EOF___ >> ~/.local/share/applications/jupyter-lab.desktop
-[Desktop Entry]
-Type=Application
-Name[en_GB]=Jupyter Lab
-Name=Jupyter Lab
-Comment[en_GB]=Start Jupyter Lab
-Comment=Start and interact with Jupyter Lab from your browser
-Keywords=Jupyter;Notebook;Lab
-Exec=jupyter lab
-# Translators: Do NOT translate or transliterate this text (this is an icon file name)!
-Icon=$HOME/.local/share/icons/jupyter-lab.png
-Terminal=false
-Type=Application
-StartupWMClass=firefox-esr
-StartupNotify=true
-Categories=X-ReverseEngineering;X-Hacking;
-___EOF___
-    check_status_install;
-
-    # Create unique desktop file and icon for jupyter
-    sudo chmod 700 $HOME/.local/share/applications/jupyter-lab.desktop;
-    sudo chown $USER $HOME/.local/share/applications/jupyter-lab.desktop;
-    sudo chown $USER $HOME/.local/share/icons/jupyter-lab.png;
-
-    echo -e "\e[35m[*] create_jupyter_desktop_file() finished\n\e[0m";
-    /usr/bin/logger 'create_jupyter_desktop_file() finished' -t 'Customizing Debian';
-}
-
-create_findus_desktop_file() {
-    echo -e "\e[35m[*] create_findus_desktop_file()\e[0m";
-    /usr/bin/logger 'create_findus_desktop_file()' -t 'Customizing Debian';
-
-    mkdir $HOME/.local/share/applications > /dev/null 2>&1;
-    # icon
-    mkdir $HOME/.local/share/icons > /dev/null 2>&1;
-    cp $SCRIPT_DIR/files/findus.png $HOME/.local/share/icons;
-
-    TOOL_INSTALL="findus desktop file";
-    TOOL_SOURCE="Script";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    cat << ___EOF___ >> ~/.local/share/applications/findus.desktop
-[Desktop Entry]
-Type=Application
-Name[en_GB]=Fault Injection Library
-Name=Fault Injection Library
-Comment[en_GB]=Start Fault Injection Library
-Comment=Start Fault Injection Library
-Keywords=Fault-injection;Glitching;Hacking;Hardware
-Exec=gnome-terminal --class="FindusTerm" --name="FindusTerm" --working-directory="$SOURCE_DIR/findus/" -- bash -c "source venv/bin/activate && exec bash"
-Icon=$HOME/.local/share/icons/findus.png
-Terminal=false
-StartupNotify=true
-StartupWMClass=FindusTerm
-Categories=X-Hacking;X-FaultInjection;
-___EOF___
-    check_status_install;
-
-    sudo chmod 700 $HOME/.local/share/applications/findus.desktop;
-
-    echo -e "\e[35m[*] create_findus_desktop_file() finished\n\e[0m";
-    /usr/bin/logger 'create_findus_desktop_file() finished' -t 'Customizing Debian';
 }
 
 create_desktop_file() {
@@ -2659,6 +2726,11 @@ main() {
         install_gnome_extensions;
         create_gnome_categories;
 
+        # Install JDK and JRE early as it is a prerequisite for e.g. Ghidra
+        if [ "$JDK_JRE_INSTALL" == "Yes" ]; then
+            install_open_jdk_jre;
+        fi
+
         # Flatpak
         if [ "$FLATPAK_UTILS" == "Always" ]; then
             install_flatpak;
@@ -2715,6 +2787,12 @@ main() {
         if [ "$DEVTOOLS_INSTALL" == "Yes" ]; then
             install_devtools;
         fi
+
+        # GHIDRA_INSTALL
+        if [ "$GHIDRA_INSTALL" == "Yes" ]; then
+            install_ghidra;
+        fi
+
 
         # Install YT-DLP
         if [ "$YTDLP_INSTALL" == "Yes" ]; then
