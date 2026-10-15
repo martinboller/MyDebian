@@ -322,6 +322,12 @@ install_additional_features() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gnome-tweaks > /dev/null 2>&1;
     check_status_install;
 
+    TOOL_INSTALL="Windows Control Tools";
+    TOOL_SOURCE="Debian Repository";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install wmctrl xdotool > /dev/null 2>&1;
+    check_status_install;
+
     echo -e "\e[32m[+] install_additional_features() finished\n\e[0m";
     /usr/bin/logger 'install_additional_features() finished' -t 'Customizing Debian';
 }
@@ -330,14 +336,7 @@ install_ghidra() {
     echo -e "\e[32m[+] install_ghidra()\e[0m";
     /usr/bin/logger 'install_ghidra()' -t 'Customizing Debian';
 
-    TOOL_ELF="javac";
-    check_already_installed
-    if [ $TOOL_INSTALLED == False ]; then
-        install_open_jdk_jre;
-    fi
-
-    cd "$RE_DIR" || exit 1;
-
+    cd "$RE_DIR";
     TOOL_INSTALL="Ghidra Download";
     TOOL_SOURCE="Source";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -427,9 +426,19 @@ ___EOF___
         pip install pyghidra > /dev/null 2>&1;
         check_status_install;
 
-        cp $SCRIPT_DIR/files/test_pyghidra.py $RE_DIR/ghidra/;
-        #python3 $RE_DIR/ghidra/test_pyghidra.py;
-        # Deactive to not end up with other PIP stuff in there
+        TOOL_INSTALL="Ghidra Python Integration";
+        TOOL_SOURCE="Python";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
+        cp $SCRIPT_DIR/files/analyze.py $RE_DIR/ghidra/
+        # start ghidra for the first time (required for python integration)
+        ghidra & > /dev/null 2>&1;
+        sleep 2;
+        wmctrl -l | xargs xdotool windowminimize > /dev/null 2>&1;
+        wmctrl -l | xargs xdotool windowminimize > /dev/null 2>&1;
+        
+        python3 $RE_DIR/ghidra/analyze.py > /dev/null 2>&1;
+        check_status_install;
+        # Deactive to not end up with other PIP stuff in VENV
         deactivate > /dev/null 2>&1;
 
         # Create a Desktop Entry for ghidra dev env
@@ -443,6 +452,9 @@ Terminal=false
 Type=Application
 Categories=Development;Security;X-ReverseEngineering;X-HardwareHacking
 __EOF__
+
+wmctrl -l | xargs xdotool windowkill > /dev/null 2>&1;
+        
     else
         echo -e "\e[31m[-] Error: Ghidra build distribution zip not found in build/dist/\e[0m";
     fi
@@ -452,8 +464,6 @@ __EOF__
     rm -f "$TAR_FILE";
     rm -rf "ghidra-Ghidra_${GHIDRA_VERSION}_build";
 
-    cd "$SCRIPT_DIR" || exit 1;
-    
     echo -e "\e[32m[+] install_ghidra() finished\n\e[0m";
     /usr/bin/logger 'install_ghidra() finished' -t 'Customizing Debian';
 }
@@ -1019,16 +1029,6 @@ install_devtools() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends gcc-arm-none-eabi > /dev/null 2>&1;
     check_status_install;
 
-    # Kernel Headers
-    ## As this runs after an update get the kernel version now
-    export KERNEL_RELEASE=$(uname --kernel-release);
-    TOOL_INSTALL="linux-headers-$KERNEL_RELEASE"
-    echo -e "\e[35m[*]\t └─ Installing Kernel Headers for $KERNEL_RELEASE\e[0m";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install linux-headers-$KERNEL_RELEASE > /dev/null 2>&1;
-    check_status_install;
-
-    install_linux_headers;
-
     # Back to script directory
     cd "$SCRIPT_DIR" || exit 1;
     
@@ -1049,7 +1049,7 @@ configure_secureboot() {
 
 install_linux_headers() {
     # As this runs after an update get the kernel version now
-    export KERNEL_RELEASE=$(uname --kernel-release);
+    KERNEL_RELEASE=$(uname --kernel-release);
     TOOL_INSTALL="linux-headers-$KERNEL_RELEASE"
     TOOL_SOURCE="Debian Repository";
     echo -e "\e[35m[*]\t └─ Installing Kernel Headers for $KERNEL_RELEASE\e[0m";
@@ -1072,7 +1072,6 @@ install_nvidia() {
     # Check if a package was successfully found
     if [ -n "$NVIDIA_PKG" ]; then
         # Linux headers required for NVIDIA installation
-        install_linux_headers;
         TOOL_INSTALL="nvidia driver package: $NVIDIA_PKG";
         TOOL_SOURCE="Debian Repository (Non-Free)";
         echo -e "\e[35m[*]\t └─ Installing $NVIDIA_PKG\e[0m";
@@ -1880,6 +1879,8 @@ auto_activate_venv() {
     echo -e "\e[32m[+] auto_activate_venv()\e[0m";
     /usr/bin/logger 'auto_activate_venv()' -t 'Customizing Debian';
 
+    TOOL_INSTALL="Auto Activate Python VENV when detected";
+    TOOL_SOURCE="Python PIP";
     # Shell config file for BASH
     shell_config_file=~/.bashrc;
     # Check if the script is already in the config file
@@ -2723,8 +2724,15 @@ main() {
             configure_min_max_buttons;
         fi
 
-        install_gnome_extensions;
-        create_gnome_categories;
+        if [ GNOME_VERSION ]; then
+            install_gnome_extensions;
+            create_gnome_categories;
+        fi
+
+        # Install Linux Headers prerequisite for e.g. Ghidra
+        if [ "$LINUX_HEADERS_INSTALL" == "Yes" ]; then
+            install_linux_headers;
+        fi
 
         # Install JDK and JRE early as it is a prerequisite for e.g. Ghidra
         if [ "$JDK_JRE_INSTALL" == "Yes" ]; then
