@@ -400,7 +400,7 @@ Exec=ghidra
 Icon=/opt/ghidra/docs/GhidraClass/Intermediate/Images/GhidraLogo64.png
 Terminal=false
 Type=Application
-Categories=Development;Security;X-ReverseEngineering;X-HardwareHacking
+Categories=Development;Security;X-ReverseEngineering;
 __EOF__
         echo -e "\e[32m[+] Ghidra successfully installed to /opt/ghidra and integrated into the system.\e[0m";
         # Set GHIDRA_INSTALL_DIR
@@ -450,7 +450,7 @@ Exec=gnome-terminal --class="GhidraDev" --name="GhidraDev" --working-directory="
 Icon=/opt/ghidra/docs/GhidraClass/Intermediate/Images/GhidraLogo64.png
 Terminal=false
 Type=Application
-Categories=Development;Security;X-ReverseEngineering;X-HardwareHacking
+Categories=Development;Security;X-ReverseEngineering;
 __EOF__
 
 wmctrl -l | xargs xdotool windowkill > /dev/null 2>&1;
@@ -543,54 +543,52 @@ install_autopsy() {
 
     cd "$SCRIPT_DIR" || exit 1;
     TOOL_INSTALL="The Sleuth Kit (tsk)";
-    TOOL_SOURCE="Debian Repositories";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install sleuthkit > /dev/null 2>&1;
+    TOOL_SOURCE="Docker";
+    sudo mkdir -p /opt/autopsy/;
+    sudo cp $SCRIPT_DIR/files/docker/Dockerfile /opt/autopsy/;
+    cd /opt/autopsy/;
+    # Run docker with elevated privileges.
+    sg docker -c "docker build --build-arg SLEUTHKIT_VERSION=\"$SLEUTHKIT_VERSION\" --build-arg AUTOPSY_VERSION=\"$AUTOPSY_VERSION\" -t autopsy-debian13:latest .";
+    
     check_status_install;
+            
+    sudo bash -c 'cat > /opt/autopsy/autopsy' << '__EOF__'
+clear
+echo -e "\e[32m[+] Starting Autopsy\n\e[0m"
+echo -e "\e[32m[+] Please don't close this window\e[0m"
+cd /opt/autopsy/ > /dev/null 2>&1;
+xhost +local:docker > /dev/null 2>&1;
+# Start docker container
+docker run --rm -it \
+  --name autopsy \
+  --net=host \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
+  -v $HOME/cases:/cases \
+  autopsy-debian13:latest > /dev/null 2>&1;
 
-    # Autopsy require OpenJDK 17 and that is too old for Debian 13
-    # Keeping as a placeholder for when/if it will work with newer versions-
-    # TOOL_ELF="java";
-    # check_already_installed;
-    # if [ $TOOL_INSTALLED == False ]; then
-    #     install_open_jdk_jre;
-    # fi
+echo -e "\e[32m[+] Exiting Autopsy - Please wait\e[0m"
+sleep 2;
+cd
+exit 0
+__EOF__
 
-    # # Download The Sleuth Kit script to install from source
-    # TOOL_INSTALL="The Sleuth Kit (tsk) install script";
-    # TOOL_SOURCE="Source";
-    # echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
-    # curl -sSL https://raw.githubusercontent.com/sleuthkit/autopsy/refs/heads/develop/linux_macos_install_scripts/install_tsk_from_src.sh | tee -a $SCRIPT_DIR/install_tsk_from_src.sh
-    # check_status_install;
-
-    # TOOL_INSTALL="Install Sleuth Kit";
-    # TOOL_SOURCE="Source";
-    # echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
-    # chmod 755 $SCRIPT_DIR/install_tsk_from_src.sh;
-    # sudo $SCRIPT_DIR/install_tsk_from_src.sh -p $SCRIPT_DIR/sleuthkit -b sleuthkit-$SLEUTHKIT_VERSION | tee -a $SCRIPT_DIR/tsk.log > /dev/null 2>&1;
-    # check_status_install;    
-
-    # cd "$SCRIPT_DIR" || exit 1;
-    # TOOL_INSTALL="autopsy git";
-    # TOOL_SOURCE="Source";
-    # wget "$AUTOPSY_URL" > /dev/null 2>&1;
-    # check_status_install;
-
-    # TOOL_INSTALL="autopsy zip";
-    # unzip autopsy-$AUTOPSY_VERSION.zip > /dev/null 2>&1;
-    # check_status_install;
-
-    # TOOL_INSTALL="Autopsy install script";
-    # curl -sSL https://raw.githubusercontent.com/sleuthkit/autopsy/refs/heads/develop/linux_macos_install_scripts/install_application.sh  | tee -a $SCRIPT_DIR/install_application.sh
-    # check_status_install;
-
-    # TOOL_INSTALL="autopsy";
-    # TOOL_SOURCE="script";
-    # chmod 755 $SCRIPT_DIR/install_application.sh;
-    # JAVA_VERSION="1.$(java --version | head -n1 | awk '{print $2}' | awk -F'.' '{print $1}')" > /dev/null 2>&1;
-    # JAVA_PATH=$(sudo update-java-alternatives -l | grep java-$JAVA_VERSION | awk '{print $3}') > /dev/null 2>&1;
-    # TSK_JAVA_LIB_PATH=$JAVA_PATH;
-    # sudo $SCRIPT_DIR/install_application.sh -z $SCRIPT_DIR/autopsy-$AUTOPSY_VERSION -i /usr/local/share/java/autopsy -j $JAVA_PATH -n Autopsy  | tee -a $SCRIPT_DIR/tsk.log > /dev/null 2>&1;
-    # check_status_install;
+    sudo chmod +x /opt/autopsy/autopsy;
+    # Create a global command-line shortcut
+    sudo ln -s /opt/autopsy/autopsy /usr/local/bin/
+    sudo cp $SCRIPT_DIR/files/icons/autopsy.png /opt/autopsy/;
+    
+    # Create a Desktop Entry for the application menu
+    sudo bash -c 'cat > /usr/share/applications/autopsy.desktop' << '__EOF__'
+[Desktop Entry]
+Name=Autopsy
+Comment=Forensics Analysis Software
+Exec=gnome-terminal --working-directory="/opt/autopsy/" -- bash -c "autopsy"
+Icon=/opt/autopsy/autopsy.png
+Terminal=false
+Type=Application
+Categories=Development;Security;X-ReverseEngineering;X-Forensics;
+__EOF__
 
     echo -e "\e[32m[+] install_autopsy() finished\n\e[0m";
     /usr/bin/logger 'install_autopsy() finished' -t 'Customizing Debian';
@@ -2761,10 +2759,6 @@ main() {
             install_forensicstools;
         fi
 
-        if [ "$AUTOPSY_INSTALL" == "Yes" ]; then
-            install_autopsy;
-        fi
-
         # SYSTOOLS_INSTALL
         if [ "$SYSTOOLS_INSTALL" == "Yes" ]; then
         install_systemtools;
@@ -2775,7 +2769,7 @@ main() {
             install_usertools;
         fi
 
-        # USERTOOLS_INSTALL
+        # Audio and Video tools installation
         if [ "$AVTOOLS_INSTALL" == "Yes" ]; then
             install_user_av_tools;
         fi
@@ -2844,6 +2838,11 @@ main() {
         # Docker Installation
         if [ "$DOCKER_INSTALL" == "Yes" ]; then
             install_docker;
+        fi
+
+        # Installing Autopsy. This MUST happen after docker is installed.
+        if [ "$AUTOPSY_INSTALL" == "Yes" ]; then
+            install_autopsy;
         fi
 
         # HASHCAT installation
