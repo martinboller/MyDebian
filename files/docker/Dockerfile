@@ -27,12 +27,15 @@ RUN apt-get update && apt-get install -y \
     libafflib-dev \
     && rm -rf /var/lib/apt/lists/*
 
+RUN apt-get -y full-upgrade
+
 ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 
 # Accept build arguments and persist them
 ARG AUTOPSY_VERSION=4.23.1
 ENV AUTOPSY_VERSION=${AUTOPSY_VERSION}
 ARG SLEUTHKIT_VERSION=4.15.0
+ENV SLEUTHKIT_VERSION=${SLEUTHKIT_VERSION}
 
 # Download and set up Autopsy
 RUN wget https://github.com/sleuthkit/autopsy/releases/download/autopsy-${AUTOPSY_VERSION}/autopsy-${AUTOPSY_VERSION}.zip -O /tmp/autopsy.zip \

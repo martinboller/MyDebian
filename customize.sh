@@ -14,7 +14,7 @@
 
 do_intro() {
     /usr/bin/logger 'do_intro()' -t 'Customizing Debian';
-    echo -e '\e[32m\t   ___          _                '  _     _
+    echo -e '\e[32m\t   ___          _                  _     _'
     echo -e '\e[32m\t / ___|   _ ___| |_ ___  _ __ ___ (_)___(_)_ __   __ _  '
     echo -e '\e[32m\t| |  | | | / __| __/ _ \| ´_ ` _ \| |_  / | ´_ \ / _` | '
     echo -e '\e[32m\t| |__| |_| \__ \ || (_) | | | | | | |/ /| | | | | (_| | '
@@ -40,8 +40,8 @@ do_outro() {
     echo -e '\e[32m\t             |  ___(_)_ __ (_)___| |__   ___  __| |              '
     echo -e '\e[32m\t             | |_  | | ´_ \| / __| ´_ \ / _ \/ _` |              ' 
     echo -e '\e[32m\t             |  _| | | | | | \__ \ | | |  __/ (_| |              '
-    echo -e '\e[32m\t             |_|   |_|_| |_|_|___/_| |_|\___|\__,_|              \e[0m'
-    echo -e
+    echo -e '\e[32m\t             |_|   |_|_| |_|_|___/_| |_|\___|\__,_|              '
+    echo -e "\e[0m"
     /usr/bin/logger 'do_outro() finished' -t 'Customizing Debian';
 }
 
@@ -191,6 +191,14 @@ check_connectivity_http() {
     echo -e "\e[32m[+]\t[√] HTTPS access to $TEST_URL\e[0m"
 }
 
+check_apt_running() {
+    while fuser /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock /var/cache/apt/archives/lock >/dev/null 2>&1; do
+        echo -e "\e[31m[-]\t Package manager is currently busy. Waiting 5 seconds..."
+        sleep 5
+    done
+    echo -e "\\e[32m[+]\t[√] Package management locks released. Proceeding with installation..."
+}
+
 check_already_installed() {
     # check if already installed
     TOOL_FOUND=$(which $TOOL_ELF) > /dev/null 2>&1;
@@ -264,6 +272,9 @@ install_updates() {
     TEST_URL="debian.org";
     check_connectivity_ping;
 
+    # Wait until package managers have stopped running
+    check_apt_running;
+
     TOOL_INSTALL="apt update";
     sudo DEBIAN_FRONTEND=noninteractive apt-get update > /dev/null 2>&1
     check_status_install;
@@ -336,63 +347,48 @@ install_ghidra() {
     echo -e "\e[32m[+] install_ghidra()\e[0m";
     /usr/bin/logger 'install_ghidra()' -t 'Customizing Debian';
 
+    # Detect latest release of Ghidra from GitHub
+    API_URL="https://api.github.com/repos/NationalSecurityAgency/ghidra/releases/latest"
+    echo -e "\e[35m[*]\t └─ [*] Querying GitHub API for the latest Ghidra release...\e[0m"
+
+    # Fetch the release metadata JSON
+    RELEASE_JSON=$(curl -sSL "$API_URL")
+    # Extract the tag name (e.g., Ghidra_12.1.4) and clean version number
+    TAG_NAME=$(echo "$RELEASE_JSON" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    GHIDRA_VERSION=$(echo "$TAG_NAME" | sed 's/^[Gg]hidra[_[:space:]]*//;s/_build$//')
+
+    # Extract the browser download URL and filename for the public zip asset
+    DOWNLOAD_URL=$(echo "$RELEASE_JSON" | grep -o 'https://[^"]*_PUBLIC_[^"]*\.zip' | head -n 1)
+    FILENAME=$(basename "$DOWNLOAD_URL")
+    GHIDRA_SOURCE_DIR=$(echo "$FILENAME" | sed -E 's/_[0-9]{8}\.zip$//')
+    echo -e "\e[35m[*]\t └─ Latest Tag:\t$TAG_NAME"
+    echo -e "\e[35m[*]\t └─ Asset File:\t$FILENAME"
+    #echo -e "\e[35m[*]\t └─ Download Link:\t$DOWNLOAD_URL"
+    echo -e "\e[35m[*]\t └─ Install from directory:\t$GHIDRA_SOURCE_DIR\e[0m"
+    export GHIDRA_INSTALL_DIR="/opt/ghidra"
+    
     cd "$RE_DIR";
-    TOOL_INSTALL="Ghidra Download";
+    TOOL_INSTALL="Downloading $FILENAME";
     TOOL_SOURCE="Source";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    local TAR_FILE="Ghidra_${GHIDRA_VERSION}_build.tar.gz"
-    local URL="https://github.com/NationalSecurityAgency/ghidra/archive/refs/tags/Ghidra_${GHIDRA_VERSION}_build.tar.gz"
-    
-    wget "$URL" -O "$TAR_FILE" > /dev/null 2>&1;
+    echo -e "\e[35m[*]\t └─ $TOOL_INSTALL\e[0m";
+    curl -# -sL -O "$DOWNLOAD_URL"
     check_status_install;
         
-    TOOL_INSTALL="Ghidra Extract";
+    TOOL_INSTALL="Extracting $FILENAME";
     TOOL_SOURCE="Source";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    tar zxf "$TAR_FILE" > /dev/null 2>&1;
-    check_status_install;
-        
-    cd "ghidra-Ghidra_${GHIDRA_VERSION}_build" || exit 1;
-    
-    TOOL_INSTALL="Ghidra Gradle Dependencies";
-    TOOL_SOURCE="Source";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL (this may take a while)\e[0m";
-    ./gradlew -I gradle/support/fetchDependencies.gradle > /dev/null 2>&1;
+    echo -e "\e[35m[*]\t └─ $TOOL_INSTALL\e[0m";
+    unzip "$FILENAME" > /dev/null 2>&1;
     check_status_install;
 
-    TOOL_INSTALL="Ghidra Build";
-    TOOL_SOURCE="Source";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL (this may take a while)\e[0m";
-    ./gradlew buildGhidra > /dev/null 2>&1;
-    check_status_install;
-
-    TOOL_INSTALL="Ghidra Install";
-    TOOL_SOURCE="Source";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL (/opt/ghidra)\e[0m";
-    # Locate the built distribution zip generated in build/dist/
-    local DIST_ZIP
-    DIST_ZIP=$(find build/dist -name "ghidra_*.zip" | head -n 1)
-    
-    if [ -n "$DIST_ZIP" ]; then
-        sudo mkdir -p /opt/ghidra
-        sudo unzip -q "$DIST_ZIP" -d /opt/ghidra
+    sudo mv $GHIDRA_SOURCE_DIR $GHIDRA_INSTALL_DIR;
+    check_status_install;   
+    # Make it executable
+    sudo chmod +x /opt/ghidra/ghidraRun    
+    # Create a global command-line shortcut
+    sudo ln -sf /opt/ghidra/ghidraRun /usr/local/bin/ghidra
         
-        # Flatten structure if nested inside a versioned folder inside /opt/ghidra
-        local EXTRACTED_DIR
-        EXTRACTED_DIR=$(find /opt/ghidra -maxdepth 1 -type d -name "ghidra_*" | head -n 1)
-        if [ -n "$EXTRACTED_DIR" ] && [ "$EXTRACTED_DIR" != "/opt/ghidra" ]; then
-            sudo mv "$EXTRACTED_DIR"/* /opt/ghidra/ 2>/dev/null || true
-            sudo rm -rf "$EXTRACTED_DIR"
-        fi
-        
-        # Make it executable
-        sudo chmod +x /opt/ghidra/ghidraRun
-        
-        # Create a global command-line shortcut
-        sudo ln -sf /opt/ghidra/ghidraRun /usr/local/bin/ghidra
-        
-        # Create a Desktop Entry for the application menu
-        sudo bash -c 'cat > /usr/share/applications/ghidra.desktop' << '__EOF__'
+    # Create a Desktop Entry for the application menu
+    sudo bash -c 'cat > /usr/share/applications/ghidra.desktop' << '__EOF__'
 [Desktop Entry]
 Name=Ghidra
 Comment=Software Reverse Engineering Framework
@@ -402,47 +398,62 @@ Terminal=false
 Type=Application
 Categories=Development;Security;X-ReverseEngineering;
 __EOF__
-        echo -e "\e[32m[+] Ghidra successfully installed to /opt/ghidra and integrated into the system.\e[0m";
-        # Set GHIDRA_INSTALL_DIR
-        export GHIDRA_INSTALL_DIR="/opt/ghidra"
-        cat << '___EOF___' >> ~/.bashrc
+    echo -e "\e[32m[+] Ghidra successfully installed to /opt/ghidra and integrated into the system.\e[0m";
 
-# Install dir for Ghidra
-GHIDRA_INSTALL_DIR="/opt/ghidra"
+    cat << '___EOF___' >> ~/.bashrc
+    
+# Set GHIDRA_INSTALL_DIR
+export GHIDRA_INSTALL_DIR="/opt/ghidra"
 ___EOF___
 
-        # Directory for Ghidra development
-        mkdir -p $RE_DIR/ghidra/;
+    # Directory for Ghidra development
+    mkdir -p $RE_DIR/ghidra/;
 
-        TOOL_INSTALL="Ghidra Virtual Environment";
-        TOOL_SOURCE="Python VENV";
-        # echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
-        VENV_NAME=$RE_DIR/ghidra/venv;
-        configure_venv;
+    TOOL_INSTALL="Ghidra Virtual Environment";
+    TOOL_SOURCE="Python VENV";
+    # echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
+    VENV_NAME=$RE_DIR/ghidra/venv;
+    configure_venv;
 
-        TOOL_INSTALL="Ghidra PIP Prerequisites";
-        TOOL_SOURCE="PIP Repository";
-        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
-        pip install pyghidra > /dev/null 2>&1;
-        check_status_install;
+    TOOL_INSTALL="Ghidra PIP Prerequisites";
+    TOOL_SOURCE="PIP Repository";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
+    pip install pyghidra > /dev/null 2>&1;
+    check_status_install;
 
-        TOOL_INSTALL="Ghidra Python Integration";
-        TOOL_SOURCE="Python";
-        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
-        cp $SCRIPT_DIR/files/analyze.py $RE_DIR/ghidra/
-        # start ghidra for the first time (required for python integration)
-        ghidra & > /dev/null 2>&1;
-        sleep 2;
-        wmctrl -l | xargs xdotool windowminimize > /dev/null 2>&1;
-        wmctrl -l | xargs xdotool windowminimize > /dev/null 2>&1;
-        
-        python3 $RE_DIR/ghidra/analyze.py > /dev/null 2>&1;
-        check_status_install;
-        # Deactive to not end up with other PIP stuff in VENV
-        deactivate > /dev/null 2>&1;
+    TOOL_INSTALL="Ghidra Python Integration";
+    TOOL_SOURCE="Python";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
+    cp $SCRIPT_DIR/files/analyze.py $RE_DIR/ghidra/
+    # start ghidra for the first time (required for python integration)
+    # Start Ghidra in the background with the user agreement automatically accepted
+    env JAVA_TOOL_OPTIONS="-DUSER_AGREEMENT=ACCEPT" /opt/ghidra/ghidraRun > /dev/null 2>&1 &
+    sleep 5;
+    GHIDRA_PID=$!
+    # Poll until the Ghidra window appears and is mapped
+    echo -e "\e[35m[*]\t └─ Waiting for Ghidra to initialize..."
+    while ! wmctrl -l | grep -i "Ghidra" > /dev/null 2>&1; do
+        sleep  2
+    done
+    # Give it additional time to fully finish rendering its components
+    sleep 2
+    # Request a clean, graceful window close (triggers Java shutdown hooks)
+    echo -e "\e[35m[*]\t └─ Ghidra initialized. Sending graceful close request..."
+    wmctrl -c "Ghidra"
+    # Wait for the background process to finish writing files and exit
+    wait $GHIDRA_PID 2>/dev/null
+    echo -e "\e[35m[*]\t └─ Ghidra closed cleanly."
+    
+    python3 $RE_DIR/ghidra/analyze.py > /dev/null 2>&1;
+    check_status_install;
+    # Deactive to not end up with other PIP stuff in VENV
+    deactivate > /dev/null 2>&1;
 
-        # Create a Desktop Entry for ghidra dev env
-        bash -c 'cat > $HOME/.local/share/applications/ghidra-dev.desktop' << '__EOF__'
+    TOOL_INSTALL="Ghidra Python Desktop Entry";
+    TOOL_SOURCE="GNOME";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
+    # Create a Desktop Entry for ghidra dev env
+    bash -c 'cat > $HOME/.local/share/applications/ghidra-dev.desktop' << '__EOF__'
 [Desktop Entry]
 Name=Ghidra Python Development
 Comment=Development Environment for Ghidra
@@ -452,17 +463,27 @@ Terminal=false
 Type=Application
 Categories=Development;Security;X-ReverseEngineering;
 __EOF__
+    check_status_install;
 
-wmctrl -l | xargs xdotool windowkill > /dev/null 2>&1;
-        
-    else
-        echo -e "\e[31m[-] Error: Ghidra build distribution zip not found in build/dist/\e[0m";
-    fi
- 
+    TOOL_INSTALL="Ghidra Accept User Agreement";
+    TOOL_SOURCE="Script";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
+    # Create set env variable for accepting license for Ghidra
+    sudo bash -c 'cat > /etc/profile.d/ghidra.sh' << '__EOF__'
+export JAVA_TOOL_OPTIONS="-DUSER_AGREEMENT=ACCEPT"
+__EOF__
+    check_status_install
+    sync;
+
+    TOOL_INSTALL="Ghidra installation Cleanup";
+    TOOL_SOURCE="Script";
+    echo -e "\e[35m[*]\t └─ $TOOL_INSTALL\e[0m";
     # Cleanup source files and archives
-    cd "$RE_DIR" || exit 1;
-    rm -f "$TAR_FILE";
-    rm -rf "ghidra-Ghidra_${GHIDRA_VERSION}_build";
+    rm -f "$RE_DIR/$FILENAME";
+    check_status_install;
+
+    # back to script directory
+    cd $SCRIPT_DIR;
 
     echo -e "\e[32m[+] install_ghidra() finished\n\e[0m";
     /usr/bin/logger 'install_ghidra() finished' -t 'Customizing Debian';
@@ -542,53 +563,68 @@ install_autopsy() {
     /usr/bin/logger 'install_autopsy()' -t 'Customizing Debian';
 
     cd "$SCRIPT_DIR" || exit 1;
-    TOOL_INSTALL="The Sleuth Kit (tsk)";
+    TOOL_INSTALL="Docker Container with Autopsy and The Sleuth Kit (tsk)";
     TOOL_SOURCE="Docker";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     sudo mkdir -p /opt/autopsy/;
     sudo cp $SCRIPT_DIR/files/docker/Dockerfile /opt/autopsy/;
     cd /opt/autopsy/;
     # Run docker with elevated privileges.
-    sg docker -c "docker build --build-arg SLEUTHKIT_VERSION=\"$SLEUTHKIT_VERSION\" --build-arg AUTOPSY_VERSION=\"$AUTOPSY_VERSION\" -t autopsy-debian13:latest .";
-    
+    sg docker -c "docker build --build-arg SLEUTHKIT_VERSION=\"$SLEUTHKIT_VERSION\" --build-arg AUTOPSY_VERSION=\"$AUTOPSY_VERSION\" -t autopsy-debian13:latest ." > /dev/null 2>&1;
     check_status_install;
             
+    TOOL_INSTALL="Startup script for Autopsy";
+    TOOL_SOURCE="GNOME";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     sudo bash -c 'cat > /opt/autopsy/autopsy' << '__EOF__'
-clear
-echo -e "\e[32m[+] Starting Autopsy\n\e[0m"
-echo -e "\e[32m[+] Please don't close this window\e[0m"
-cd /opt/autopsy/ > /dev/null 2>&1;
-xhost +local:docker > /dev/null 2>&1;
-# Start docker container
-docker run --rm -it \
+#!/usr/bin/env bash
+cd /opt/autopsy/ > /dev/null 2>&1
+xhost +local:docker > /dev/null 2>&1
+
+# Start docker container in detached background mode (-d)
+docker run --rm -d \
   --name autopsy \
   --net=host \
   -e DISPLAY=$DISPLAY \
   -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
   -v $HOME/cases:/cases \
-  autopsy-debian13:latest > /dev/null 2>&1;
+  autopsy-debian13:latest > /dev/null 2>&1
 
-echo -e "\e[32m[+] Exiting Autopsy - Please wait\e[0m"
-sleep 2;
-cd
 exit 0
 __EOF__
+check_status_install;
 
     sudo chmod +x /opt/autopsy/autopsy;
     # Create a global command-line shortcut
     sudo ln -s /opt/autopsy/autopsy /usr/local/bin/
     sudo cp $SCRIPT_DIR/files/icons/autopsy.png /opt/autopsy/;
     
+    TOOL_INSTALL="Desktop Entry for Autopsy";
+    TOOL_SOURCE="GNOME";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     # Create a Desktop Entry for the application menu
     sudo bash -c 'cat > /usr/share/applications/autopsy.desktop' << '__EOF__'
 [Desktop Entry]
 Name=Autopsy
 Comment=Forensics Analysis Software
-Exec=gnome-terminal --working-directory="/opt/autopsy/" -- bash -c "autopsy"
+Exec=/opt/autopsy/autopsy
+Path=/opt/autopsy/
 Icon=/opt/autopsy/autopsy.png
 Terminal=false
 Type=Application
 Categories=Development;Security;X-ReverseEngineering;X-Forensics;
+Name[en]=Autopsy
+Name[en_GB]=Autopsy
+Name[en_GB.UTF-8]=Autopsy
+Comment[en]=Forensics Analysis Software
+Comment[en_GB]=Forensics Analysis Software
+Comment[en_GB.UTF-8]=Forensics Analysis Software
+PrefersNonDefaultGPU=false
+Hidden=false
+NoDisplay=false
+StartupNotify=false
 __EOF__
+    check_status_install;
 
     echo -e "\e[32m[+] install_autopsy() finished\n\e[0m";
     /usr/bin/logger 'install_autopsy() finished' -t 'Customizing Debian';
@@ -835,7 +871,7 @@ install_systemtools() {
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="System Tools";
     echo -e "\e[35m[*]\t └─ Installing system tools\e[0m";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gparted nano p7zip p7zip-full unzip dconf-editor htop screen > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gparted nano p7zip p7zip-full unzip dconf-editor htop screen apt-rdepends > /dev/null 2>&1;
     check_status_install;
     cd "$SCRIPT_DIR" || exit 1;
 
@@ -1048,11 +1084,19 @@ configure_secureboot() {
 install_linux_headers() {
     # As this runs after an update get the kernel version now
     KERNEL_RELEASE=$(uname --kernel-release);
+    NEXT_KERNEL_RELEASE=$(ls -1 /lib/modules | sort -V | tail -n 1);
     TOOL_INSTALL="linux-headers-$KERNEL_RELEASE"
     TOOL_SOURCE="Debian Repository";
-    echo -e "\e[35m[*]\t └─ Installing Kernel Headers for $KERNEL_RELEASE\e[0m";
+    echo -e "\e[35m[*]\t └─ Installing Kernel Headers for running $KERNEL_RELEASE\e[0m";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install linux-headers-$KERNEL_RELEASE > /dev/null 2>&1;
     check_status_install;
+
+    if [ $NEXT_KERNEL_RELEASE ]; then
+        TOOL_INSTALL="linux-headers-$NEXT_KERNEL_RELEASE"
+        echo -e "\e[35m[*]\t └─ Installing Kernel Headers for $NEXT_KERNEL_RELEASE\e[0m";
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y linux-headers-$(ls -1 /lib/modules | sort -V | tail -n 1) > /dev/null 2>&1;
+        check_status_install;
+    fi    
 }
 
 install_nvidia() {
