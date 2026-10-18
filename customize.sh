@@ -296,6 +296,7 @@ install_additional_features() {
     echo -e "\e[32m[+] install_additional_features()\e[0m";
     /usr/bin/logger 'install_additional_features()' -t 'Customizing Debian';
 
+    check_apt_running;
     TOOL_INSTALL="Debian Goodies";
     TOOL_SOURCE="Debian Repository";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -380,14 +381,24 @@ install_ghidra() {
     unzip "$FILENAME" > /dev/null 2>&1;
     check_status_install;
 
+    TOOL_INSTALL="Installing Ghidra $GHIDRA_VERSION in $GHIDRA_INSTALL_DIR";
+    TOOL_SOURCE="Source";
     sudo mv $GHIDRA_SOURCE_DIR $GHIDRA_INSTALL_DIR;
-    check_status_install;   
+    check_status_install;
+
     # Make it executable
+    TOOL_INSTALL="Ensuring Ghidra is executable";
+    TOOL_SOURCE="Source";
+    echo -e "\e[35m[*]\t └─ $TOOL_INSTALL\e[0m";
     sudo chmod +x /opt/ghidra/ghidraRun    
     # Create a global command-line shortcut
     sudo ln -sf /opt/ghidra/ghidraRun /usr/local/bin/ghidra
-        
+    check_status_install;
+
     # Create a Desktop Entry for the application menu
+    TOOL_INSTALL="Create desktop entry for Ghidra";
+    TOOL_SOURCE="Source";
+    echo -e "\e[35m[*]\t └─ $TOOL_INSTALL\e[0m";
     sudo bash -c 'cat > /usr/share/applications/ghidra.desktop' << '__EOF__'
 [Desktop Entry]
 Name=Ghidra
@@ -398,20 +409,25 @@ Terminal=false
 Type=Application
 Categories=Development;Security;X-ReverseEngineering;
 __EOF__
+    check_status_install;
     echo -e "\e[32m[+] Ghidra successfully installed to /opt/ghidra and integrated into the system.\e[0m";
 
+    TOOL_INSTALL="Configuring GHIDRA_INSTALL_DIR to $GHIDRA_INSTALL_DIR";
+    TOOL_SOURCE="Source";
+    echo -e "\e[35m[*]\t └─ $TOOL_INSTALL\e[0m";    
     cat << '___EOF___' >> ~/.bashrc
     
 # Set GHIDRA_INSTALL_DIR
 export GHIDRA_INSTALL_DIR="/opt/ghidra"
 ___EOF___
+    check_status_install;
 
     # Directory for Ghidra development
     mkdir -p $RE_DIR/ghidra/;
 
     TOOL_INSTALL="Ghidra Virtual Environment";
     TOOL_SOURCE="Python VENV";
-    # echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
     VENV_NAME=$RE_DIR/ghidra/venv;
     configure_venv;
 
@@ -425,12 +441,11 @@ ___EOF___
     TOOL_SOURCE="Python";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
     cp $SCRIPT_DIR/files/analyze.py $RE_DIR/ghidra/
-    # start ghidra for the first time (required for python integration)
-    # Start Ghidra in the background with the user agreement automatically accepted
+    # start ghidra for the first time (required for python integration) with the user agreement automatically accepted
     env JAVA_TOOL_OPTIONS="-DUSER_AGREEMENT=ACCEPT" /opt/ghidra/ghidraRun > /dev/null 2>&1 &
     sleep 5;
     GHIDRA_PID=$!
-    # Poll until the Ghidra window appears and is mapped
+    # Poll until the Ghidra window appears
     echo -e "\e[35m[*]\t └─ Waiting for Ghidra to initialize..."
     while ! wmctrl -l | grep -i "Ghidra" > /dev/null 2>&1; do
         sleep  2
@@ -515,6 +530,7 @@ install_proprietary_filesystems() {
     
     TEST_URL="debian.org";
     check_connectivity_http;
+    check_apt_running;
 
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="ntfs-3g";
@@ -537,6 +553,7 @@ install_open_jdk_jre() {
     echo -e "\e[32m[+] install_open_jdk_jre()\n\e[0m";
     /usr/bin/logger 'install_open_jdk_jre()' -t 'Customizing Debian';
 
+    check_apt_running;
     TOOL_INSTALL="OpenJDK and OpenJRE";
     TOOL_SOURCE="Debian Repository";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -546,6 +563,9 @@ install_open_jdk_jre() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install pkg-config openjdk-25-jdk openjdk-25-jre > /dev/null 2>&1;
     check_status_install;
 
+    TOOL_INSTALL="Configuring JAVA_HOME";
+    TOOL_SOURCE="Debian Repository";
+    echo -e "\e[35m[*]\t └─ $TOOL_INSTALL\e[0m";
     JAVA_HOME=$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")
     cat << ___EOF___ >> ~/.bashrc
 
@@ -553,7 +573,8 @@ install_open_jdk_jre() {
 JAVA_HOME=\$(dirname "\$(dirname "\$(readlink -f "\$(command -v javac)")")")
 ___EOF___
     sync;
-    
+    check_status_install;
+
     echo -e "\e[32m[+] install_open_jdk_jre() finished\n\e[0m";
     /usr/bin/logger 'install_open_jdk_jre() finished' -t 'Customizing Debian';
 }
@@ -644,6 +665,7 @@ install_hashcat() {
         TEST_URL="github.com";
         check_connectivity_http;
 
+        check_apt_running;
         TOOL_SOURCE="Debian Repository";
         TOOL_INSTALL="hashcat prerequisites";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
@@ -706,7 +728,9 @@ Components: main
 Enabled: yes
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 __EOF__
-    sudo apt update > /dev/null 2>&1;
+    
+    check_apt_running;
+    sudo apt-get update > /dev/null 2>&1;
     check_status_install;
     fi
 
@@ -723,6 +747,7 @@ install_pythontools() {
     # Check that debian.org is reachable
     TEST_URL="debian.org";
     check_connectivity_http;
+    check_apt_running;
 
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="python-dotenv";
@@ -747,6 +772,7 @@ install_networktools() {
     # Check that debian.org is reachable
     TEST_URL="debian.org";
     check_connectivity_http;
+    check_apt_running;
 
     # Set tool source and what to install
     TOOL_SOURCE="Debian Repository";
@@ -824,6 +850,7 @@ install_forensicstools() {
     # Check that debian.org is reachable
     TEST_URL="debian.org";
     check_connectivity_http;
+    check_apt_running;
 
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="Wireshark";
@@ -837,21 +864,26 @@ install_forensicstools() {
         sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
     fi
 
-    echo -e "\e[35m[*]\t └─ Installing forensics-all\e[0m";
-    TOOL_INSTALL="Forensics Tools"    
+    TOOL_INSTALL="Metapackage forensics-all"    
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install forensics-all > /dev/null 2>&1;
     check_status_install;
     # hashcat install with forensics-all - but want to install from source
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y purge hashcat > /dev/null 2>&1;
 
-    echo -e "\e[35m[*]\t └─ Installing forensics-extra\e[0m";
-    TOOL_INSTALL="Forensics Extra Package"
+    TOOL_INSTALL="Metapackage forensics-extra"
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install forensics-extra > /dev/null 2>&1;
     check_status_install;
 
-    echo -e "\e[35m[*]\t └─ Installing additional forensics tools\e[0m";
-    TOOL_INSTALL="Additional Forensics Tools"
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install testdisk geoip-bin geoip-database > /dev/null 2>&1;
+    TOOL_INSTALL="Testdisk"
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install testdisk > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_INSTALL="geoip-bin and geoip-database"
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install geoip-bin geoip-database > /dev/null 2>&1;
     check_status_install;
 
     cd "$SCRIPT_DIR" || exit 1;
@@ -867,12 +899,44 @@ install_systemtools() {
     # Check that debian.org is reachable
     TEST_URL="debian.org";
     check_connectivity_http;
+    check_apt_running;
 
     TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="System Tools";
-    echo -e "\e[35m[*]\t └─ Installing system tools\e[0m";
+    TOOL_INSTALL="gparted";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gparted > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_INSTALL="nano";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gparted nano p7zip p7zip-full unzip dconf-editor htop screen apt-rdepends > /dev/null 2>&1;
     check_status_install;
+
+    TOOL_INSTALL="P7Zip tools and unzip";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install p7zip p7zip-full unzip dconf-editor htop screen apt-rdepends > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_INSTALL="dconf-editor";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install dconf-editor > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_INSTALL="htop";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install htop > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_INSTALL="screen";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install screen > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_INSTALL="apt-rdepends";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install apt-rdepends > /dev/null 2>&1;
+    check_status_install;
+
     cd "$SCRIPT_DIR" || exit 1;
 
     echo -e "\e[32m[+] install_systemtools() finished\n\e[0m";
@@ -886,12 +950,36 @@ install_usertools() {
     # Check that debian.org is reachable
     TEST_URL="debian.org";
     check_connectivity_http;
+    check_apt_running;
 
     TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="User Tools";
+    TOOL_INSTALL="transmission-gtk";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install transmission-gtk sshpass rclone rclone-browser \
-        figlet lolcat cowsay sl cmatrix webp > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install transmission-gtk > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="sshpass";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install sshpass > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="command line niceties";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install figlet lolcat cowsay sl cmatrix webp > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="rclone tools";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install rclone rclone-browser > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="webp";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install webp > /dev/null 2>&1;
     check_status_install;
 
     TOOL_SOURCE="Debian Repository";
@@ -909,6 +997,10 @@ install_usertools() {
 install_user_av_tools() {
     /usr/bin/logger 'install_user_av_tools' -t 'Customizing Debian';
     echo -e "\e[35m[*] install_user_av_tools\e[0m";
+    
+    TEST_URL="debian.org";
+    check_connectivity_http;
+    check_apt_running;
 
     # https://zihad.com.bd/posts/debian-13-trixie-codecs-multimedia-guide/
     TOOL_SOURCE="Debian Repository";
@@ -1018,25 +1110,56 @@ install_devtools() {
     # Check that debian.org is reachable
     TEST_URL="debian.org";
     check_connectivity_http;
+    check_apt_running;
 
-    echo -e "\e[35m[*]\t └─ Installing core development tools\e[0m";
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="gnupg"
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gnupg2 --install-recommends > /dev/null 2>&1;
+    check_status_install;
+
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="Core Development Tools"
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install git devscripts build-essential gnupg2 dirmngr --install-recommends > /dev/null 2>&1;
+    echo -e "\e[35m[*]\t └─ Installing $INSTALL_TOOL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install git devscripts build-essential dirmngr --install-recommends > /dev/null 2>&1;
     check_status_install;
 
     # Some additional helpful tools
-    echo -e "\e[35m[*]\t └─ Installing additional development tools\e[0m";
     TOOL_INSTALL="Additional Development Tools"
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gawk xxd vbindiff gdb gdb-multiarch ddd binutils strace ltrace --install-recommends > /dev/null 2>&1;
     # Required to build Proxmark and others
     check_status_install;
-   
+
+    # trace tools
+    TOOL_INSTALL="strace and ltrace"
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install strace ltrace --install-recommends > /dev/null 2>&1;
+    # Required to build Proxmark and others
+    check_status_install;
+
+    # cmake
+    TOOL_INSTALL="cmake"
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends cmake > /dev/null 2>&1;
+    check_status_install;
+
     # cmake and QT development tools
-    echo -e "\e[35m[*]\t └─ Installing cmake and QT development tools\e[0m";
-    TOOL_INSTALL="cmake and QT Development Tools"
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends ca-certificates pkg-config libreadline-dev \
-        libnewlib-dev qtbase5-dev libssl-dev cmake > /dev/null 2>&1;
+    TOOL_INSTALL="QT Development Tools";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends qtbase5-dev libssl-dev > /dev/null 2>&1;
+    check_status_install;
+
+    # pkg-config
+    TOOL_INSTALL="pkg-config and ca-certificates";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends ca-certificates pkg-config libreadline-dev libnewlib-dev qtbase5-dev libssl-dev cmake > /dev/null 2>&1;
+    check_status_install;
+
+    # pkg-config
+    TOOL_INSTALL="useful libraries";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends libreadline-dev libnewlib-dev libssl-dev > /dev/null 2>&1;
     check_status_install;
 
     # Bluetooth libraries
@@ -1082,6 +1205,10 @@ configure_secureboot() {
 }
 
 install_linux_headers() {
+    TEST_URL="debian.org";
+    check_connectivity_http;
+    check_apt_running;
+    
     # As this runs after an update get the kernel version now
     KERNEL_RELEASE=$(uname --kernel-release);
     NEXT_KERNEL_RELEASE=$(ls -1 /lib/modules | sort -V | tail -n 1);
@@ -1102,6 +1229,10 @@ install_linux_headers() {
 install_nvidia() {
     /usr/bin/logger 'install_nvidia()' -t 'Customizing Debian';
     echo -e "\e[32m[+] install_nvidia()\n\e[0m";
+
+    TEST_URL="debian.org";
+    check_connectivity_http;
+    check_apt_running;
 
     TOOL_INSTALL="nvidia-detect"
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -1142,6 +1273,7 @@ install_jupyterlab() {
     TEST_URL="pypi.org";
     check_connectivity_http;
 
+    TOOL_SOURCE="PIP Repository";
     TOOL_INSTALL="jupyterlab";
     # venv for jupyterlab
     VENV_NAME=~/.venv;
@@ -1152,6 +1284,18 @@ install_jupyterlab() {
     TOOL_INSTALL="jupyterlab";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     pip install jupyterlab > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_INSTALL="jupyterlab configuration file";
+    echo -e "\e[35m[*]\t └─ Generating $TOOL_INSTALL\e[0m";
+    jupyter server --generate-config
+    check_status_install;
+    sync;
+
+    TOOL_INSTALL="jupyterlab ROOT_DIR $HOME/Documents/Jupyter/";
+    echo -e "\e[35m[*]\t └─ Generating $TOOL_INSTALL\e[0m";
+    mkdir -p $HOME/Documents/Jupyter/;
+    sed -i "s&# c.ServerApp.root_dir = ''&c.ServerApp.root_dir = 'Documents/Jupyter'&" $HOME/.jupyter/jupyter_server_config.py
     check_status_install;
 
     APP_NAME="jupyter-lab";
@@ -1174,13 +1318,13 @@ install_sigrok_tools() {
         # Check that debian.org is reachable
         TEST_URL="debian.org";
         check_connectivity_http;
-
         # Check that GitHub is reachable
         TEST_URL="github.com";
         check_connectivity_http;
 
-        # Installing from source    
-        # Installing prerequisites
+        # Installing SIGROK from source    
+        # Installing prerequisites first
+        check_apt_running;
         TOOL_SOURCE="Debian Repository";
         TOOL_INSTALL="Sigrok Prerequisite Packages (i)";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -1429,6 +1573,7 @@ install_hwhacktools() {
     # Check that debian.org is reachable
     TEST_URL="debian.org";
     check_connectivity_http;
+    check_apt_running;
 
     #ST-LINK (STM microcontrollers)
     TOOL_INSTALL="ST Link Tools";
@@ -1645,6 +1790,7 @@ install_hwhacktools() {
     # reload udev rules
     sudo udevadm control --reload > /dev/null 2>&1;
     check_status_install;
+
     cd "$SCRIPT_DIR" || exit 1;
 
     echo -e "\e[32m[+] install_hwhacktools() finished\n\e[0m";
@@ -1658,6 +1804,7 @@ install_reversetools() {
     # Check that debian.org is reachable
     TEST_URL="debian.org";
     check_connectivity_http;
+    check_apt_running;
 
     TOOL_SOURCE="Debian Repository";
     # Reverse Engineering tools
@@ -1823,6 +1970,7 @@ install_virtualization() {
     # Check that debian.org is reachable
     TEST_URL="debian.org";
     check_connectivity_http;
+    check_apt_running;
     
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="virsh";
@@ -1900,6 +2048,7 @@ install_flatpak() {
     # Check that debian.org is reachable
     TEST_URL="debian.org";
     check_connectivity_http;
+    check_apt_running;
 
     TOOL_INSTALL="Flatpak Support"
     TOOL_SOURCE="Debian Repository";
@@ -2176,13 +2325,13 @@ install_gnome_extensions() {
     echo -e "\e[35m[*]\t └─ Compiling $TOOL_INSTALL\e[0m"
     sudo cp ~/.local/share/gnome-shell/extensions/*/schemas/*.gschema.xml /usr/share/glib-2.0/schemas/ 2>/dev/null
     sudo glib-compile-schemas /usr/share/glib-2.0/schemas/
-    check_status_install
+    check_status_install;
 
     # Add autostart hook
-    enable_gnome_extensions_autostart
+    enable_gnome_extensions_autostart;
 
-    echo -e "\e[32m[+] install_gnome_extensions() finished\n\e[0m"
-    /usr/bin/logger 'install_gnome_extensions() finished' -t 'Customizing Debian'
+    echo -e "\e[32m[+] install_gnome_extensions() finished\n\e[0m";
+    /usr/bin/logger 'install_gnome_extensions() finished' -t 'Customizing Debian';
 }
 
 enable_gnome_extensions_autostart() {
@@ -2216,6 +2365,7 @@ configure_nix() {
 
     TEST_URL="debian.org";
     check_connectivity_ping;
+    check_apt_running;
 
     # curl, git and wget must always be there
     TOOL_INSTALL="cURL, git, and wget prerequisites for script";
@@ -2283,6 +2433,7 @@ configure_microsoft_apt_repository() {
     # Check that microsoft.com is reachable
     TEST_URL="microsoft.com";
     check_connectivity_http;
+    check_apt_running;
 
     TOOL_INSTALL="Microsoft Linux Repo";
     TOOL_SOURCE="Microsoft Repo .deb package";
@@ -2348,6 +2499,7 @@ install_ms_powershell() {
     # Check that microsoft.com is reachable
     TEST_URL="microsoft.com";
     check_connectivity_http;
+    check_apt_running;
 
     TOOL_SOURCE="Microsoft Repo";
     # Install PowerShell
@@ -2474,6 +2626,7 @@ install_docker() {
     # Check that debian.org is reachable
     TEST_URL="debian.org";
     check_connectivity_http;
+    check_apt_running;
 
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="docker";
@@ -2494,6 +2647,8 @@ install_docker() {
 install_ytdlp() {
     echo -e "\e[35m[*] install_ytdlp()\e[0m";
     /usr/bin/logger 'install_ytdlp()' -t 'Customizing Debian';
+    TEST_URL="pypi.org";
+    check_connectivity_http;
 
     TOOL_INSTALL="yt-dlp";
     VENV_NAME=~/.venv;
@@ -2511,6 +2666,8 @@ install_ytdlp() {
 install_volatility() {
     echo -e "\e[35m[*] install_volatility()\e[0m";
     /usr/bin/logger 'install_volatility()' -t 'Customizing Debian';
+    TEST_URL="github.com";
+    check_connectivity_http;
 
     if [ -d $RE_DIR/volatility3 ]; then
         TOOL_INSTALL="volatility3";
@@ -2701,15 +2858,31 @@ cleanup() {
     flatpak --assumeyes update > /dev/null 2>&1;
     check_status_install;
 
-    TOOL_SOURCE="Linux";
-    TOOL_INSTALL="Cleanup";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    rm $SCRIPT_DIR/*.zip > /dev/null 2>&1;
-    rm $SCRIPT_DIR/*.gz > /dev/null 2>&1;
-    rm $SCRIPT_DIR/*.deb > /dev/null 2>&1;
-    sudo apt -y autoremove --purge > /dev/null 2>&1;
+    # apt updates
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="Updates";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL for $TOOL_SOURCE\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get update > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y full-upgrade > /dev/null 2>&1;
     check_status_install;
-    sudo apt autoclean > /dev/null 2>&1;
+
+    # cleanup apt
+    TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="apt autoremove and autoclean";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL for $TOOL_SOURCE\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y autoremove --purge > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y autoclean > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y clean > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_SOURCE="Linux";
+    TOOL_INSTALL="Removing unneccesary files";
+    echo -e "\e[35m[*]\t └─ $TOOL_INSTALL\e[0m";
+    rm $SCRIPT_DIR/*.zip > /dev/null 2>&1;
+    rm $SCRIPT_DIR/*.deb > /dev/null 2>&1;
+    rm $SCRIPT_DIR/*.gz > /dev/null 2>&1;
+    ls $SCRIPT_DIR/* > /dev/null 2>&1;
+    check_status_install;
 
     echo -e "\e[32m[+] cleanup() finished\n\e[0m";
     /usr/bin/logger 'cleanup() finished' -t 'Customizing Debian';
