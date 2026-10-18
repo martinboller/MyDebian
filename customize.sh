@@ -2841,8 +2841,8 @@ show_errors() {
         echo -e "\e[31m[-]\tThese features failed installation:\r\n $FEATURE_ERRORS\e[0m";
         /usr/bin/logger "\e[31m$COUNT_FEATURE_ERRORS of $PKG_COUNT features errored out during installation\e[0m" -t 'Customizing Debian';        
     else
-        echo -e "\e[32m[+]\tNo errors during install. $PKG_COUNT features installed\e[0m" | tee -a $SCRIPT_DIR/features.log;
-        /usr/bin/logger "No errors during install. $PKG_COUNT features installed" -t 'Customizing Debian';
+        echo -e "\e[32m[+]\tNo errors during install. $PKG_COUNT features installed/configured\e[0m" | tee -a $SCRIPT_DIR/features.log;
+        /usr/bin/logger "No errors during install. $PKG_COUNT features installed/configured" -t 'Customizing Debian';
     fi
     echo -e "\e[35m\n[*]Finished installation of the preset: $PRESET_SELECTED\n\e[0m" | tee -a $SCRIPT_DIR/features.log; 
 }

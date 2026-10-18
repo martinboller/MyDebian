@@ -72,9 +72,10 @@ Core utilities for software-level reverse engineering, firmware unpacking, and b
   * **[flent](https://flent.org/)**: Flent (The FLExible Network Tester) is a Python-based benchmarking utility that orchestrates multiple network testing tools (such as netperf and iperf) to run aggregate, repeatable tests and analyze performance under load, such as detecting bufferbloat.
 * **Desktop Environment & GNOME**: Automated deployment of extensions (*Dash to Panel*, *Caffeine*), custom App Folders (*Hardware Hacking*, *Reverse Engineering*, *Fault Injection*, *Digital Forensics*), and window manager tweaks.
 * **Virtualization**:
-  * **Multi-architecture emulation (ARM, RISC-V, PPC, etc.)**
-  * **[QEMU/KVM](https://www.qemu.org/)**
-  * **[Virt-Manager](https://virt-manager.org/)**
+  * **Multi-architecture emulation, specifically ARM, RISC-V, PowerPC, IBM S-390, Sparc32**
+  * **[QEMU/KVM](https://www.qemu.org/)**: A generic and open source machine emulator and virtualizer.
+  * **[Virt-Manager](https://virt-manager.org/)**: The virt-manager application is a desktop user interface for managing virtual machines through libvirt. It primarily targets KVM VMs, but also manages Xen and LXC (linux containers).
+  * **[gnome-boxes (Boxes)](https://help.gnome.org/gnome-boxes/supported-protocols.html)**: Boxes uses qemu-kvm, libvirt-glib and spice-gtk to allow users to easily manage virtual machines. Useful for quickly spinning up a box.
 * **Productivity**:
   * Flatpak integration (**[VSCodium](https://vscodium.com/)**, **[ImHex](https://imhex.werwolv.net/)**, **[OpenSCAD](https://openscad.org/)**), and Microsoft PowerShell.
 
