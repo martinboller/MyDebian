@@ -191,8 +191,8 @@ check_connectivity_http() {
     echo -e "\e[32m[+]\t[√] HTTPS access to $TEST_URL\e[0m"
 }
 
-check_apt_running() {
-    while fuser /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock /var/cache/apt/archives/lock >/dev/null 2>&1; do
+check_apt_running() {  
+    while fuser /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock /var/cache/apt/archives/lock; do
         echo -e "\e[31m[-]\t Package manager is currently busy. Waiting 5 seconds..."
         sleep 5
     done

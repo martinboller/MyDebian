@@ -88,8 +88,8 @@ Core utilities for software-level reverse engineering, firmware unpacking, and b
 
 **1a. Clone the repo**
 ```bash
-git clone https://github.com/martinboller/myDebian.git
-cd myDebian/
+git clone https://github.com/martinboller/MyDebian.git
+cd MyDebian/
 ```
 or
 
@@ -97,7 +97,7 @@ or
 ```bash
 wget https://github.com/martinboller/MyDebian/archive/refs/heads/master.zip
 unzip master.zip
-cd myDebian-master/
+cd MyDebian-master/
 ```
 
 **2a. Configure installation preferences**
