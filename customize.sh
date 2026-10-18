@@ -1288,7 +1288,7 @@ install_jupyterlab() {
 
     TOOL_INSTALL="jupyterlab configuration file";
     echo -e "\e[35m[*]\t └─ Generating $TOOL_INSTALL\e[0m";
-    jupyter server --generate-config
+    jupyter server --generate-config > /dev/null 2>&1;
     check_status_install;
     sync;
 
@@ -1726,6 +1726,9 @@ install_hwhacktools() {
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         pip install pyserial click esptool > /dev/null 2>&1;
         check_status_install;
+    
+        APP_NAME="busside";
+        create_desktop_file;
     fi
 
     # Serial U-BOOT tool (Python)
@@ -1747,6 +1750,9 @@ install_hwhacktools() {
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
         pip install pyserial > /dev/null 2>&1;
         check_status_install;
+        
+        APP_NAME="sertack";
+        create_desktop_file;
     fi
     /usr/bin/logger 'Installed sertack' -t 'Customizing Debian';
 
@@ -2159,6 +2165,11 @@ install_utils_flatpak() {
     # FP_USERTOOLS_INSTALL
     if [ "$FP_USERTOOLS_INSTALL" == "Yes" ]; then
         /usr/bin/logger 'installing Flatpak Usertools' -t 'Customizing Debian';
+
+        TOOL_INSTALL='Inkscape';
+        echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
+        flatpak --assumeyes install org.inkscape.Inkscape > /dev/null 2>&1;
+        check_fp_install;	
 
         TOOL_INSTALL='Déjà Dup Backup';
         echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";

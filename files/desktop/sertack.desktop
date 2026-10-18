@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name[en_GB]=Sertack
+Name=Sertack
+Comment[en_GB]=Start Fault Injection Library
+Comment=Start Sertack Python utility for embedded device security auditing, firmware extraction, and hardware debugging
+Icon=sertack.png
+Keywords=Fault-injection;Glitching;Hacking;Hardware
+Exec=gnome-terminal --class="SertackTerm" --name="SertackTerm" --working-directory="git/HWHack/sertack/" -- bash -c "source venv/bin/activate && exec bash"
+Terminal=false
+StartupNotify=true
+StartupWMClass=FindusTerm
+Categories=X-HardwareHacking;

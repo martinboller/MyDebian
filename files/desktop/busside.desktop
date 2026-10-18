@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name[en_GB]=BUSSide
+Name=BUSSide
+Comment[en_GB]=Start BUSSide
+Comment=BUSSide interface with various hardware buses to assist in device exploitation and security auditing
+Icon=busside.png
+Keywords=Fault-injection;Glitching;Hacking;Hardware
+Exec=gnome-terminal --class="BUSSideTerm" --name="BUSSideTerm" --working-directory="git/HWHack/BUSSide/Client/" -- bash -c "source venv/bin/activate && exec bash"
+Terminal=false
+StartupNotify=true
+StartupWMClass=BUSSideTerm
+Categories=X-HardwareHacking;
