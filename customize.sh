@@ -407,7 +407,7 @@ Exec=ghidra
 Icon=/opt/ghidra/docs/GhidraClass/Intermediate/Images/GhidraLogo64.png
 Terminal=false
 Type=Application
-Categories=Development;Security;X-ReverseEngineering;
+Categories=Development;Security;X-ReverseEngineering;X-DigitalForensics;
 __EOF__
     check_status_install;
     echo -e "\e[32m[+] Ghidra successfully installed to /opt/ghidra and integrated into the system.\e[0m";
@@ -633,7 +633,7 @@ Path=/opt/autopsy/
 Icon=/opt/autopsy/autopsy.png
 Terminal=false
 Type=Application
-Categories=Development;Security;X-ReverseEngineering;X-Forensics;
+Categories=Development;Security;X-ReverseEngineering;X-DigitalForensics;
 Name[en]=Autopsy
 Name[en_GB]=Autopsy
 Name[en_GB.UTF-8]=Autopsy
