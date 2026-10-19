@@ -1,0 +1,23 @@
+[Desktop Entry]
+Type=Application
+Name[en_GB]=PowerShell
+Name=PowerShell
+Comment[en_GB]=Start PowerShell (pwsh)
+Comment=Start PowerShell (pwsh)
+Icon=powershell.png
+Keywords=Development
+Exec=gnome-terminal -- pwsh
+Terminal=false
+StartupNotify=true
+Categories=Development
+Name[en]=PowerShell
+Name[en_GB.UTF-8]=PowerShell
+Comment[en]=Start PowerShell (pwsh)
+Comment[en_GB.UTF-8]=Start PowerShell (pwsh)
+Keywords[en]=Development
+Keywords[en_GB]=Development
+Keywords[en_GB.UTF-8]=Development
+PrefersNonDefaultGPU=false
+Hidden=false
+NoDisplay=false
+Path=Documents/PowerShell/

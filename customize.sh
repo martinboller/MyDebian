@@ -1266,6 +1266,14 @@ install_linux_headers() {
     # As this runs after an update get the kernel version now
     KERNEL_RELEASE=$(uname --kernel-release);
     NEXT_KERNEL_RELEASE=$(ls -1 /lib/modules | sort -V | tail -n 1);
+
+    TOOL_INSTALL="linux-headers-amd64 metapackage"
+    TOOL_SOURCE="Debian Repository";
+    echo -e "\e[35m[*]\t └─ Installing Kernel Headers metapackage for amd64\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install linux-headers-amd64 > /dev/null 2>&1;
+    check_status_install;
+
+    # These are to make sure the right headers are installed - should be taken care of with the metapackage, but...
     TOOL_INSTALL="linux-headers-$KERNEL_RELEASE"
     TOOL_SOURCE="Debian Repository";
     echo -e "\e[35m[*]\t └─ Installing Kernel Headers for running $KERNEL_RELEASE\e[0m";
@@ -2077,7 +2085,7 @@ install_virtualization() {
         check_status_install;
 
         # s390x
-        TOOL_INSTALL="qemu emulator for 64-bit IBM z/Architecture (s390x) mainframe systems";
+        TOOL_INSTALL="qemu emulator for 64-bit IBM s390x z/Architecture systems";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-s390x > /dev/null 2>&1;
         check_status_install;
@@ -2586,6 +2594,10 @@ install_ms_powershell() {
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install powershell > /dev/null 2>&1;
     check_status_install;
+
+    mkdir $HOME/Documents/PowerShell/;
+    APP_NAME="powershell";
+    create_desktop_file;
 
     echo -e "\e[32m[+] install_ms_powershell() finished\n\e[0m";
     /usr/bin/logger 'install_ms_powershell() finished' -t 'Customizing Debian';
