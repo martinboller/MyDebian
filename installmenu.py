@@ -39,6 +39,7 @@ CONFIG_GROUPS = [
     ]),
     ("Development", [
         ("Install Development Tools from Debian Packages", "DEVTOOLS_INSTALL"),
+        ("Install Cross Compilers", "CROSS_COMPILERS_INSTALL"),
         ("Install Open Java JDK & JRE", "JDK_JRE_INSTALL"),
         ("Install Linux Headers", "LINUX_HEADERS_INSTALL"),
         ("Install Jupyter Labs", "JUPYTER_INSTALL"),
@@ -85,6 +86,7 @@ DEPENDENCIES = {
     "GNOME_HIDE_OVERVIEW":["GNOME_EXTENSION_DASH_TO_PANEL"],
     "AUTOPSY_INSTALL":["DEVTOOLS_INSTALL", "DOCKER_INSTALL"],
     "GHIDRA_INSTALL":["PYTHON_INSTALL"],
+    "CROSS_COMPILERS_INSTALL":["DEVTOOLS_INSTALL"]
 }
 
 def load_env(filepath=".env"):

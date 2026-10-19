@@ -220,7 +220,7 @@ check_install() {
         /usr/bin/logger "$TOOL_INSTALL successfully installed from $TOOL_SOURCE" -t 'Customizing Debian';
     else
         echo -e "\e[31m$PKG_COUNT.\t[-] ERROR: $TOOL_INSTALL not installed correctly\e[0m" | tee -a $SCRIPT_DIR/features.log;
-        /usr/bin/logger "\e[31m------- ERROR: $TOOL_INSTALL not installed -------\e[0m" -t 'Customizing Debian';
+        /usr/bin/logger "ERROR: $TOOL_INSTALL not installed correctly" -t 'Customizing Debian';
     fi
     ((PKG_COUNT++))
     sudo echo > /dev/null 2>&1;
@@ -229,10 +229,10 @@ check_install() {
 check_status_install() {
     if [ "$?" == 0 ]; then
         /usr/bin/logger "$TOOL_INSTALL successfully installed from $TOOL_SOURCE" -t 'Customizing Debian';
-        echo -e "\e[32m$PKG_COUNT.\t[+] $TOOL_INSTALL successfully installed from $TOOL_SOURCE\e[0m" | tee -a $SCRIPT_DIR/features.log;
+        echo -e "\e[32m$PKG_COUNT.\t[+] $TOOL_INSTALL successfully installed/configured from $TOOL_SOURCE\e[0m" | tee -a $SCRIPT_DIR/features.log;
      else
-        echo -e "\e[31m$PKG_COUNT.\t[-] ERROR: $TOOL_INSTALL not installed correctly\e[0m" | tee -a $SCRIPT_DIR/features.log;
-        /usr/bin/logger "\e[31m------- ERROR: $TOOL_INSTALL not installed -------\e[0m" -t 'Customizing Debian';
+        echo -e "\e[31m$PKG_COUNT.\t[-] ERROR: $TOOL_INSTALL not installed/configured correctly\e[0m" | tee -a $SCRIPT_DIR/features.log;
+        /usr/bin/logger "ERROR: $TOOL_INSTALL not installed/configured correctly" -t 'Customizing Debian';
     fi
     ((PKG_COUNT++))
     sudo echo > /dev/null 2>&1;
@@ -245,7 +245,7 @@ check_fp_install() {
         /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
     else
         echo -e "\e[31m$PKG_COUNT.\t[-] ERROR: $TOOL_INSTALL not installed correctly\e[0m" | tee -a $SCRIPT_DIR/features.log;
-        /usr/bin/logger "\e[31m------- ERROR: $TOOL_INSTALL not installed -------\e[0m" -t 'Customizing Debian';
+        /usr/bin/logger "ERROR: $TOOL_INSTALL not installed correctly" -t 'Customizing Debian';
     fi
     ((PKG_COUNT++))
     sudo echo > /dev/null 2>&1;
@@ -259,7 +259,7 @@ check_ldd_install() {
         /usr/bin/logger "$TOOL_INSTALL successfully installed" -t 'Customizing Debian';
     else
         echo -e "\e[31m$PKG_COUNT.\t[-] ERROR: $TOOL_INSTALL not installed correctly\e[0m" | tee -a $SCRIPT_DIR/features.log;
-        /usr/bin/logger "\e[31m------- ERROR: $TOOL_INSTALL not installed -------\e[0m" -t 'Customizing Debian';
+        /usr/bin/logger "ERROR: $TOOL_INSTALL not installed correctly" -t 'Customizing Debian';
     fi
     ((PKG_COUNT++))
     sudo echo > /dev/null 2>&1;
@@ -1004,7 +1004,7 @@ install_user_av_tools() {
 
     # https://zihad.com.bd/posts/debian-13-trixie-codecs-multimedia-guide/
     TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="Video and Codecs";
+    TOOL_INSTALL="Video and Audio Codecs";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install ffmpeg libavcodec-extra libavformat-extra > /dev/null 2>&1;
     check_status_install;
@@ -1180,17 +1180,71 @@ install_devtools() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends libssl-dev > /dev/null 2>&1;
     check_status_install;
 
-    # libssl-dev
-    TOOL_INSTALL="gcc-arm-none-eabi"
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends gcc-arm-none-eabi > /dev/null 2>&1;
-    check_status_install;
-
     # Back to script directory
     cd "$SCRIPT_DIR" || exit 1;
     
     /usr/bin/logger 'installing Development tools from Debian repository finished' -t 'Customizing Debian';
     echo -e "\e[32m[+] Installing development tools finished\n\e[0m";
+}
+
+install_cross_compilers() {
+    /usr/bin/logger 'install_cross_compilers()' -t 'Customizing Debian';
+    echo -e "\e[35m[*] install_cross_compilers()\e[0m";
+
+    TOOL_SOURCE="Debian Repositories";
+    # ARM Cortex
+    TOOL_INSTALL="Compiler for embedded ARM chips using Cortex-M, and Cortex-R";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends \
+        gcc-arm-none-eabi \
+        gcc-arm-none-eabi-source > /dev/null 2>&1;
+    check_status_install;
+
+    # 64bit Cross Compilers
+    TOOL_INSTALL="Compilers for 64bit platforms (aarch64, riscv64, sparc64)";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends \
+        gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
+        gcc-riscv64-linux-gnu g++-riscv64-linux-gnu \
+        gcc-sparc64-linux-gnu g++-sparc64-linux-gnu > /dev/null 2>&1;
+    check_status_install;
+
+    # 32bit Cross Compilers
+    TOOL_INSTALL="Compilers for 32bit platforms eabihf, powerpc, sparc, riscv32"
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends \
+        gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf \
+        gcc-powerpc-linux-gnu g++-powerpc-linux-gnu  > /dev/null 2>&1;
+    check_status_install;
+
+    # Necessary headers for cross compilers
+    TOOL_INSTALL="Crossbuild Essentials"
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends \
+        crossbuild-essential-amd64/stable \
+        crossbuild-essential-arm64/stable \
+        crossbuild-essential-armel/stable \
+        crossbuild-essential-armhf/stable \
+        crossbuild-essential-i386/stable \
+        crossbuild-essential-mips/stable \
+        crossbuild-essential-mips64/stable \
+        crossbuild-essential-mips64el/stable \
+        crossbuild-essential-mips64r6/stable \
+        crossbuild-essential-mips64r6el/stable \
+        crossbuild-essential-mipsel/stable \
+        crossbuild-essential-mipsr6/stable \
+        crossbuild-essential-mipsr6el/stable \
+        crossbuild-essential-powerpc/stable \
+        crossbuild-essential-ppc64el/stable \
+        crossbuild-essential-riscv64/stable \
+        crossbuild-essential-s390x/stable > /dev/null 2>&1;
+    check_status_install;
+
+    # Back to script directory
+    cd "$SCRIPT_DIR" || exit 1;
+    
+    /usr/bin/logger 'install_cross_compilers() finished' -t 'Customizing Debian';
+    echo -e "\e[32m[+] install_cross_compilers() finished\n\e[0m";
 }
 
 configure_secureboot() {
@@ -1763,6 +1817,7 @@ install_hwhacktools() {
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
     if [ -d $RE_DIR/$TOOL_INSTALL ]; then
         cd "$SOURCE_DIR" || exit 1;
+        check_status_install;
     else
         TOOL_SOURCE="source";
         git clone --depth 1 --recurse-submodules https://github.com/MKesenheimer/fault-injection-library.git findus > /dev/null 2>&1;
@@ -1772,11 +1827,14 @@ install_hwhacktools() {
         configure_venv;
 
         TOOL_INSTALL="findus"
+        TOOL_SOURCE="PIP Repository";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
         cd "$SOURCE_DIR/$TOOL_INSTALL" || exit 1;
         pip install . > /dev/null 2>&1;
         check_status_install;
 
         TOOL_INSTALL="RD6006 Python support";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
         pip install rd6006 > /dev/null 2>&1;
         check_status_install;
     fi
@@ -1790,6 +1848,7 @@ install_hwhacktools() {
     TOOL_INSTALL="udevadm control"
     TOOL_SOURCE="Linux";
     # Create the necessary links and cache to the most recent shared libraries
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
     sudo ldconfig;
     # Copy udev rules files
     sudo cp $SCRIPT_DIR/files/*.rules /etc/udev/rules.d/ > /dev/null 2>&1;
@@ -1829,8 +1888,10 @@ install_reversetools() {
         echo -e "\e[35m[*]\t └─ Checking cargo path\e[0m";
         export CARGO_PATH=$(grep '.cargo/bin' ~/.profile)
 
+        TOOL_INSTALL="cargo path";
         if [ -n "$CARGO_PATH" ]; then
             echo -e "\e[35m[*]\t └─ Cargo path already configured\e[0m";
+            check_status_install;
         else
             echo -e "\e[35m[*]\t └─ Adding cargo path to $HOME/.profile\e[0m";
             cat << ___EOF___ >> ~/.profile
@@ -1856,6 +1917,7 @@ ___EOF___
     if [ $TOOL_INSTALLED == False ]; then
         TEST_URL="crates.io"; # Cargo repository
         check_connectivity_http;
+
         TOOL_INSTALL="binwalk";
         TOOL_SOURCE="Cargo Repository (crates.io)";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -1997,43 +2059,49 @@ install_virtualization() {
         check_status_install;
 
         # PPC
-        TOOL_SOURCE="Debian Repository";
         TOOL_INSTALL="qemu emulator for PowerPC machines";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-ppc > /dev/null 2>&1;
         check_status_install;
 
         # SPARC32
-        TOOL_SOURCE="Debian Repository";
         TOOL_INSTALL="qemu emulator for Sparc32 Systems";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-sparc > /dev/null 2>&1;
         check_status_install;
 
         # RISC-V
-        TOOL_SOURCE="Debian Repository";
         TOOL_INSTALL="qemu emulator for 32-bit and 64-bit RISC-V CPUs";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-riscv > /dev/null 2>&1;
         check_status_install;
 
         # s390x
-        TOOL_SOURCE="Debian Repository";
         TOOL_INSTALL="qemu emulator for 64-bit IBM z/Architecture (s390x) mainframe systems";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install qemu-system-s390x > /dev/null 2>&1;
         check_status_install;
     fi
     
+    TOOL_INSTALL="User rights kvm and libvirt";
+    TOOL_SOURCE="usermod";
+    echo -e "\e[35m[*]\t └─ configuring $TOOL_INSTALL with $TOOL_SOURCE\e[0m";
     # Configure user rights to kvm and libvirt
     sudo usermod -aG kvm $USER > /dev/null 2>&1;
     sudo usermod -aG libvirt $USER > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_INSTALL="Enable libvirtd";
+    TOOL_SOURCE="systemctl";
+    echo -e "\e[35m[*]\t └─ $TOOL_INSTALL with $TOOL_SOURCE\e[0m";
     # enable libvirtd
     sudo systemctl enable --now libvirtd > /dev/null 2>&1;
-    
+    check_status_install;
+
     # Install Virtual Machine Manager. Manage Virtual machines outside of virsh
     TOOL_INSTALL="Virtual Machine Manager";
-    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    TOOL_SOURCE="Debian Repository";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install virt-manager > /dev/null 2>&1;
     check_status_install;
     
@@ -2366,7 +2434,7 @@ ___EOF___
     echo -e "\e[32m$PKG_COUNT.\t[+] $TOOL_INSTALL successfully installed as autostart\e[0m" | tee -a $SCRIPT_DIR/features.log;
     ((PKG_COUNT++));
 
-    echo -e "\e[32m[+] enable_gnome_extensions_autostart() finished\n\e[0m";
+    echo -e "\e[32m[+] enable_gnome_extensions_autostart() finished\e[0m";
     /usr/bin/logger 'enable_gnome_extensions_autostart() finished' -t 'Customizing Debian';
 }
 
@@ -2751,7 +2819,7 @@ create_desktop_file() {
     # update database for desktop files
     update-desktop-database ~/.local/share/applications/
 
-    echo -e "\e[35m[*] create_desktop_file() finished\n\e[0m";
+    echo -e "\e[35m[*] create_desktop_file() finished\e[0m";
     /usr/bin/logger 'create_desktop_file() finished' -t 'Customizing Debian';
 }
 
@@ -2850,7 +2918,7 @@ show_errors() {
     if [[ $FEATURE_ERRORS ]]; then
         echo -e "\e[31m[-]\t$COUNT_FEATURE_ERRORS of $PKG_COUNT features errored out during installation\e[0m";
         echo -e "\e[31m[-]\tThese features failed installation:\r\n $FEATURE_ERRORS\e[0m";
-        /usr/bin/logger "\e[31m$COUNT_FEATURE_ERRORS of $PKG_COUNT features errored out during installation\e[0m" -t 'Customizing Debian';        
+        /usr/bin/logger "COUNT_FEATURE_ERRORS of $PKG_COUNT features errored out during installation" -t 'Customizing Debian';        
     else
         echo -e "\e[32m[+]\tNo errors during install. $PKG_COUNT features installed/configured\e[0m" | tee -a $SCRIPT_DIR/features.log;
         /usr/bin/logger "No errors during install. $PKG_COUNT features installed/configured" -t 'Customizing Debian';
@@ -2893,6 +2961,15 @@ cleanup() {
     rm $SCRIPT_DIR/*.deb > /dev/null 2>&1;
     rm $SCRIPT_DIR/*.gz > /dev/null 2>&1;
     ls $SCRIPT_DIR/* > /dev/null 2>&1;
+    check_status_install;
+
+    # udev stuff to make devices work
+    TOOL_INSTALL="udevadm control before finishing customization"
+    TOOL_SOURCE="Linux";
+    # Create the necessary links and cache to the most recent shared libraries
+    sudo ldconfig;
+    # reload udev rules
+    sudo udevadm control --reload > /dev/null 2>&1;
     check_status_install;
 
     echo -e "\e[32m[+] cleanup() finished\n\e[0m";
@@ -3018,11 +3095,15 @@ main() {
             install_devtools;
         fi
 
+        # Cross Compilers Install
+        if [ "$CROSS_COMPILERS_INSTALL" == "Yes" ]; then
+            install_cross_compilers;
+        fi
+
         # GHIDRA_INSTALL
         if [ "$GHIDRA_INSTALL" == "Yes" ]; then
             install_ghidra;
         fi
-
 
         # Install YT-DLP
         if [ "$YTDLP_INSTALL" == "Yes" ]; then
