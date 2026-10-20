@@ -65,7 +65,7 @@ case "$PRESET_SELECTED" in
     "Networking")
         # Favorites for Networking Preset
         /usr/bin/logger "Configuring favorite applications to support $PRESET_SELECTED for user: $USER" -t 'Customizing Debian';
-        gsettings set org.gnome.shell favorite-apps "['firefox-esr.desktop', 'org.gnome.Nautilus.desktop', 'org.wireshark.Wireshark.desktop', 'org.gnome.Terminal.desktop', 'org.gnome.Software.desktop']";
+        gsettings set org.gnome.shell favorite-apps "['firefox-esr.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop', 'org.gnome.Software.desktop']";
         ;;
     "Productivity")
         # Favorites for Productivity Preset
@@ -75,7 +75,7 @@ case "$PRESET_SELECTED" in
     "All")
         # Favorites for All configuration
         /usr/bin/logger "Configuring favorite applications to support $PRESET_SELECTED for user: $USER" -t 'Customizing Debian';
-        gsettings set org.gnome.shell favorite-apps "['firefox-esr.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Calculator.desktop', 'org.gnome.Terminal.desktop', 'org.wireshark.Wireshark.desktop', 'com.vscodium.codium.desktop', 'org.gnome.Software.desktop']";
+        gsettings set org.gnome.shell favorite-apps "['firefox-esr.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Calculator.desktop', 'org.gnome.Terminal.desktop', 'com.vscodium.codium.desktop', 'org.gnome.Software.desktop']";
         ;;
     "Custom")
         # Favorites for Custom configuration

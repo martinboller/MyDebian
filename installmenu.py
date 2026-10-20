@@ -36,6 +36,7 @@ CONFIG_GROUPS = [
         ("Install Ghidra", "GHIDRA_INSTALL"),
         ("Install Volatility", "VOLATILITY_INSTALL"),
         ("Install Autopsy with Sleuthkit", "AUTOPSY_INSTALL"),
+        ("Python Webserver On-Demand", "PYTHON_WEBSERVER_INSTALL"),
     ]),
     ("Development", [
         ("Install Development Tools from Debian Packages", "DEVTOOLS_INSTALL"),
@@ -86,7 +87,8 @@ DEPENDENCIES = {
     "GNOME_HIDE_OVERVIEW":["GNOME_EXTENSION_DASH_TO_PANEL"],
     "AUTOPSY_INSTALL":["DEVTOOLS_INSTALL", "DOCKER_INSTALL"],
     "GHIDRA_INSTALL":["PYTHON_INSTALL"],
-    "CROSS_COMPILERS_INSTALL":["DEVTOOLS_INSTALL"]
+    "CROSS_COMPILERS_INSTALL":["DEVTOOLS_INSTALL"],
+    "PYTHON_WEBSERVER_INSTALL":["PYTHON_INSTALL"],
 }
 
 def load_env(filepath=".env"):

@@ -173,16 +173,26 @@ configure_grub() {
     /usr/bin/logger 'configure_grub() finished' -t 'Customizing Debian';
 }
 
+check_connectivity_sockets() {
+    # Checking that we can reach $TEST_URL over port $TEST_PORT over tcp sockets
+    until timeout 5 bash -c "exec 3<>/dev/tcp/$TEST_URL/$TEST_PORT" > /dev/null 2>&1; do
+        echo -e "\e[31m[-]\t Waiting for network access to $TEST_URL on port $TEST_PORT...\e[0m";
+        sleep 5;
+    done
+    echo -e "\e[32m[+]\t[√] TCP connection to $TEST_URL established (Port $TEST_PORT)\e[0m"
+}
+
 check_connectivity_ping() {
     # Checking that we can reach $TEST_URL over icmp
-    until ping -c 1 -W 2 $TEST_URL > /dev/null 2>&1; do
+    echo -e "\e[35m[*]\t └─ Checking connectivity to $TEST_URL...\e[0m";
+    until ping -c 5 -W 5 $TEST_URL > /dev/null 2>&1; do
         echo -e "\e[31m[-]\t Waiting for connectivity to $TEST_URL...\e[0m";
         sleep 5;
     done
     echo -e "\e[32m[+]\t[√] ICMP access to $TEST_URL. Continuing installation...\e[0m";
 }
 
-check_connectivity_http() {
+check_connectivity_https() {
     # Checking that we can reach $TEST_URL over HTTP
     until curl --user-agent $USER_AGENT --silent --head --request GET https://$TEST_URL > /dev/null 2>&1; do
         echo -e "\e[31m[-]\t Waiting for network access to $TEST_URL...\e[0m";
@@ -392,7 +402,7 @@ install_ghidra() {
     echo -e "\e[35m[*]\t └─ $TOOL_INSTALL\e[0m";
     sudo chmod +x /opt/ghidra/ghidraRun    
     # Create a global command-line shortcut
-    sudo ln -sf /opt/ghidra/ghidraRun /usr/local/bin/ghidra
+    sudo ln -sf /opt/ghidra/ghidraRun /usr/local/bin/ghidra;
     check_status_install;
 
     # Create a Desktop Entry for the application menu
@@ -407,7 +417,7 @@ Exec=ghidra
 Icon=/opt/ghidra/docs/GhidraClass/Intermediate/Images/GhidraLogo64.png
 Terminal=false
 Type=Application
-Categories=Development;Security;X-ReverseEngineering;X-DigitalForensics;
+Categories=Development;Security;X-ReverseEngineering;
 __EOF__
     check_status_install;
     echo -e "\e[32m[+] Ghidra successfully installed to /opt/ghidra and integrated into the system.\e[0m";
@@ -529,7 +539,7 @@ install_proprietary_filesystems() {
     /usr/bin/logger 'install_proprietary_filesystems()' -t 'Customizing Debian';
     
     TEST_URL="debian.org";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
 
     TOOL_SOURCE="Debian Repository";
@@ -663,7 +673,7 @@ install_hashcat() {
     if [ $TOOL_INSTALLED == False ]; then
         # Check that github is reachable
         TEST_URL="github.com";
-        check_connectivity_http;
+        check_connectivity_https;
 
         check_apt_running;
         TOOL_SOURCE="Debian Repository";
@@ -746,23 +756,42 @@ install_pythontools() {
 
     # Check that debian.org is reachable
     TEST_URL="debian.org";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
 
     TOOL_SOURCE="Debian Repository";
-    TOOL_INSTALL="python-dotenv";
-    echo -e "\e[35m[*]\t └─ Installing Python tools\e[0m";   
+    TOOL_INSTALL="Python tools";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install python3 python3-pip python3-setuptools python3-gnupg \
         python3-venv libpython3-dev > /dev/null 2>&1;
     check_status_install;
+
     VENV_NAME=~/.venv;
     configure_venv;
     configure_primary_venv_path;
+
     # back to script directory
     cd "$SCRIPT_DIR" || exit 1;
 
     echo -e "\e[32m[+] install_pythontools() finished\n\e[0m";
     /usr/bin/logger 'installing Python tools from Debian repository finished' -t 'Customizing Debian';
+}
+
+install_pythonwebserver() {
+    /usr/bin/logger 'install_pythonwebserver()' -t 'Customizing Debian';
+    echo -e "\e[35m[*] install_pythonwebserver()\e[0m";
+
+    TOOL_SOURCE="Python";
+    TOOL_INSTALL="Application Entry for Python webserver";
+    echo -e "\e[35m[*]\t └─ Installing Python tools\e[0m";   
+    mkdir -p $HOME/Public/webserver/;
+    cp $SCRIPT_DIR/files/error_418_i_m_a_teapot.html $HOME/Public/webserver/index.html;
+    check_status_install;
+    APP_NAME="pythonwebserver";
+    create_desktop_file;
+
+    /usr/bin/logger 'install_pythonwebserver() finished' -t 'Customizing Debian';
+    echo -e "\e[35m[*] install_pythonwebserver() finished\e[0m";
 }
 
 install_networktools() {
@@ -771,7 +800,7 @@ install_networktools() {
 
     # Check that debian.org is reachable
     TEST_URL="debian.org";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
 
     # Set tool source and what to install
@@ -784,7 +813,13 @@ install_networktools() {
         echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install wireshark > /dev/null 2>&1;
         check_status_install;
+        APP_NAME="org.wireshark.Wireshark";
+        create_desktop_file;
+        TOOL_SOURCE="usermod";
+        TOOL_INSTALL="Wireshark group membership";
+        echo -e "\e[35m[*]\t └─ Adding $USER to Group wireshark\e[0m";
         sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
+        check_status_install;
     fi
 
     TOOL_INSTALL="Network Scan Tools";
@@ -849,7 +884,7 @@ install_forensicstools() {
 
     # Check that debian.org is reachable
     TEST_URL="debian.org";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
 
     TOOL_SOURCE="Debian Repository";
@@ -861,7 +896,13 @@ install_forensicstools() {
         echo "wireshark-common wireshark-common/install-setuid boolean true" | sudo debconf-set-selections
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install wireshark > /dev/null 2>&1;
         check_status_install;
+        APP_NAME="org.wireshark.Wireshark";
+        create_desktop_file;
+        TOOL_SOURCE="usermod";
+        TOOL_INSTALL="Wireshark group membership";
+        echo -e "\e[35m[*]\t └─ Adding $USER to Group wireshark\e[0m";
         sudo usermod -a -G wireshark $USER > /dev/null 2>&1;
+        check_status_install;
     fi
 
     TOOL_INSTALL="Metapackage forensics-all"    
@@ -888,6 +929,8 @@ install_forensicstools() {
 
     cd "$SCRIPT_DIR" || exit 1;
 
+    install_hal_mtt;
+
     echo -e "\e[32m[+] install_forensicstools() finished\n\e[0m";
     /usr/bin/logger 'installing Forensics tools from Debian repository finished' -t 'Customizing Debian';
 }
@@ -898,7 +941,7 @@ install_systemtools() {
 
     # Check that debian.org is reachable
     TEST_URL="debian.org";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
 
     TOOL_SOURCE="Debian Repository";
@@ -949,7 +992,7 @@ install_usertools() {
 
     # Check that debian.org is reachable
     TEST_URL="debian.org";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
 
     TOOL_SOURCE="Debian Repository";
@@ -999,7 +1042,7 @@ install_user_av_tools() {
     echo -e "\e[35m[*] install_user_av_tools\e[0m";
     
     TEST_URL="debian.org";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
 
     # https://zihad.com.bd/posts/debian-13-trixie-codecs-multimedia-guide/
@@ -1109,7 +1152,7 @@ install_devtools() {
     
     # Check that debian.org is reachable
     TEST_URL="debian.org";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
 
     TOOL_SOURCE="Debian Repository";
@@ -1260,7 +1303,7 @@ configure_secureboot() {
 
 install_linux_headers() {
     TEST_URL="debian.org";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
     
     # As this runs after an update get the kernel version now
@@ -1293,7 +1336,7 @@ install_nvidia() {
     echo -e "\e[32m[+] install_nvidia()\n\e[0m";
 
     TEST_URL="debian.org";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
 
     TOOL_INSTALL="nvidia-detect"
@@ -1333,7 +1376,7 @@ install_jupyterlab() {
     
     # Check that PyPi is reachable
     TEST_URL="pypi.org";
-    check_connectivity_http;
+    check_connectivity_https;
 
     TOOL_SOURCE="PIP Repository";
     TOOL_INSTALL="jupyterlab";
@@ -1379,10 +1422,10 @@ install_sigrok_tools() {
         
         # Check that debian.org is reachable
         TEST_URL="debian.org";
-        check_connectivity_http;
+        check_connectivity_https;
         # Check that GitHub is reachable
         TEST_URL="github.com";
-        check_connectivity_http;
+        check_connectivity_https;
 
         # Installing SIGROK from source    
         # Installing prerequisites first
@@ -1634,7 +1677,7 @@ install_hwhacktools() {
 
     # Check that debian.org is reachable
     TEST_URL="debian.org";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
 
     #ST-LINK (STM microcontrollers)
@@ -1651,9 +1694,16 @@ install_hwhacktools() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install esptool > /dev/null 2>&1;
     check_status_install;
 
+    TOOL_INSTALL="MTD Utils";
+    TOOL_SOURCE="Debian Repository";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install mtd-utils > /dev/null 2>&1;
+    check_status_install;
+    /usr/bin/logger "Installed $TOOL_INSTALL" -t 'Customizing Debian';
+
     # Check that GitHub is reachable
     TEST_URL="github.com";
-    check_connectivity_http;
+    check_connectivity_https;
 
     TOOL_ELF="flashrom";
     check_already_installed;
@@ -1876,7 +1926,7 @@ install_reversetools() {
     
     # Check that debian.org is reachable
     TEST_URL="debian.org";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
 
     TOOL_SOURCE="Debian Repository";
@@ -1908,6 +1958,7 @@ if [ -d "\$HOME/.cargo/bin" ] ; then
     PATH="\$HOME/.cargo/bin:\$PATH"
 fi
 ___EOF___
+
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install cargo build-essential libfontconfig1-dev liblzma-dev > /dev/null 2>&1;
         check_status_install;
         # update rust and cargo to latest stable
@@ -1924,13 +1975,34 @@ ___EOF___
     check_already_installed;
     if [ $TOOL_INSTALLED == False ]; then
         TEST_URL="crates.io"; # Cargo repository
-        check_connectivity_http;
+        check_connectivity_https;
 
         TOOL_INSTALL="binwalk";
         TOOL_SOURCE="Cargo Repository (crates.io)";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         cargo install binwalk > /dev/null 2>&1;
         check_install;
+
+        TOOL_INSTALL="binwalk-ui";
+        TOOL_SOURCE="GitHub";
+        sudo mkdir -p /opt/binwalk-ui/;
+        curl -sSL https://raw.githubusercontent.com/ReFirmLabs/binwalk/refs/heads/master/scripts/binwalk-ui -o $SCRIPT_DIR/binwalk-ui;
+        sudo chmod +x $SCRIPT_DIR/binwalk-ui;
+        sudo mv $SCRIPT_DIR/binwalk-ui.sh /opt/binwalk-ui/;
+        sudo ln -sf /opt/binwalk-ui/binwalk-ui /usr/local/bin/binwalk-ui;
+        TOOL_INSTALL="binwalk path";
+        if [ -n "$BINWALK_PATH" ]; then
+            echo -e "\e[35m[*]\t └─ Binwalk path already configured\e[0m";
+            check_status_install;
+        else
+            echo -e "\e[35m[*]\t └─ Adding Binwalk path to $HOME/.profile\e[0m";
+            cat << ___EOF___ >> ~/.profile
+# set PATH so it includes user's .cargo/bin/binwalk if it exists
+if [ -f "\$HOME/.cargo/bin/binwalk" ] ; then
+    BINWALK_PATH="\$HOME/.cargo/bin/binwalk"
+fi
+___EOF___
+        fi
     fi
     
     TOOL_INSTALL="firmwalker";
@@ -2045,7 +2117,7 @@ install_virtualization() {
 
     # Check that debian.org is reachable
     TEST_URL="debian.org";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
     
     TOOL_SOURCE="Debian Repository";
@@ -2057,7 +2129,7 @@ install_virtualization() {
     if [ "$QEMU_EMULATORS" == "Yes" ]; then
         # Check that debian.org is reachable
         TEST_URL="debian.org";
-        check_connectivity_http;
+        check_connectivity_https;
    
         # ARM
         TOOL_SOURCE="Debian Repository";
@@ -2129,7 +2201,7 @@ install_flatpak() {
 
     # Check that debian.org is reachable
     TEST_URL="debian.org";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
 
     TOOL_INSTALL="Flatpak Support"
@@ -2189,7 +2261,7 @@ install_utils_flatpak() {
 
     # Check that flathub.org is reachable
     TEST_URL="flathub.org";
-    check_connectivity_http;
+    check_connectivity_https;
 
     # FP_DEVTOOLS_INSTALL
     if [ "$FP_DEVTOOLS_INSTALL" == "Yes" ]; then
@@ -2357,7 +2429,7 @@ install_gnome_extensions() {
     /usr/bin/logger 'install_gnome_extensions()' -t 'Customizing Debian'
 
     TEST_URL="gnome.org";
-    check_connectivity_http;
+    check_connectivity_https;
 
     # Dynamically enumerate all variables starting with GNOME_EXTENSION_
     for var_name in ${!GNOME_EXTENSION_@}; do
@@ -2519,7 +2591,7 @@ configure_microsoft_apt_repository() {
 
     # Check that microsoft.com is reachable
     TEST_URL="microsoft.com";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
 
     TOOL_INSTALL="Microsoft Linux Repo";
@@ -2585,7 +2657,7 @@ install_ms_powershell() {
 
     # Check that microsoft.com is reachable
     TEST_URL="microsoft.com";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
 
     TOOL_SOURCE="Microsoft Repo";
@@ -2679,7 +2751,7 @@ install_golang() {
 
     # Check that go.dev is reachable
     TEST_URL="go.dev";
-    check_connectivity_http;
+    check_connectivity_https;
 
     cd "$SCRIPT_DIR" || exit 1;
     TOOL_INSTALL="go"
@@ -2716,7 +2788,7 @@ install_docker() {
 
     # Check that debian.org is reachable
     TEST_URL="debian.org";
-    check_connectivity_http;
+    check_connectivity_https;
     check_apt_running;
 
     TOOL_SOURCE="Debian Repository";
@@ -2739,7 +2811,7 @@ install_ytdlp() {
     echo -e "\e[35m[*] install_ytdlp()\e[0m";
     /usr/bin/logger 'install_ytdlp()' -t 'Customizing Debian';
     TEST_URL="pypi.org";
-    check_connectivity_http;
+    check_connectivity_https;
 
     TOOL_INSTALL="yt-dlp";
     VENV_NAME=~/.venv;
@@ -2758,7 +2830,7 @@ install_volatility() {
     echo -e "\e[35m[*] install_volatility()\e[0m";
     /usr/bin/logger 'install_volatility()' -t 'Customizing Debian';
     TEST_URL="github.com";
-    check_connectivity_http;
+    check_connectivity_https;
 
     if [ -d $RE_DIR/volatility3 ]; then
         TOOL_INSTALL="volatility3";
@@ -2848,6 +2920,7 @@ create_gnome_categories() {
         "reverse-engineering"
         "fault-injection"
         "digital forensics"
+        "networking tools"
     )
 
     echo -e "\e[35m[*]\t └─ Fetching existing GNOME app folders...\e[0m"
@@ -2988,6 +3061,27 @@ cleanup() {
     /usr/bin/logger 'cleanup() finished' -t 'Customizing Debian';
 }
 
+install_hal_mtt() {
+    echo -e "\e[32m[+] install_hal_mtt()\n\e[0m";
+    /usr/bin/logger 'install_hal_mtt()' -t 'Customizing Debian';
+
+    TOOL_SOURCE="GitHub";
+    TOOL_INSTALL="Mount That Thing (MTT) Download";
+    echo -e "\e[35m[*]\t └─ $TOOL_INSTALL\e[0m";
+    sudo mkdir /opt/dfis/;
+
+    cd $RE_DIR;
+    git clone https://github.com/halpomeranz/dfis.git > /dev/null 2>&1;
+    check_status_install;
+    TOOL_INSTALL="Mount That Thing (MTT) install";
+    sudo cp $RE_DIR/dfis/mtt.sh /opt/dfis/mtt.sh;
+    sudo chmod 755 /opt/dfis/mtt.sh;
+    sudo ln -sf /opt/dfis/mtt.sh /usr/local/bin/mtt.sh;
+
+    echo -e "\e[32m[+] install_hal_mtt() finished\n\e[0m";
+    /usr/bin/logger 'install_hal_mtt() finished' -t 'Customizing Debian';
+}
+
 #################################################################################################################
 ## Main Routine                                                                                                 #
 #################################################################################################################
@@ -3100,6 +3194,11 @@ main() {
         if [ "$PYTHON_INSTALL" == "Yes" ]; then
             install_pythontools;
             auto_activate_venv;
+        fi
+
+        # PYTHON_Webserver on-demand installation
+        if [ "$PYTHON_WEBSERVER_INSTALL" == "Yes" ]; then
+            install_pythonwebserver;
         fi
 
         # DEVTOOLS_INSTALL

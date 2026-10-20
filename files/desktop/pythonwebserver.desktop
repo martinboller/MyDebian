@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name[en_GB]=Python Web Server
+Name=Python Web Server
+Comment=Start a Python Web Server on port 8080 from Public/webserver
+Icon=pythonwebserver.png
+Keywords=Fault-injection;Hacking;Hardware
+Exec=gnome-terminal --class="webserver" --name="webserver" --working-directory="Public/webserver/" -- bash -c "python3 -m http.server 8080 && exec bash"
+Path=Public/webserver/
+Terminal=false
+StartupNotify=true
+Categories=X-HardwareHacking;X-NetworkingTools;
