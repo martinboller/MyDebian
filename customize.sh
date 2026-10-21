@@ -284,17 +284,16 @@ install_updates() {
 
     # Wait until package managers have stopped running
     check_apt_running;
-
     TOOL_INSTALL="apt update";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     sudo DEBIAN_FRONTEND=noninteractive apt-get update > /dev/null 2>&1
     check_status_install;
 
     TOOL_INSTALL="apt full-upgrade";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    check_apt_running;
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y full-upgrade > /dev/null 2>&1
     check_status_install;
-
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y --purge autoremove > /dev/null 2>&1
-    sudo DEBIAN_FRONTEND=noninteractive apt-get autoclean > /dev/null 2>&1
 
     cd "$SCRIPT_DIR" || exit 1;
 
@@ -2651,6 +2650,11 @@ configure_serial_access() {
     /usr/bin/logger 'configure_serial_access() finished' -t 'Customizing Debian';
 }
 
+do_icon_beautification() {
+    sudo sed -i 's/Icon=hwloc/Icon=ibus-keyboard.png/' /usr/share/applications/lstopo.desktop > /dev/null 2>&1;
+    echo "Icon=gcr-key-pair" | sudo tee -a /usr/share/applications/lynis.desktop > /dev/null 2>&1;
+}
+
 install_ms_powershell() {
     echo -e "\e[35m[*] install_ms_powershell()\e[0m";
     /usr/bin/logger 'install_ms_powershell()' -t 'Customizing Debian';
@@ -3287,6 +3291,7 @@ main() {
             install_nvidia;
         fi
 
+        do_icon_beautification;
         # final cleanup
         cleanup;
         show_errors;
