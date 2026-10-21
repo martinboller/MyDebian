@@ -185,7 +185,7 @@ check_connectivity_sockets() {
 check_connectivity_ping() {
     # Checking that we can reach $TEST_URL over icmp
     echo -e "\e[35m[*]\t └─ Checking connectivity to $TEST_URL...\e[0m";
-    until ping -c 5 -W 5 $TEST_URL > /dev/null 2>&1; do
+    until ping -c 2 -W 5 $TEST_URL > /dev/null 2>&1; do
         echo -e "\e[31m[-]\t Waiting for connectivity to $TEST_URL...\e[0m";
         sleep 5;
     done
@@ -342,6 +342,15 @@ install_additional_features() {
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gnome-tweaks > /dev/null 2>&1;
     check_status_install;
+    install_wm_tools;
+    
+    echo -e "\e[32m[+] install_additional_features() finished\n\e[0m";
+    /usr/bin/logger 'install_additional_features() finished' -t 'Customizing Debian';
+}
+
+install_wm_tools() {
+    echo -e "\e[32m[+] install_wm_tools()\e[0m";
+    /usr/bin/logger 'install_wm_tools()' -t 'Customizing Debian';
 
     TOOL_INSTALL="Windows Control Tools";
     TOOL_SOURCE="Debian Repository";
@@ -349,14 +358,16 @@ install_additional_features() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install wmctrl xdotool > /dev/null 2>&1;
     check_status_install;
 
-    echo -e "\e[32m[+] install_additional_features() finished\n\e[0m";
-    /usr/bin/logger 'install_additional_features() finished' -t 'Customizing Debian';
+    echo -e "\e[32m[+] install_wm_tools() finished\e[0m";
+    /usr/bin/logger 'install_wm_tools() finished' -t 'Customizing Debian';
 }
-
 install_ghidra() {
     echo -e "\e[32m[+] install_ghidra()\e[0m";
     /usr/bin/logger 'install_ghidra()' -t 'Customizing Debian';
 
+    # Uses wmctl and xdotool
+    install_wm_tools;
+    
     # Detect latest release of Ghidra from GitHub
     API_URL="https://api.github.com/repos/NationalSecurityAgency/ghidra/releases/latest"
     echo -e "\e[35m[*]\t └─ [*] Querying GitHub API for the latest Ghidra release...\e[0m"
@@ -2650,9 +2661,18 @@ configure_serial_access() {
     /usr/bin/logger 'configure_serial_access() finished' -t 'Customizing Debian';
 }
 
-do_icon_beautification() {
+do_icon_cleanup() {
+    echo -e "\e[32m[+] do_icon_cleanup()\e[0m";
+    /usr/bin/logger 'do_icon_cleanup()' -t 'Customizing Debian';
+
+    TOOL_SOURCE="script";
+    TOOL_INSTALL="Adding useable icons for Lynis and lstopo";
+    echo -e "\e[35m[*]\t └─ $TOOL_INSTALL\e[0m";
     sudo sed -i 's/Icon=hwloc/Icon=ibus-keyboard.png/' /usr/share/applications/lstopo.desktop > /dev/null 2>&1;
     echo "Icon=gcr-key-pair" | sudo tee -a /usr/share/applications/lynis.desktop > /dev/null 2>&1;
+
+    echo -e "\e[32m[+] do_icon_cleanup() finished\n\e[0m";
+    /usr/bin/logger 'do_icon_cleanup() finished' -t 'Customizing Debian';
 }
 
 install_ms_powershell() {
@@ -3291,7 +3311,7 @@ main() {
             install_nvidia;
         fi
 
-        do_icon_beautification;
+        do_icon_cleanup;
         # final cleanup
         cleanup;
         show_errors;
