@@ -5,15 +5,15 @@ Control your installation profile interactively via `installmenu.py` which manag
 
 ---
 
-## ❤️ Thanks
+## ❤️ Thanks ❤️
 
 A heartfelt thank you to:
 
-* ***Luca Bongiorni*** - for your incredible hardware hacking innovation, brilliant tooling support, and pushing the boundaries of what's possible.
+* ***Luca Bongiorni*** - for your incredible hardware hacking innovation, brilliant tooling support, and pushing the boundaries of what's possible. Take his [Offensive Hardware Hacking Training](https://www.whid.ninja/).
 * ***Søren Egede Knudsen*** - for your invaluable cybersecurity expertise, steady guidance, and great collaboration along the way.
 * ***Michael Vingaard*** -for your deep OT/ICS security insights, collaboration, and building top-tier training environments.
 
-To everyone that I've forgotten, **SORRY**
+To everyone that I've forgotten, **SORRY** ❤️❤️❤️
 
 ## 🔌 Hardware Hacking & Embedded Toolchain
 

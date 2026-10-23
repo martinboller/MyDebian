@@ -5,10 +5,6 @@
 # Author:       Martin Boller                                       #
 #                                                                   #
 # Email:        martin@bollers.dk                                   #
-# Last Update:  2026-09-19                                          #
-# Version:      3.00                                                #
-#                                                                   #
-# Changes:  Tested on Debian 13 (Debian)                            #
 #                                                                   #
 #####################################################################
 
