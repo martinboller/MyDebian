@@ -1002,6 +1002,12 @@ install_usertools() {
     check_apt_running;
 
     TOOL_SOURCE="Debian Repository";
+    TOOL_INSTALL="Calibre e-book reader";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install calibre calibre-bin > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="transmission-gtk";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install transmission-gtk > /dev/null 2>&1;
@@ -2335,10 +2341,12 @@ install_utils_flatpak() {
         flatpak --assumeyes install com.bitwarden.desktop > /dev/null 2>&1;
         check_fp_install;
 
-        TOOL_INSTALL="calibre";
-        echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
-        flatpak --assumeyes install com.calibre_ebook.calibre > /dev/null 2>&1;
-        check_fp_install;
+        # The flatpak version of Calibre is no good
+        # Constant breakage with large books, multiple books etc.
+        # TOOL_INSTALL="calibre";
+        # echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
+        # flatpak --assumeyes install com.calibre_ebook.calibre > /dev/null 2>&1;
+        # check_fp_install;
 
         TOOL_INSTALL="ungoogled_chromium";
         echo -e "\e[35m[*]\t └─ installing $TOOL_INSTALL\e[0m";
