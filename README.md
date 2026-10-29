@@ -11,7 +11,8 @@ A heartfelt thank you to:
 
 * ***Luca Bongiorni*** - for your incredible hardware hacking innovation, brilliant tooling support, and pushing the boundaries of what's possible. Take his [Offensive Hardware Hacking Training](https://www.whid.ninja/).
 * ***Søren Egede Knudsen*** - for your invaluable cybersecurity expertise, steady guidance, and great collaboration along the way.
-* ***Michael Vingaard*** -for your deep OT/ICS security insights, collaboration, and building top-tier training environments.
+* ***Michael Vingaard*** - for your deep OT/ICS security insights, collaboration, and building top-tier training environments.
+* ***Mitch Impey*** - for your general awesomeness and being the bestest of friends.
 
 To everyone that I've forgotten, **SORRY** ❤️❤️❤️
 
@@ -121,7 +122,9 @@ python3 installmenu.py
 ```bash
 vi .env
 ```
-***Be careful with dependencies!***
+...or just use nano or whatever you prefer.
+
+***Be careful with dependencies when editing manually!***
 
 **3. Ensure your user is in sudoers**
 ```bash
