@@ -2060,7 +2060,13 @@ install_reversetools() {
         TOOL_INSTALL="binwalk commandline";
         TOOL_SOURCE="script";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL using $BINWALK_INSTALL\e[0m";
-        echo "alias binwalk='docker run -t -v "$PWD":/analysis binwalkv3'" | tee -a ~/.bash_aliases > /dev/null 2>&1;
+        sudo mkdir /opt/binwalk/;
+        echo '#!/usr/bin/env bash' | sudo tee -a /opt/binwalk/binwalk
+        echo 'docker run -t -v "$PWD":/analysis binwalkv3' | sudo tee -a /opt/binwalk/binwalk
+        sudo chmod 755 /opt/binwalk/binwalk;
+        sudo ln -sf /opt/binwalk/binwalk /usr/local/bin/binwalk;
+        # Alias works well, however I want everything to be found by which
+        #echo "alias binwalk='docker run -t -v "$PWD":/analysis binwalkv3'" | tee -a ~/.bash_aliases > /dev/null 2>&1;
         check_status_install;
     fi
     

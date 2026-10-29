@@ -140,8 +140,8 @@ Follow along in the two terminal windows, then reboot when prompted to. That's i
 
 ## 📄 License
 
-This project is open-source software licensed under the **[European Union Public Licence (EUPL)](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eu-public-licence)** (v1.2 or later). 
+This project is open-source software licensed under the **[European Union Public Licence (EUPL)](https://interoperable-europe.ec.europa.eu/licence/european-union-public-licence-version-12-eupl)** (v1.2 or later). 
 
 By contributing or using this repository, you agree to be bound by the terms of the EUPL. You may obtain a copy of the License at:
 
-* [Official EUPL Text & Translations](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eu-public-licence)
+* [Official EUPL Text & Translations](https://interoperable-europe.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
