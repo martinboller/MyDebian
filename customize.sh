@@ -357,6 +357,7 @@ install_wm_tools() {
     echo -e "\e[32m[+] install_wm_tools() finished\e[0m";
     /usr/bin/logger 'install_wm_tools() finished' -t 'Customizing Debian';
 }
+
 install_ghidra() {
     echo -e "\e[32m[+] install_ghidra()\e[0m";
     /usr/bin/logger 'install_ghidra()' -t 'Customizing Debian';
@@ -1235,6 +1236,12 @@ install_devtools() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends libssl-dev > /dev/null 2>&1;
     check_status_install;
 
+    # hash-slinger
+    TOOL_INSTALL="hash-slinger"
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends hash-slinger > /dev/null 2>&1;
+    check_status_install;
+
     # Back to script directory
     cd "$SCRIPT_DIR" || exit 1;
     
@@ -1932,7 +1939,8 @@ install_hwhacktools() {
     /usr/bin/logger 'install_hwhacktools() finished' -t 'Customizing Debian';
 }
 
-install_reversetools() {
+
+install_cargo_binwalk(){
     echo -e "\e[35m[*] install_reversetools()\e[0m";
     /usr/bin/logger 'install_reversetools()' -t 'Customizing Debian';
     
@@ -2000,7 +2008,7 @@ ___EOF___
         sudo mkdir -p /opt/binwalk-ui/;
         curl -sSL https://raw.githubusercontent.com/ReFirmLabs/binwalk/refs/heads/master/scripts/binwalk-ui -o $SCRIPT_DIR/binwalk-ui;
         sudo chmod +x $SCRIPT_DIR/binwalk-ui;
-        sudo mv $SCRIPT_DIR/binwalk-ui.sh /opt/binwalk-ui/;
+        sudo mv $SCRIPT_DIR/binwalk-ui /opt/binwalk-ui/;
         sudo ln -sf /opt/binwalk-ui/binwalk-ui /usr/local/bin/binwalk-ui;
         TOOL_INSTALL="binwalk path";
         if [ -n "$BINWALK_PATH" ]; then
@@ -2015,6 +2023,45 @@ if [ -f "\$HOME/.cargo/bin/binwalk" ] ; then
 fi
 ___EOF___
         fi
+    fi
+
+}
+install_reversetools() {
+    echo -e "\e[35m[*] install_reversetools()\e[0m";
+    /usr/bin/logger 'install_reversetools()' -t 'Customizing Debian';
+    
+    # Check that debian.org is reachable
+    TEST_URL="debian.org";
+    check_connectivity_https;
+    check_apt_running;
+
+    # Reverse Engineering tools
+    mkdir -p $RE_DIR;
+    cd "$RE_DIR" || exit 1;
+
+    TOOL_ELF="binwalk";
+    check_already_installed;
+    if [ $TOOL_INSTALLED == False ]; then
+        TOOL_INSTALL="binwalk";
+        TOOL_SOURCE="git";
+        cd "$RE_DIR" || exit 1;
+        echo -e "\e[35m[*]\t └─ cloning $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
+        git clone https://github.com/ReFirmLabs/binwalk > /dev/null 2>&1;
+        check_status_install;
+
+        TOOL_INSTALL="binwalk";
+        TOOL_SOURCE="docker container";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL $TOOL_SOURCE\e[0m";
+        cd $RE_DIR/binwalk;
+        sudo ./build_docker.sh > /dev/null 2>&1;
+        check_status_install;
+        BINWALK_INSTALLED=$(sg docker 'docker image ls' | grep binwalk | awk '{print $1}')
+
+        TOOL_INSTALL="binwalk commandline";
+        TOOL_SOURCE="script";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL using $BINWALK_INSTALL\e[0m";
+        echo "alias binwalk='docker run -t -v "$PWD":/analysis binwalkv3'" | tee -a ~/.bash_aliases > /dev/null 2>&1;
+        check_status_install;
     fi
     
     TOOL_INSTALL="firmwalker";
@@ -2850,6 +2897,27 @@ install_ytdlp() {
     pip install $TOOL_INSTALL > /dev/null 2>&1;
     check_status_install;
 
+
+    TOOL_INSTALL="yt-dlp configuration file";
+    TOOL_SOURCE="Script";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    mkdir ~/.config/yt-dlp/;
+    cat << ___EOF___ >> ~/.config/yt-dlp/config
+--cookies-from-browser firefox
+--remote-components ejs:github
+
+# Sponsors
+--no-sponsorblock
+
+# Thumbnails
+--embed-thumbnail
+
+# Metadata
+--embed-metadata
+--embed-chapters
+___EOF___
+    check_status_install;
+
     echo -e "\e[32m[+] install_ytdlp() finished\n\e[0m";
     /usr/bin/logger 'install_ytdlp() finished' -t 'Customizing Debian';
 }
@@ -3110,6 +3178,20 @@ install_hal_mtt() {
     /usr/bin/logger 'install_hal_mtt() finished' -t 'Customizing Debian';
 }
 
+enable_sudo_insults() {
+    echo -e "\e[32m[+] enable_sudo_insults()\e[0m";
+    /usr/bin/logger 'enable_sudo_insults()' -t 'Customizing Debian';
+
+    TOOL_SOURCE="sudoers";
+    TOOL_INSTALL="enable sudo insults";
+    echo -e "\e[35m[*]\t └─ $TOOL_INSTALL in $TOOL_SOURCE\e[0m";
+    echo "Defaults        insults" | sudo tee -a /etc/sudoers.d/insults > /dev/null 2>&1;
+    check_status_install;
+    
+    echo -e "\e[32m[+] enable_sudo_insults() finished\n\e[0m";
+    /usr/bin/logger 'enable_sudo_insults() finished' -t 'Customizing Debian';
+}
+
 #################################################################################################################
 ## Main Routine                                                                                                 #
 #################################################################################################################
@@ -3153,6 +3235,7 @@ main() {
         # Core NIX configuration
         if [ "$NIX_CONFIGURE" == "Always" ]; then
           configure_nix;
+          enable_sudo_insults;
         fi
 
         # Gnome Keyboard Shortcuts
@@ -3229,6 +3312,16 @@ main() {
             install_pythonwebserver;
         fi
 
+        # Virtualization
+        if [ "$VIRT_INSTALL" == "Yes" ]; then
+            install_virtualization;
+        fi
+
+        # Docker Installation
+        if [ "$DOCKER_INSTALL" == "Yes" ]; then
+            install_docker;
+        fi
+
         # DEVTOOLS_INSTALL
         if [ "$DEVTOOLS_INSTALL" == "Yes" ]; then
             install_devtools;
@@ -3276,16 +3369,6 @@ main() {
 
         if [ "$PULSEVIEW_INSTALL" == "Yes" ]; then
             install_sigrok_tools;
-        fi
-
-        # Virtualization
-        if [ "$VIRT_INSTALL" == "Yes" ]; then
-            install_virtualization;
-        fi
-
-        # Docker Installation
-        if [ "$DOCKER_INSTALL" == "Yes" ]; then
-            install_docker;
         fi
 
         # Installing Autopsy. This MUST happen after docker is installed.
