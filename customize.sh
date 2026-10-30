@@ -597,7 +597,7 @@ ___EOF___
 }
 
 install_autopsy() {
-    echo -e "\e[32m[+] install_autopsy()\n\e[0m";
+    echo -e "\e[32m[+] install_autopsy()\e[0m";
     /usr/bin/logger 'install_autopsy()' -t 'Customizing Debian';
 
     cd "$SCRIPT_DIR" || exit 1;
@@ -2060,8 +2060,8 @@ install_reversetools() {
         TOOL_SOURCE="script";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL using $BINWALK_INSTALL\e[0m";
         sudo mkdir /opt/binwalk/;
-        echo '#!/usr/bin/env bash' | sudo tee -a /opt/binwalk/binwalk
-        echo 'docker run -t -v "$PWD":/analysis binwalkv3' | sudo tee -a /opt/binwalk/binwalk
+        echo '#!/usr/bin/env bash' | sudo tee -a /opt/binwalk/binwalk > /dev/null 2>&1;
+        echo 'docker run -t -v "$PWD":/analysis binwalkv3' | sudo tee -a /opt/binwalk/binwalk > /dev/null 2>&1;
         sudo chmod 755 /opt/binwalk/binwalk;
         sudo ln -sf /opt/binwalk/binwalk /usr/local/bin/binwalk;
         # Alias works well, however I want everything to be found by which
@@ -2072,7 +2072,7 @@ install_reversetools() {
         TOOL_SOURCE="Filesystem";
         mkdir -p ~/Documents/Firmwares;
         check_status_install;
-        
+
         TOOL_INSTALL="binwalk application entry";
         TOOL_SOURCE="GNOME";
         APP_NAME="binwalk";
