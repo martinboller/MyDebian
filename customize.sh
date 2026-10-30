@@ -1939,7 +1939,6 @@ install_hwhacktools() {
     /usr/bin/logger 'install_hwhacktools() finished' -t 'Customizing Debian';
 }
 
-
 install_cargo_binwalk(){
     echo -e "\e[35m[*] install_reversetools()\e[0m";
     /usr/bin/logger 'install_reversetools()' -t 'Customizing Debian';
@@ -2068,6 +2067,16 @@ install_reversetools() {
         # Alias works well, however I want everything to be found by which
         #echo "alias binwalk='docker run -t -v "$PWD":/analysis binwalkv3'" | tee -a ~/.bash_aliases > /dev/null 2>&1;
         check_status_install;
+
+        TOOL_INSTALL="binwalk Firmwares Directory";
+        TOOL_SOURCE="Filesystem";
+        mkdir -p ~/Documents/Firmwares;
+        check_status_install;
+        
+        TOOL_INSTALL="binwalk application entry";
+        TOOL_SOURCE="GNOME";
+        APP_NAME="binwalk";
+        create_desktop_file;
     fi
     
     TOOL_INSTALL="firmwalker";

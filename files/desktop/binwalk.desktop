@@ -1,0 +1,20 @@
+[Desktop Entry]
+Type=Application
+Name=Binwalk
+Comment=Start binwalk in Terminal
+Exec=gnome-terminal --class="BinwalkTerm" --name="BinwalkTerm" --working-directory="Documents/Firmwares/" -- bash -c "binwalk --help && exec bash"
+Terminal=false
+Icon=binwalk.png
+StartupNotify=true
+StartupWMClass=BinwalkTerm
+Categories=X-ReverseEngineering;X-HardwareHacking;
+Name[en]=Binwalk
+Name[en_GB]=Binwalk
+Name[en_GB.UTF-8]=Binwalk
+Comment[en]=Start binwalk in Terminal
+Comment[en_GB]=Start binwalk in Terminal
+Comment[en_GB.UTF-8]=Start binwalk in Terminal
+PrefersNonDefaultGPU=false
+Hidden=false
+NoDisplay=false
+Path=/home/martin/Documents/Firmwares
