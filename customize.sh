@@ -1005,7 +1005,7 @@ install_usertools() {
     TOOL_SOURCE="Debian Repository";
     TOOL_INSTALL="Calibre e-book reader";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install calibre calibre-bin > /dev/null 2>&1;
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install calibre > /dev/null 2>&1;
     check_status_install;
 
     TOOL_SOURCE="Debian Repository";
