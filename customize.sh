@@ -1358,7 +1358,7 @@ install_nvidia() {
     check_connectivity_https;
     check_apt_running;
 
-    if [ $(lspci | grep -iE "3d|display|vga" | grep -i nvidia) ]; then
+    if [[ $(lspci | grep -iE "3d|display|vga" | grep -i nvidia) ]]; then
         TOOL_SOURCE="Download";
         TOOL_INSTALL="nvidia-repo";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -1368,18 +1368,21 @@ install_nvidia() {
         wget https://developer.download.nvidia.com/compute/cuda/repos/debian$VER/x86_64/cuda-archive-keyring.gpg
         sudo mv $SCRIPT_DIR/cuda-archive-keyring.gpg /usr/share/keyrings/cuda-archive-keyring.gpg
         echo "deb [signed-by=/usr/share/keyrings/cuda-archive-keyring.gpg] https://developer.download.nvidia.com/compute/cuda/repos/debian$VER/x86_64/ /" | sudo tee /etc/apt/sources.list.d/cuda-debian$VER-amd64.list > /dev/null 2>&1;
-        sudo apt update > /dev/null 2>&1;
-        
+        sudo DEBIAN_FRONTEND=noninteractive apt-get update > /dev/null 2>&1;
+        check_status_install;
+
         TOOL_SOURCE="NVIDIA Repository";
         TOOL_INSTALL="nvidia-open";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install nvidia-open --install-recommends > /dev/null 2>&1;
+        check_status_install;
 
         TOOL_SOURCE="NVIDIA Debian Repository";
         TOOL_INSTALL="cuda-toolkit";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install cuda-toolkit --install-recommends > /dev/null 2>&1;
-
+        check_status_install;
+        
         # Checks if secureboot is enabled. If yes import key to UEFI
         configure_secureboot;
     else
