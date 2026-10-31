@@ -1354,36 +1354,33 @@ install_nvidia() {
     /usr/bin/logger 'install_nvidia()' -t 'Customizing Debian';
     echo -e "\e[32m[+] install_nvidia()\n\e[0m";
 
-    TEST_URL="debian.org";
+    TEST_URL="nvidia.com";
     check_connectivity_https;
     check_apt_running;
 
-    TOOL_INSTALL="nvidia-detect"
+    TOOL_SOURCE="Download";
+    TOOL_INSTALL="nvidia-repo";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install nvidia-detect > /dev/null 2>&1;
-    check_status_install;
+    cd $SCRIPT_DIR;
+    wget https://developer.download.nvidia.com/compute/cuda/repos/debian$VER/x86_64/cuda-keyring_1.1-1_all.deb
+    sudo DEBIAN_FRONTEND=noninteractive  apt-get -y install $SCRIPT_DIR/cuda-keyring_1.1-1_all.deb
+    wget https://developer.download.nvidia.com/compute/cuda/repos/debian$VER/x86_64/cuda-archive-keyring.gpg
+    sudo mv $SCRIPT_DIR/cuda-archive-keyring.gpg /usr/share/keyrings/cuda-archive-keyring.gpg
+    echo "deb [signed-by=/usr/share/keyrings/cuda-archive-keyring.gpg] https://developer.download.nvidia.com/compute/cuda/repos/debian$VER/x86_64/ /" | sudo tee /etc/apt/sources.list.d/cuda-debian$VER-amd64.list > /dev/null 2>&1;
+    sudo apt update > /dev/null 2>&1;
+    
+    TOOL_SOURCE="NVIDIA Repository";
+    TOOL_INSTALL="nvidia-open";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install nvidia-open --install-recommends > /dev/null 2>&1;
 
-    # Extract the recommended package name into a variable
-    NVIDIA_PKG=$(nvidia-detect | awk '/It is recommended to install the/ {print $7}')
+    TOOL_SOURCE="NVIDIA Debian Repository";
+    TOOL_INSTALL="cuda-toolkit";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install cuda-toolkit --install-recommends > /dev/null 2>&1;
 
-    # Check if a package was successfully found
-    if [ -n "$NVIDIA_PKG" ]; then
-        # Linux headers required for NVIDIA installation
-        TOOL_INSTALL="nvidia driver package: $NVIDIA_PKG";
-        TOOL_SOURCE="Debian Repository (Non-Free)";
-        echo -e "\e[35m[*]\t └─ Installing $NVIDIA_PKG\e[0m";
-        sudo apt-get -y install "$NVIDIA_PKG" > /dev/null 2>&1;
-        check_status_install;
-
-        TOOL_INSTALL="nvidia cuda toolkit";
-        sudo apt-get -y install nvidia-cuda-toolkit > /dev/null 2>&1;
-        check_status_install;
-
-        # Checks if secureboot is enabled. If yes import key to UEFI
-        configure_secureboot;
-    else
-        echo -e "\e[35m[*]\t └─  Could not determine recommended NVIDIA driver. Not installing"
-    fi
+    # Checks if secureboot is enabled. If yes import key to UEFI
+    configure_secureboot;
 
     /usr/bin/logger 'install_nvidia() finished' -t 'Customizing Debian';
     echo -e "\e[32m[+] install_nvidia() finished\n\e[0m";
