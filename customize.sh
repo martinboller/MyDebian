@@ -1382,7 +1382,7 @@ install_nvidia() {
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         sudo DEBIAN_FRONTEND=noninteractive apt-get -y install cuda-toolkit --install-recommends > /dev/null 2>&1;
         check_status_install;
-        
+
         # Checks if secureboot is enabled. If yes import key to UEFI
         configure_secureboot;
     else
@@ -2635,7 +2635,6 @@ configure_sudo() {
     echo -e "\e[35m[*]\t └─ Adding user: $USER to group $SUDOGROUP\e[0m";
     echo -e "\e[35m[*]\t └─ You must provide the root password, then logout and rerun script\e[0m";
     echo -e "\e[35m[*]\t └─ $(su - root -c "/sbin/usermod -aG $SUDOGROUP $USER")\e[0m"
-    echo -e "\e[35m[*]\t └─ $("/usr/bin/newgrp $SUDOGROUP")\e[0m"
         
     echo -e "\e[32m[+] configure_sudo() finished\n\e[0m";
     /usr/bin/logger 'configure_sudo() finished' -t 'Customizing Debian';
@@ -3427,9 +3426,15 @@ main() {
         
     # Cannot sudo
     else
-        echo -e "\e[31m[-]\t$USER does not belong to group$SUDOGROUP, please provide root password\e[0m"
+        echo -e "\e[31m[-]\t$USER does not belong to group$SUDOGROUP, please provide root users password\e[0m"
         configure_sudo;
-        echo -e "\e[31m[-]\tNow rerun this script\e[0m"
+        echo -e "\e[31m[-]\tYou need to reboot for the change to take effect, then rerun this script\e[0m"
+        read -p "Do You want to reboot now? (y/n)" DO_REBOOT;
+        printf -v DO_IT_NOW "%.1s" "${DO_REBOOT^^}"
+        if [ "$DO_IT_NOW" == "Y" ]; then
+            sync;
+            systemctl reboot;
+        fi
     fi
 
     /usr/bin/logger 'main() finished' -t 'Customizing Debian';
