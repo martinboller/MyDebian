@@ -2628,6 +2628,28 @@ configure_nix() {
     /usr/bin/logger 'configure_nix() finished' -t 'Customizing Debian';
 }
 
+install_ntpsec() {
+    echo -e "\e[35m[*] install_ntpsec()\e[0m";
+    /usr/bin/logger 'install_ntpsec()' -t 'Customizing Debian';
+
+    # Removes systemd-timesyncd and installs good timesync
+    TOOL_INSTALL="Stop & disable systemd-timesyncd";
+    TOOL_SOURCE="Script";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo systemctl stop systemd-timesyncd.service > /dev/null 2>&1;
+    sudo systemctl disable systemd-timesyncd.service > /dev/null 2>&1;
+    check_status_install;
+
+    TOOL_INSTALL="ntpsec";
+    TOOL_SOURCE="Debian Repository";
+    echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y install ntpsec > /dev/null 2>&1;
+    check_status_install;
+    
+    echo -e "\e[35m[*] install_ntpsec() finished\e[0m";
+    /usr/bin/logger 'install_ntpsec() finished' -t 'Customizing Debian';
+}
+
 configure_sudo() {
     echo -e "\e[35m[*] configure_sudo()\e[0m";
     /usr/bin/logger 'configure_sudo()' -t 'Customizing Debian';
@@ -3252,8 +3274,13 @@ main() {
 
         # Core NIX configuration
         if [ "$NIX_CONFIGURE" == "Always" ]; then
-          configure_nix;
-          enable_sudo_insults;
+            configure_nix;
+            enable_sudo_insults;
+        fi
+
+        # Good timesync (replacing systemd-timesyncd with ntpsec)
+        if [ "$NTPSEC_INSTALL" == "Always" ]; then
+            install_ntpsec;
         fi
 
         # Gnome Keyboard Shortcuts
