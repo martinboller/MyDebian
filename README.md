@@ -127,6 +127,13 @@ vi .env
 ***Be careful with dependencies when editing manually!***
 
 **3. Ensure your user is in sudoers**
+
+Either run the *customize.sh* script and supply the root password.
+```bash
+./customize.sh
+```
+or
+
 ```bash
 su root -c "/sbin/usermod -aG sudo $USER"
 ```

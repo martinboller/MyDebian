@@ -2094,6 +2094,16 @@ install_reversetools() {
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         git clone https://github.com/hotelzululima/firmwalker.git > /dev/null 2>&1;
         check_status_install;
+
+        TOOL_INSTALL="firmwalker permissions";
+        TOOL_SOURCE="chmod";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+        git clone https://github.com/hotelzululima/firmwalker.git > /dev/null 2>&1;
+        chmod 755 $RE_DIR/firmwalker/firmwalker.sh;
+        check_status_install;
+
+        APP_NAME="firmwalker";
+        create_desktop_file;
     fi
 
     TOOL_INSTALL="binwally";

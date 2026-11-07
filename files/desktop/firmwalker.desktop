@@ -1,0 +1,19 @@
+[Desktop Entry]
+Type=Application
+Name=Firmwalker
+Comment=Start Firmwalker in Terminal
+Exec=gnome-terminal --class="FirmwalkerTerm" --name="FirmwalkerTerm" --working-directory="git/RE/firmwalker/" -- bash -c "exec bash"
+Terminal=false
+Icon=firmwalker.png
+StartupNotify=true
+StartupWMClass=FirmwalkerTerm
+Categories=X-ReverseEngineering;X-HardwareHacking;
+Name[en]=Firmwalker
+Name[en_GB]=Firmwalker
+Name[en_GB.UTF-8]=Firmwalker
+Comment[en]=Start Firmwalker in Terminal
+Comment[en_GB]=Start Firmwalker in Terminal
+Comment[en_GB.UTF-8]=Start Firmwalker in Terminal
+PrefersNonDefaultGPU=false
+Hidden=false
+NoDisplay=false
