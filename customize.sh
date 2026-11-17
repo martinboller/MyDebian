@@ -291,7 +291,7 @@ install_updates() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y full-upgrade > /dev/null 2>&1
     check_status_install;
 
-    cd "$SCRIPT_DIR" || exit 1;
+    cd "$SCRIPT_DIR";
 
     echo -e "\e[32m[+] install_updates() finished\n\e[0m";
     /usr/bin/logger 'install_updates() finished' -t 'Customizing Debian';
@@ -560,7 +560,7 @@ install_proprietary_filesystems() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install exfat-fuse exfatprogs > /dev/null 2>&1;
     check_status_install;
 
-    cd "$SCRIPT_DIR" || exit 1;
+    cd "$SCRIPT_DIR";
     
     echo -e "\e[32m[+] install_proprietary_filesystems() finished\n\e[0m";
     /usr/bin/logger 'install_proprietary_filesystems() finished' -t 'Customizing Debian';
@@ -600,7 +600,7 @@ install_autopsy() {
     echo -e "\e[32m[+] install_autopsy()\e[0m";
     /usr/bin/logger 'install_autopsy()' -t 'Customizing Debian';
 
-    cd "$SCRIPT_DIR" || exit 1;
+    cd "$SCRIPT_DIR";
     TOOL_INSTALL="Docker Container with Autopsy and The Sleuth Kit (tsk)";
     TOOL_SOURCE="Docker";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -705,7 +705,7 @@ install_hashcat() {
         TOOL_SOURCE="Source";
         TOOL_INSTALL="hashcat";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";   
-        cd "$SOURCE_DIR" || exit 1;
+        cd "$SOURCE_DIR";
         #git clone https://github.com/hashcat/hashcat.git > /dev/null 2>&1;
         wget https://github.com/hashcat/hashcat/archive/refs/tags/v$HASHCAT_RELEASE.tar.gz > /dev/null 2>&1;
         tar -xzf v$HASHCAT_RELEASE.tar.gz > /dev/null 2>&1;
@@ -714,9 +714,9 @@ install_hashcat() {
         make > /dev/null 2>&1;
         sudo make install > /dev/null 2>&1;
         check_install;
-        cd "$SOURCE_DIR" || exit 1;
+        cd "$SOURCE_DIR";
         rm v$HASHCAT_RELEASE.tar.gz > /dev/null 2>&1;
-        cd "$SCRIPT_DIR" || exit 1;
+        cd "$SCRIPT_DIR";
     fi
 
     TOOL_INSTALL="Hashcat $(hashcat --version)";
@@ -751,7 +751,7 @@ __EOF__
     check_status_install;
     fi
 
-    cd "$SCRIPT_DIR" || exit 1;
+    cd "$SCRIPT_DIR";
 
     echo -e "\e[32m[+] install_backports() finished\n\e[0m";
     /usr/bin/logger 'installing Debian backports repository finished' -t 'Customizing Debian';
@@ -778,7 +778,7 @@ install_pythontools() {
     configure_primary_venv_path;
 
     # back to script directory
-    cd "$SCRIPT_DIR" || exit 1;
+    cd "$SCRIPT_DIR";
 
     echo -e "\e[32m[+] install_pythontools() finished\n\e[0m";
     /usr/bin/logger 'installing Python tools from Debian repository finished' -t 'Customizing Debian';
@@ -879,7 +879,7 @@ install_networktools() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install tcpflow-nox > /dev/null 2>&1;
     check_status_install;
 
-    cd "$SCRIPT_DIR" || exit 1;
+    cd "$SCRIPT_DIR";
 
     echo -e "\e[32m[+] install_networktools() finished\n\e[0m";
     /usr/bin/logger 'installing Network tools from Debian repository finished' -t 'Customizing Debian';
@@ -934,7 +934,7 @@ install_forensicstools() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install geoip-bin geoip-database > /dev/null 2>&1;
     check_status_install;
 
-    cd "$SCRIPT_DIR" || exit 1;
+    cd "$SCRIPT_DIR";
 
     install_hal_mtt;
 
@@ -987,7 +987,7 @@ install_systemtools() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install apt-rdepends > /dev/null 2>&1;
     check_status_install;
 
-    cd "$SCRIPT_DIR" || exit 1;
+    cd "$SCRIPT_DIR";
 
     echo -e "\e[32m[+] install_systemtools() finished\n\e[0m";
     /usr/bin/logger 'installing System tools from Debian repository finished' -t 'Customizing Debian';
@@ -1044,7 +1044,7 @@ install_usertools() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y install gnome-shell-extension-prefs > /dev/null 2>&1;
     check_status_install;
 
-    cd "$SCRIPT_DIR" || exit 1;
+    cd "$SCRIPT_DIR";
     
     echo -e "\e[32m[+] install_usertools() finished\n\e[0m";
     /usr/bin/logger 'installing User tools from Debian repository finished' -t 'Customizing Debian';
@@ -1243,7 +1243,7 @@ install_devtools() {
     check_status_install;
 
     # Back to script directory
-    cd "$SCRIPT_DIR" || exit 1;
+    cd "$SCRIPT_DIR";
     
     /usr/bin/logger 'installing Development tools from Debian repository finished' -t 'Customizing Debian';
     echo -e "\e[32m[+] Installing development tools finished\n\e[0m";
@@ -1303,7 +1303,7 @@ install_cross_compilers() {
     check_status_install;
 
     # Back to script directory
-    cd "$SCRIPT_DIR" || exit 1;
+    cd "$SCRIPT_DIR";
     
     /usr/bin/logger 'install_cross_compilers() finished' -t 'Customizing Debian';
     echo -e "\e[32m[+] install_cross_compilers() finished\n\e[0m";
@@ -1497,7 +1497,7 @@ install_sigrok_tools() {
         check_status_install;
 
         mkdir -p $SOURCE_DIR/sigrok;
-        cd "$SOURCE_DIR/sigrok/" || exit 1;
+        cd "$SOURCE_DIR/sigrok/";
         # Install libsigrokdecode from source
         # Note: Depending on trixie backports
         /usr/bin/logger 'installing libsigrokdecode' -t 'Customizing Debian';
@@ -1538,7 +1538,7 @@ install_sigrok_tools() {
         TOOL_INSTALL="libsigrok"
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         /usr/bin/logger 'installing libsigrok' -t 'Customizing Debian';
-        cd "$SOURCE_DIR/sigrok/" || exit 1;
+        cd "$SOURCE_DIR/sigrok/";
 
         TOOL_INSTALL="libsigrok"
         git clone https://github.com/martinboller/libsigrok > /dev/null 2>&1;
@@ -1571,7 +1571,7 @@ install_sigrok_tools() {
 
         # Install sigrok-cli from source
         /usr/bin/logger 'installing sigrok-cli' -t 'Customizing Debian';
-        cd "$SOURCE_DIR/sigrok/" || exit 1;
+        cd "$SOURCE_DIR/sigrok/";
         TOOL_SOURCE="Source";
         TOOL_INSTALL="sigrok-cli git";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -1618,7 +1618,7 @@ install_sigrok_tools() {
         TOOL_INSTALL="sigrok-firmware-fx2lafw git";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         /usr/bin/logger 'installing sigrok-firmware-fx2lafw' -t 'Customizing Debian';
-        cd "$SOURCE_DIR/sigrok/" || exit 1;
+        cd "$SOURCE_DIR/sigrok/";
         git clone git://sigrok.org/sigrok-firmware-fx2lafw > /dev/null 2>&1;
         check_status_install;
 
@@ -1646,7 +1646,7 @@ install_sigrok_tools() {
 
         # Install pulseview from source
         /usr/bin/logger 'installing pulseview' -t 'Customizing Debian';
-        cd "$SOURCE_DIR/sigrok/" || exit 1;
+        cd "$SOURCE_DIR/sigrok/";
         TOOL_INSTALL="pulseview git"
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         git clone git://sigrok.org/pulseview > /dev/null 2>&1;
@@ -1683,7 +1683,7 @@ install_sigrok_tools() {
     fi
 
     # Back home to where install script is running from
-    cd "$SCRIPT_DIR" || exit 1;
+    cd "$SCRIPT_DIR";
 
     echo -e "\e[32m[+] install_sigrok_tools() finished\n\e[0m";
     /usr/bin/logger 'install_sigrok_tools() finished' -t 'Customizing Debian';
@@ -1696,7 +1696,7 @@ install_hwhacktools() {
     ## Hardware Hacking Tools for Debian. Note: require development tools
     # Directory for source-code (declared in .env)
     mkdir -p $SOURCE_DIR;
-    cd "$SOURCE_DIR" || exit 1;
+    cd "$SOURCE_DIR";
 
     # Check that debian.org is reachable
     TEST_URL="debian.org";
@@ -1741,7 +1741,7 @@ install_hwhacktools() {
         TOOL_INSTALL="flashrom";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         TOOL_SOURCE="Source";
-        cd "$SOURCE_DIR" || exit 1;
+        cd "$SOURCE_DIR";
         git clone https://github.com/whid-injector/flashrom-whidboard > /dev/null 2>&1;
         cd "$SOURCE_DIR/flashrom-whidboard/" > /dev/null 2>&1;
         sudo mkdir -p /usr/local/sbin > /dev/null 2>&1;
@@ -1762,7 +1762,7 @@ install_hwhacktools() {
         
     if [ $TOOL_INSTALLED == False ]; then
         # openOCD
-        cd "$SOURCE_DIR" || exit 1;
+        cd "$SOURCE_DIR";
         TOOL_INSTALL="openocd Prerequisites";
         TOOL_SOURCE="Debian Repository";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -1794,7 +1794,7 @@ install_hwhacktools() {
     check_already_installed;
     if [ $TOOL_INSTALLED == False ]; then
         # SNANDER
-        cd "$SOURCE_DIR" || exit 1;
+        cd "$SOURCE_DIR";
         TOOL_SOURCE="Debian Repository";
         TOOL_INSTALL="snander Prerequisites";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -1818,7 +1818,7 @@ install_hwhacktools() {
     check_already_installed;
     if [ $TOOL_INSTALLED == False ]; then
         # ufprog
-        cd "$SOURCE_DIR" || exit 1;
+        cd "$SOURCE_DIR";
         TOOL_INSTALL="ufprog Prerequisites";
         TOOL_SOURCE="Debian Repository";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
@@ -1843,10 +1843,10 @@ install_hwhacktools() {
     TOOL_INSTALL="BUSSide"
     TOOL_SOURCE="Source";
     if [ -d $RE_DIR/$TOOL_INSTALL ]; then
-        cd "$SOURCE_DIR" || exit 1;
+        cd "$SOURCE_DIR";
         check_status_install;
     else
-        cd "$SOURCE_DIR" || exit 1;
+        cd "$SOURCE_DIR";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         git clone https://github.com/martinboller/BUSSide.git > /dev/null 2>&1;
         check_status_install;
@@ -1871,9 +1871,9 @@ install_hwhacktools() {
     TOOL_SOURCE="Source";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
     if [ -d $RE_DIR/$TOOL_INSTALL ]; then
-        cd "$SOURCE_DIR" || exit 1;
+        cd "$SOURCE_DIR";
     else
-        cd "$SOURCE_DIR" || exit 1;
+        cd "$SOURCE_DIR";
         git clone https://github.com/martinboller/sertack.git > /dev/null 2>&1;
         check_status_install;
 
@@ -1897,7 +1897,7 @@ install_hwhacktools() {
     # Findus (fault-injecttion-library) supports the ChipWhisperer Pro, the ChipWhisperer Husky and the Pico Glitcher.
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
     if [ -d $RE_DIR/$TOOL_INSTALL ]; then
-        cd "$SOURCE_DIR" || exit 1;
+        cd "$SOURCE_DIR";
         check_status_install;
     else
         TOOL_SOURCE="source";
@@ -1910,7 +1910,7 @@ install_hwhacktools() {
         TOOL_INSTALL="findus"
         TOOL_SOURCE="PIP Repository";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
-        cd "$SOURCE_DIR/$TOOL_INSTALL" || exit 1;
+        cd "$SOURCE_DIR/$TOOL_INSTALL";
         pip install . > /dev/null 2>&1;
         check_status_install;
 
@@ -1937,7 +1937,7 @@ install_hwhacktools() {
     sudo udevadm control --reload > /dev/null 2>&1;
     check_status_install;
 
-    cd "$SCRIPT_DIR" || exit 1;
+    cd "$SCRIPT_DIR";
 
     echo -e "\e[32m[+] install_hwhacktools() finished\n\e[0m";
     /usr/bin/logger 'install_hwhacktools() finished' -t 'Customizing Debian';
@@ -1955,7 +1955,7 @@ install_cargo_binwalk(){
     TOOL_SOURCE="Debian Repository";
     # Reverse Engineering tools
     mkdir -p $RE_DIR;
-    cd "$RE_DIR" || exit 1;
+    cd "$RE_DIR";
 
     TOOL_ELF="cargo";
     check_already_installed;
@@ -2040,14 +2040,14 @@ install_reversetools() {
 
     # Reverse Engineering tools
     mkdir -p $RE_DIR;
-    cd "$RE_DIR" || exit 1;
+    cd "$RE_DIR";
 
     TOOL_ELF="binwalk";
     check_already_installed;
     if [ $TOOL_INSTALLED == False ]; then
         TOOL_INSTALL="binwalk";
         TOOL_SOURCE="git";
-        cd "$RE_DIR" || exit 1;
+        cd "$RE_DIR";
         echo -e "\e[35m[*]\t └─ cloning $TOOL_INSTALL from $TOOL_SOURCE\e[0m";
         git clone https://github.com/ReFirmLabs/binwalk > /dev/null 2>&1;
         check_status_install;
@@ -2086,11 +2086,11 @@ install_reversetools() {
     TOOL_INSTALL="firmwalker";
     TOOL_SOURCE="Source";
     # firmwalker bash script
-    if [ -d $RE_DIR/binwally ]; then
-        cd "$RE_DIR" || exit 1;
+    if [ -d $RE_DIR/firmwalker ]; then
+        cd "$RE_DIR";
         check_status_install;
-    else    
-        cd "$RE_DIR" || exit 1;
+    else
+        cd "$RE_DIR";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         git clone https://github.com/hotelzululima/firmwalker.git > /dev/null 2>&1;
         check_status_install;
@@ -2098,7 +2098,6 @@ install_reversetools() {
         TOOL_INSTALL="firmwalker permissions";
         TOOL_SOURCE="chmod";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-        git clone https://github.com/hotelzululima/firmwalker.git > /dev/null 2>&1;
         chmod 755 $RE_DIR/firmwalker/firmwalker.sh;
         check_status_install;
 
@@ -2109,11 +2108,11 @@ install_reversetools() {
     TOOL_INSTALL="binwally";
     TOOL_SOURCE="Source"
     if [ -d $RE_DIR/binwally ]; then
-        cd "$RE_DIR" || exit 1;
+        cd "$RE_DIR";
         check_status_install;
     else
         # binwally for python3
-        cd "$RE_DIR" || exit 1;
+        cd "$RE_DIR";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         git clone https://github.com/martinboller/binwally.git > /dev/null 2>&1;
         check_status_install;
@@ -2136,10 +2135,10 @@ install_reversetools() {
     TOOL_INSTALL="DidierStevensSuite";
     TOOL_SOURCE="Source"
     if [ -d $RE_DIR/DidierStevensSuite ]; then
-        cd "$RE_DIR" || exit 1;
+        cd "$RE_DIR";
         check_status_install;
     else
-        cd "$RE_DIR" || exit 1;
+        cd "$RE_DIR";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         git clone https://github.com/DidierStevens/DidierStevensSuite.git > /dev/null 2>&1;
         check_status_install;
@@ -2155,7 +2154,23 @@ install_reversetools() {
         check_status_install;
     fi   
 
-    cd "$SCRIPT_DIR" || exit 1;
+    TOOL_INSTALL="ubi-tools";
+    TOOL_SOURCE="Source";
+    # ubi bash scripts
+    if [ -d $RE_DIR/ubi-tools ]; then
+        cd "$RE_DIR";
+        check_status_install;
+    else
+        cd "$RE_DIR";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+        git clone https://github.com/martinboller/ubi-tools.git > /dev/null 2>&1;
+        check_status_install;
+
+        APP_NAME="ubitools";
+        create_desktop_file;
+    fi
+
+    cd "$SCRIPT_DIR";
 
     echo -e "\e[32m[+] install_reversetools() finished\n\e[0m";
     /usr/bin/logger 'install_reversetools() finished' -t 'Customizing Debian';
@@ -2175,7 +2190,7 @@ install_rea() {
         TOOL_INSTALL="$TOOL_INSTALL already installed";
         check_status_install;
     else
-        cd "$RE_DIR" || exit 1;
+        cd "$RE_DIR";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
         git clone https://github.com/morluto/rea.git > /dev/null 2>&1;
         check_status_install;
@@ -2708,7 +2723,7 @@ configure_microsoft_apt_repository() {
     TOOL_INSTALL="Microsoft Linux Repo";
     TOOL_SOURCE="Microsoft Repo .deb package";
     echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-    cd "$SCRIPT_DIR" || exit 1;
+    cd "$SCRIPT_DIR";
     echo -e "\e[35m[*]\t └─ adding packages-microsoft-prod.deb to sources.list\e[0m";
     # Download the Microsoft repository GPG keys
     echo -e "\e[35m[*]\t └─ Download the Microsoft repository GPG keys\e[0m";
@@ -2878,7 +2893,7 @@ install_golang() {
     TEST_URL="go.dev";
     check_connectivity_https;
 
-    cd "$SCRIPT_DIR" || exit 1;
+    cd "$SCRIPT_DIR";
     TOOL_INSTALL="go"
     echo -e "\e[35m[*]\t └─ Downloading golang $GO_URL\e[0m";
     sudo mkdir -p /usr/local/ > /dev/null 2>&1;
@@ -2981,13 +2996,13 @@ install_volatility() {
     if [ -d $RE_DIR/volatility3 ]; then
         TOOL_INSTALL="volatility3";
         TOOL_SOURCE="Source";
-        cd "$RE_DIR" || exit 1;
+        cd "$RE_DIR";
         check_status_install;
     else
         TOOL_INSTALL="volatility3";
         TOOL_SOURCE="Source";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-        cd "$RE_DIR" || exit 1;
+        cd "$RE_DIR";
         git clone https://github.com/volatilityfoundation/volatility3.git > /dev/null 2>&1;
         check_status_install;
 
@@ -3463,7 +3478,7 @@ main() {
         
     # Cannot sudo
     else
-        echo -e "\e[31m[-]\t$USER does not belong to group$SUDOGROUP, please provide root users password\e[0m"
+        echo -e "\e[31m[-]\t$USER does not belong to group $SUDOGROUP, please provide root users password\e[0m"
         configure_sudo;
         echo -e "\e[31m[-]\tYou need to reboot for the change to take effect, then rerun this script\e[0m"
         read -p "Do You want to reboot now? (y/n)" DO_REBOOT;

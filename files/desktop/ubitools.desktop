@@ -1,0 +1,19 @@
+[Desktop Entry]
+Type=Application
+Name=ubitools
+Comment=Start ubitools in Terminal
+Exec=gnome-terminal --class="ubitoolsTerm" --name="ubitoolsTerm" --working-directory="git/RE/ubi-tools/" -- bash -c "exec bash"
+Terminal=false
+Icon=ubitools.png
+StartupNotify=true
+StartupWMClass=ubitoolsTerm
+Categories=X-ReverseEngineering;X-HardwareHacking;
+Name[en]=ubitools
+Name[en_GB]=ubitools
+Name[en_GB.UTF-8]=ubitools
+Comment[en]=Start ubitools in Terminal
+Comment[en_GB]=Start ubitools in Terminal
+Comment[en_GB.UTF-8]=Start ubitools in Terminal
+PrefersNonDefaultGPU=false
+Hidden=false
+NoDisplay=false
