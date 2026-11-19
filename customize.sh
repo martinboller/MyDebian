@@ -2003,17 +2003,17 @@ ___EOF___
         TOOL_INSTALL="binwalk";
         TOOL_SOURCE="Cargo Repository (crates.io)";
         echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
-        cargo install binwalk > /dev/null 2>&1;
+        cargo install --git https://github.com/ReFirmLabs/binwalk binwalk --locked > /dev/null 2>&1;
         check_install;
 
-        TOOL_INSTALL="binwalk-ui";
-        TOOL_SOURCE="GitHub";
-        sudo mkdir -p /opt/binwalk-ui/;
-        curl -sSL https://raw.githubusercontent.com/ReFirmLabs/binwalk/refs/heads/master/scripts/binwalk-ui -o $SCRIPT_DIR/binwalk-ui;
-        sudo chmod +x $SCRIPT_DIR/binwalk-ui;
-        sudo mv $SCRIPT_DIR/binwalk-ui /opt/binwalk-ui/;
-        sudo ln -sf /opt/binwalk-ui/binwalk-ui /usr/local/bin/binwalk-ui;
-        TOOL_INSTALL="binwalk path";
+#        TOOL_INSTALL="binwalk-ui";
+#        TOOL_SOURCE="GitHub";
+#        sudo mkdir -p /opt/binwalk-ui/;
+#        curl -sSL https://raw.githubusercontent.com/ReFirmLabs/binwalk/refs/heads/master/scripts/binwalk-ui -o $SCRIPT_DIR/binwalk-ui;
+#        sudo chmod +x $SCRIPT_DIR/binwalk-ui;
+#        sudo mv $SCRIPT_DIR/binwalk-ui /opt/binwalk-ui/;
+#        sudo ln -sf /opt/binwalk-ui/binwalk-ui /usr/local/bin/binwalk-ui;
+#        TOOL_INSTALL="binwalk path";
         if [ -n "$BINWALK_PATH" ]; then
             echo -e "\e[35m[*]\t └─ Binwalk path already configured\e[0m";
             check_status_install;
@@ -2029,6 +2029,7 @@ ___EOF___
     fi
 
 }
+
 install_reversetools() {
     echo -e "\e[35m[*] install_reversetools()\e[0m";
     /usr/bin/logger 'install_reversetools()' -t 'Customizing Debian';
@@ -2052,25 +2053,89 @@ install_reversetools() {
         git clone https://github.com/ReFirmLabs/binwalk > /dev/null 2>&1;
         check_status_install;
 
-        TOOL_INSTALL="binwalk";
-        TOOL_SOURCE="docker container";
-        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL $TOOL_SOURCE\e[0m";
-        cd $RE_DIR/binwalk;
-        sudo ./build_docker.sh > /dev/null 2>&1;
-        check_status_install;
-        BINWALK_INSTALLED=$(sg docker 'docker image ls' | grep binwalk | awk '{print $1}')
+    TOOL_ELF="cargo";
+    check_already_installed;
+    if [ $TOOL_INSTALLED == False ]; then
+        # Binwalk 3.x
+        TOOL_INSTALL="cargo";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+        #git clone https://github.com/ReFirmLabs/binwalk.git
+        # binwalk require cargo and some other packages which may not be installed depending on config
+        PATH="$HOME/.cargo/bin:$PATH";
+        echo -e "\e[35m[*]\t └─ Checking cargo path\e[0m";
+        export CARGO_PATH=$(grep '.cargo/bin' ~/.profile)
 
-        TOOL_INSTALL="binwalk commandline";
-        TOOL_SOURCE="script";
-        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL using $BINWALK_INSTALL\e[0m";
-        sudo mkdir /opt/binwalk/;
-        echo '#!/usr/bin/env bash' | sudo tee -a /opt/binwalk/binwalk > /dev/null 2>&1;
-        echo 'docker run -t -v "$PWD":/analysis binwalkv3' | sudo tee -a /opt/binwalk/binwalk > /dev/null 2>&1;
-        sudo chmod 755 /opt/binwalk/binwalk;
-        sudo ln -sf /opt/binwalk/binwalk /usr/local/bin/binwalk;
-        # Alias works well, however I want everything to be found by which
-        #echo "alias binwalk='docker run -t -v "$PWD":/analysis binwalkv3'" | tee -a ~/.bash_aliases > /dev/null 2>&1;
+        TOOL_INSTALL="cargo path";
+        if [ -n "$CARGO_PATH" ]; then
+            echo -e "\e[35m[*]\t └─ Cargo path already configured\e[0m";
+            check_status_install;
+        else
+            echo -e "\e[35m[*]\t └─ Adding cargo path to $HOME/.profile\e[0m";
+            cat << ___EOF___ >> ~/.profile
+# set PATH so it includes user's private .cargo/bin if it exists
+if [ -d "\$HOME/.cargo/bin" ] ; then
+    PATH="\$HOME/.cargo/bin:\$PATH"
+fi
+___EOF___
+
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install cargo build-essential libfontconfig1-dev liblzma-dev > /dev/null 2>&1;
         check_status_install;
+        # update rust and cargo to latest stable
+        TOOL_INSTALL="Latest stable rust";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+        sync;
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y install rustup > /dev/null 2>&1; 
+        rustup default stable > /dev/null 2>&1;
+        check_status_install;
+        fi
+    fi
+
+    TOOL_ELF="binwalk";
+    check_already_installed;
+    if [ $TOOL_INSTALLED == False ]; then
+        TEST_URL="crates.io"; # Cargo repository
+        check_connectivity_https;
+
+        TOOL_INSTALL="binwalk";
+        TOOL_SOURCE="Cargo Repository (crates.io)";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+        cargo install --git https://github.com/ReFirmLabs/binwalk binwalk --locked > /dev/null 2>&1;
+        check_install;
+
+        TOOL_INSTALL="binwalk path";
+        if [ -n "$BINWALK_PATH" ]; then
+            echo -e "\e[35m[*]\t └─ Binwalk path already configured\e[0m";
+            check_status_install;
+        else
+            echo -e "\e[35m[*]\t └─ Adding Binwalk path to $HOME/.profile\e[0m";
+            cat << ___EOF___ >> ~/.profile
+# set PATH so it includes user's .cargo/bin/binwalk if it exists
+if [ -f "\$HOME/.cargo/bin/binwalk" ] ; then
+    BINWALK_PATH="\$HOME/.cargo/bin/binwalk"
+fi
+___EOF___
+        fi
+    fi
+
+        # TOOL_INSTALL="binwalk";
+        # TOOL_SOURCE="docker container";
+        # echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL $TOOL_SOURCE\e[0m";
+        # cd $RE_DIR/binwalk;
+        # sudo ./build_docker.sh > /dev/null 2>&1;
+        # check_status_install;
+        # BINWALK_INSTALLED=$(sg docker 'docker image ls' | grep binwalk | awk '{print $1}')
+
+        # TOOL_INSTALL="binwalk commandline";
+        # TOOL_SOURCE="script";
+        # echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL using $BINWALK_INSTALL\e[0m";
+        # sudo mkdir /opt/binwalk/;
+        # echo '#!/usr/bin/env bash' | sudo tee -a /opt/binwalk/binwalk > /dev/null 2>&1;
+        # echo 'docker run -t -v "$PWD":/analysis binwalkv3' | sudo tee -a /opt/binwalk/binwalk > /dev/null 2>&1;
+        # sudo chmod 755 /opt/binwalk/binwalk;
+        # sudo ln -sf /opt/binwalk/binwalk /usr/local/bin/binwalk;
+        # # Alias works well, however I want everything to be found by which
+        # #echo "alias binwalk='docker run -t -v "$PWD":/analysis binwalkv3'" | tee -a ~/.bash_aliases > /dev/null 2>&1;
+        # check_status_install;
 
         TOOL_INSTALL="binwalk Firmwares Directory";
         TOOL_SOURCE="Filesystem";
