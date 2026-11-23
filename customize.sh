@@ -2170,6 +2170,22 @@ ___EOF___
         create_desktop_file;
     fi
 
+    TOOL_INSTALL="firmware-mod-kit";
+    TOOL_SOURCE="Source";
+    # firmwalker bash script
+    if [ -d $RE_DIR/firmware-mod-kit ]; then
+        cd "$RE_DIR";
+        check_status_install;
+    else
+        cd "$RE_DIR";
+        echo -e "\e[35m[*]\t └─ Installing $TOOL_INSTALL\e[0m";
+        git clone https://github.com/martinboller/firmware-mod-kit.git > /dev/null 2>&1;
+        check_status_install;
+
+        APP_NAME="firmware-mod-kit";
+        create_desktop_file;
+    fi
+
     TOOL_INSTALL="binwally";
     TOOL_SOURCE="Source"
     if [ -d $RE_DIR/binwally ]; then

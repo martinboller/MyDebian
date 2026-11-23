@@ -1,0 +1,19 @@
+[Desktop Entry]
+Type=Application
+Name=firmware-mod-kit
+Comment=Start firmware-mod-kit in Terminal
+Exec=gnome-terminal --class="firmware-mod-kitTerm" --name="firmware-mod-kitTerm" --working-directory="git/RE/firmware-mod-kit/" -- bash -c "exec bash"
+Terminal=false
+Icon=firmware-mod-kit.png
+StartupNotify=true
+StartupWMClass=firmware-mod-kitTerm
+Categories=X-ReverseEngineering;X-HardwareHacking;
+Name[en]=firmware-mod-kit
+Name[en_GB]=firmware-mod-kit
+Name[en_GB.UTF-8]=firmware-mod-kit
+Comment[en]=Start firmware-mod-kit in Terminal
+Comment[en_GB]=Start firmware-mod-kit in Terminal
+Comment[en_GB.UTF-8]=Start firmware-mod-kit in Terminal
+PrefersNonDefaultGPU=false
+Hidden=false
+NoDisplay=false
